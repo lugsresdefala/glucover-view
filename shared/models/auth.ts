@@ -15,8 +15,7 @@ export const roleDisplayNames: Record<UserRole, string> = {
   coordinator: "Coordenador(a)",
 };
 
-// Session storage table.
-// (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
+// Session storage table for server-managed login state.
 export const sessions = pgTable(
   "sessions",
   {

@@ -3,12 +3,17 @@ import type { PatientEvaluation, ClinicalRecommendation, GlucoseReading, Critica
 import { glucoseTargets, calculateGlucosePercentageInTarget, calculateAverageGlucose, checkCriticalGlucose, criticalGlucoseThresholds } from "@shared/schema";
 import { generateClinicalAnalysis, formatAnalysisForAI, type ClinicalAnalysis } from "./clinical-engine";
 
-// Using Replit's AI Integrations service - provides OpenAI-compatible API access
-// without requiring your own API key. Charges are billed to your Replit credits.
-const openai = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-});
+const openaiApiKey =
+  process.env.OPENAI_API_KEY ?? process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+const openaiBaseUrl =
+  process.env.OPENAI_BASE_URL ?? process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+
+const openai = openaiApiKey
+  ? new OpenAI({
+      baseURL: openaiBaseUrl,
+      apiKey: openaiApiKey,
+    })
+  : null;
 
 // DMG Guidelines prompt context
 const DMG_GUIDELINES = `
@@ -158,7 +163,7 @@ export async function generateClinicalRecommendation(
 ): Promise<ClinicalRecommendation> {
   const clinicalAnalysis = generateClinicalAnalysis(evaluation);
   
-  if (!process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || !process.env.AI_INTEGRATIONS_OPENAI_API_KEY) {
+  if (!openai) {
     console.warn("OpenAI integration not configured, using deterministic recommendation");
     return generateDeterministicRecommendation(clinicalAnalysis);
   }

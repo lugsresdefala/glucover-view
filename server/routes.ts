@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { generateClinicalRecommendation } from "./openai";
 import { patientEvaluationSchema, type Patient } from "@shared/schema";
 import { z } from "zod";
-import { getSession } from "./replit_integrations/auth";
+import { getSession } from "./session";
 
 // Extended request types
 interface AuthenticatedRequest extends Request {

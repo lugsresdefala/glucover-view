@@ -1,5 +1,7 @@
 # DMG Assist - Clinical Decision Support Platform
 
+> Nota: Este documento descrevia a configuração específica do Replit. A aplicação agora roda fora do Replit; consulte o README para o fluxo de deploy atual.
+
 ## Overview
 
 DMG Assist is a clinical decision support system for managing Gestational Diabetes Mellitus (DMG). It helps healthcare professionals and patients track glucose data, manage insulin regimens, and generate evidence-based treatment recommendations following Brazilian clinical guidelines.
