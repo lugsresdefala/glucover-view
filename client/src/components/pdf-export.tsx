@@ -123,13 +123,13 @@ function PrintableReport({ evaluation }: { evaluation: StoredEvaluation }) {
                     {reading.preAlmoco ?? "-"}
                   </td>
                   <td className="border border-gray-300 px-2 py-1 text-center font-mono">
-                    {reading.posAlmoco2h ?? "-"}
+                    {typeof reading.posAlmoco2h === "number" ? reading.posAlmoco2h : "-"}
                   </td>
                   <td className="border border-gray-300 px-2 py-1 text-center font-mono">
                     {reading.preJantar ?? "-"}
                   </td>
                   <td className="border border-gray-300 px-2 py-1 text-center font-mono">
-                    {reading.posJantar2h ?? "-"}
+                    {typeof reading.posJantar2h === "number" ? reading.posJantar2h : "-"}
                   </td>
                   <td className="border border-gray-300 px-2 py-1 text-center font-mono">
                     {reading.madrugada ?? "-"}

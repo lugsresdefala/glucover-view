@@ -234,7 +234,8 @@ export function calculateGlucosePercentageInTarget(readings: GlucoseReading[]): 
       if (isGlucoseWithinTarget(reading.posAlmoco1h, "posPrandial1h")) inTarget++;
     }
     // Compatibilidade com dados legados usando 2h pós-almoço
-    if (reading.posAlmoco2h !== undefined) {
+    // Dados legados podem trazer valores nulos/objetos; só contamos números válidos.
+    if (typeof reading.posAlmoco2h === "number") {
       total++;
       if (isGlucoseWithinTarget(reading.posAlmoco2h, "posPrandial2h")) inTarget++;
     }
@@ -247,7 +248,7 @@ export function calculateGlucosePercentageInTarget(readings: GlucoseReading[]): 
       if (isGlucoseWithinTarget(reading.posJantar1h, "posPrandial1h")) inTarget++;
     }
     // Compatibilidade com dados legados usando 2h pós-jantar
-    if (reading.posJantar2h !== undefined) {
+    if (typeof reading.posJantar2h === "number") {
       total++;
       if (isGlucoseWithinTarget(reading.posJantar2h, "posPrandial2h")) inTarget++;
     }
