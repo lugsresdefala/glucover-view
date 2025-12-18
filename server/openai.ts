@@ -3,6 +3,7 @@ import type { PatientEvaluation, ClinicalRecommendation, GlucoseReading, Critica
 import { glucoseTargets, calculateGlucosePercentageInTarget, calculateAverageGlucose, checkCriticalGlucose, criticalGlucoseThresholds } from "@shared/schema";
 import { generateClinicalAnalysis, formatAnalysisForAI, type ClinicalAnalysis } from "./clinical-engine";
 
+// Keep compatibility with legacy Replit variables while preferring standard OPENAI_* envs.
 const openaiApiKey =
   process.env.OPENAI_API_KEY ?? process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
 const openaiBaseUrl =

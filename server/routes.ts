@@ -1,10 +1,11 @@
 import type { Express, RequestHandler, Request } from "express";
 import { createServer, type Server } from "http";
+import crypto from "crypto";
 import { storage } from "./storage";
 import { generateClinicalRecommendation } from "./openai";
 import { patientEvaluationSchema, type Patient } from "@shared/schema";
 import { z } from "zod";
-import { getSession } from "./session";
+import { getCookieSecurity, getSession } from "./session";
 
 // Extended request types
 interface AuthenticatedRequest extends Request {
@@ -97,6 +98,63 @@ export async function registerRoutes(
   // Setup session middleware
   app.set("trust proxy", 1);
   app.use(getSession());
+  const { secureCookies, sameSite } = getCookieSecurity();
+
+  app.use((req, res, next) => {
+    const sessionData = req.session as any;
+    if (sessionData && !sessionData.csrfToken) {
+      sessionData.csrfToken = crypto.randomBytes(24).toString("hex");
+    }
+
+    if (sessionData?.csrfToken) {
+      res.cookie("csrf_token", sessionData.csrfToken, {
+        httpOnly: false,
+        secure: secureCookies,
+        sameSite,
+      });
+    }
+
+    if (
+      ["GET", "HEAD", "OPTIONS"].includes(req.method) ||
+      req.path === "/api/csrf-token"
+    ) {
+      return next();
+    }
+
+    const csrfHeader =
+      (req.headers["x-csrf-token"] as string | undefined) ||
+      (req.headers["x-xsrf-token"] as string | undefined);
+
+    if (sessionData?.csrfToken && csrfHeader === sessionData.csrfToken) {
+      return next();
+    }
+
+    return res.status(403).json({ message: "CSRF token missing or invalid" });
+  });
+
+  app.get("/api/csrf-token", (req, res) => {
+    const token = (req.session as any)?.csrfToken;
+    if (!token) {
+      return res.status(500).json({ message: "CSRF token unavailable" });
+    }
+    res.json({ csrfToken: token });
+  });
+
+  // Basic CSRF mitigation: ensure mutating requests originate from the same host.
+  app.use((req, res, next) => {
+    if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+      return next();
+    }
+
+    const origin = req.headers.origin || req.headers.referer;
+    const host = `${req.protocol}://${req.get("host")}`;
+
+    if (origin && origin.startsWith(host)) {
+      return next();
+    }
+
+    return res.status(403).json({ message: "CSRF protection: invalid origin" });
+  });
 
   // ========== Patient Authentication Routes ==========
   

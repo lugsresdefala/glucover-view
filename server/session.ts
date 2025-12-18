@@ -5,15 +5,29 @@ const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 const PgStore = connectPg(session);
 
+export function getCookieSecurity() {
+  const isProduction = process.env.NODE_ENV === "production";
+  const secureCookies =
+    (process.env.SESSION_COOKIE_SECURE || "").toLowerCase() === "true" ||
+    isProduction;
+  const sameSite: "none" | "lax" = secureCookies ? "none" : "lax";
+  return { isProduction, secureCookies, sameSite };
+}
+
 export function getSession() {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL must be set to use session storage");
   }
 
-  const sessionSecret = process.env.SESSION_SECRET || "dev-session-secret";
+  const { isProduction, secureCookies, sameSite } = getCookieSecurity();
+  const sessionSecret = process.env.SESSION_SECRET;
+
+  if (isProduction && !sessionSecret) {
+    throw new Error("SESSION_SECRET must be set in production");
+  }
 
   return session({
-    secret: sessionSecret,
+    secret: sessionSecret || "dev-session-secret",
     store: new PgStore({
       conString: process.env.DATABASE_URL,
       createTableIfMissing: true,
@@ -24,7 +38,8 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: secureCookies,
+      sameSite,
       maxAge: ONE_WEEK_MS,
     },
   });
