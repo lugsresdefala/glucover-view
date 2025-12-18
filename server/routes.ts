@@ -16,6 +16,48 @@ interface PatientAuthenticatedRequest extends Request {
   patient?: Patient;
 }
 
+const allowedOrigins = new Set(
+  (process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0)
+    .map((origin) => {
+      try {
+        const parsed = new URL(origin);
+        return `${parsed.protocol}//${parsed.host}`;
+      } catch {
+        return null;
+      }
+    })
+    .filter((origin): origin is string => origin !== null),
+);
+
+function getRequestHost(req: Request) {
+  const proto =
+    (req.headers["x-forwarded-proto"] as string | undefined) || req.protocol;
+  const host =
+    (req.headers["x-forwarded-host"] as string | undefined) || req.get("host");
+  if (!host) return undefined;
+  return `${proto}://${host}`;
+}
+
+function normalizeOrigin(origin: string | undefined) {
+  if (!origin) return undefined;
+  try {
+    const parsed = new URL(origin);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return undefined;
+  }
+}
+
+function isTrustedOrigin(origin: string | undefined, host: string | undefined) {
+  const normalizedOrigin = normalizeOrigin(origin);
+  if (!normalizedOrigin) return false;
+  if (host && normalizedOrigin === host) return true;
+  return allowedOrigins.has(normalizedOrigin);
+}
+
 // Patient session middleware
 const isPatientAuthenticated: RequestHandler = (req: PatientAuthenticatedRequest, res, next) => {
   if (req.session && (req.session as any).patientId) {
@@ -101,6 +143,33 @@ export async function registerRoutes(
   const { secureCookies, sameSite } = getCookieSecurity();
 
   app.use((req, res, next) => {
+    const origin = req.headers.origin as string | undefined;
+    const host = getRequestHost(req);
+    const trusted = isTrustedOrigin(origin, host);
+
+    if (trusted && origin) {
+      res.header("Access-Control-Allow-Origin", origin);
+      res.header("Vary", "Origin");
+    }
+
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Content-Type, X-CSRF-Token, X-XSRF-Token",
+    );
+    res.header(
+      "Access-Control-Allow-Methods",
+      "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+    );
+
+    if (req.method === "OPTIONS") {
+      return res.status(204).end();
+    }
+
+    return next();
+  });
+
+  app.use((req, res, next) => {
     const sessionData = req.session as any;
     if (sessionData && !sessionData.csrfToken) {
       sessionData.csrfToken = crypto.randomBytes(24).toString("hex");
@@ -146,10 +215,12 @@ export async function registerRoutes(
       return next();
     }
 
-    const origin = req.headers.origin || req.headers.referer;
-    const host = `${req.protocol}://${req.get("host")}`;
+    const originHeader = req.headers.origin as string | undefined;
+    const refererHeader = req.headers.referer as string | undefined;
+    const origin = originHeader || normalizeOrigin(refererHeader);
+    const host = getRequestHost(req);
 
-    if (origin && origin.startsWith(host)) {
+    if (isTrustedOrigin(origin, host)) {
       return next();
     }
 
