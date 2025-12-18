@@ -1,5 +1,13 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+const apiBase =
+  (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "") || "";
+
+function buildApiUrl(path: string) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${apiBase}${normalizedPath}`;
+}
+
 const CSRF_COOKIE_NAME = "csrf_token";
 
 function readCookieValue(name: string): string | undefined {
@@ -15,7 +23,9 @@ async function ensureCsrfToken(): Promise<string | undefined> {
   if (existing) return existing;
 
   try {
-    const res = await fetch("/api/csrf-token", { credentials: "include" });
+    const res = await fetch(buildApiUrl("/api/csrf-token"), {
+      credentials: "include",
+    });
     if (res.ok) {
       const body = await res.json();
       return body?.csrfToken;
@@ -50,7 +60,7 @@ export async function apiRequest(
     }
   }
 
-  const res = await fetch(url, {
+  const res = await fetch(buildApiUrl(url), {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -70,7 +80,7 @@ export const getQueryFn: <T>(options: {
     const csrfToken = readCookieValue(CSRF_COOKIE_NAME);
     const headers = csrfToken ? { "X-CSRF-Token": csrfToken } : undefined;
 
-    const res = await fetch(queryKey.join("/") as string, {
+    const res = await fetch(buildApiUrl(queryKey.join("/") as string), {
       credentials: "include",
       headers,
     });

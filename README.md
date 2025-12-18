@@ -13,6 +13,11 @@ Aplicação full-stack para acompanhamento glicêmico e geração de recomendaç
 3. Execute o build de produção (interface + API): `npm run build`
 4. Suba o servidor: `npm run start` (serve a API e os assets estáticos gerados em `dist/public`)
 
+## Deploy sugerido (Vercel + backend gratuito)
+
+- **Frontend**: no Vercel, use `npm run build` e defina o diretório de saída como `dist/public`. Configure a variável `VITE_API_BASE_URL` apontando para o backend.
+- **Backend**: qualquer serviço Node gratuito (Render/Railway/Fly.io) usando Postgres gratuito (Neon/Supabase). Defina `ALLOWED_ORIGINS` com o domínio do Vercel para liberar CORS/CSRF e mantenha `SESSION_COOKIE_SECURE=true`.
+
 ## Desenvolvimento
 
 - `npm run dev`: inicia o servidor em modo desenvolvimento com Vite em middleware.

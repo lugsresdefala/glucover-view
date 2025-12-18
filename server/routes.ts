@@ -16,6 +16,26 @@ interface PatientAuthenticatedRequest extends Request {
   patient?: Patient;
 }
 
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+function getRequestHost(req: Request) {
+  const proto =
+    (req.headers["x-forwarded-proto"] as string | undefined) || req.protocol;
+  const host =
+    (req.headers["x-forwarded-host"] as string | undefined) || req.get("host");
+  if (!host) return undefined;
+  return `${proto}://${host}`;
+}
+
+function isTrustedOrigin(origin: string | undefined, host: string | undefined) {
+  if (!origin) return false;
+  if (host && origin.startsWith(host)) return true;
+  return allowedOrigins.some((allowed) => origin.startsWith(allowed));
+}
+
 // Patient session middleware
 const isPatientAuthenticated: RequestHandler = (req: PatientAuthenticatedRequest, res, next) => {
   if (req.session && (req.session as any).patientId) {
@@ -101,6 +121,33 @@ export async function registerRoutes(
   const { secureCookies, sameSite } = getCookieSecurity();
 
   app.use((req, res, next) => {
+    const origin = req.headers.origin as string | undefined;
+    const host = getRequestHost(req);
+    const trusted = isTrustedOrigin(origin, host);
+
+    if (trusted && origin) {
+      res.header("Access-Control-Allow-Origin", origin);
+      res.header("Vary", "Origin");
+    }
+
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Content-Type, X-CSRF-Token, X-XSRF-Token",
+    );
+    res.header(
+      "Access-Control-Allow-Methods",
+      "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+    );
+
+    if (req.method === "OPTIONS") {
+      return res.status(204).end();
+    }
+
+    return next();
+  });
+
+  app.use((req, res, next) => {
     const sessionData = req.session as any;
     if (sessionData && !sessionData.csrfToken) {
       sessionData.csrfToken = crypto.randomBytes(24).toString("hex");
@@ -146,10 +193,11 @@ export async function registerRoutes(
       return next();
     }
 
-    const origin = req.headers.origin || req.headers.referer;
-    const host = `${req.protocol}://${req.get("host")}`;
+    const origin = (req.headers.origin ||
+      req.headers.referer) as string | undefined;
+    const host = getRequestHost(req);
 
-    if (origin && origin.startsWith(host)) {
+    if (isTrustedOrigin(origin, host)) {
       return next();
     }
 
