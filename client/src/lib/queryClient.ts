@@ -1,11 +1,29 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-const apiBase =
-  (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "") || "";
+function parseApiBase(url: string | undefined) {
+  if (!url) return "";
+  try {
+    const parsed = new URL(url);
+    const pathname = parsed.pathname.replace(/\/+$/, "");
+    return `${parsed.origin}${pathname}`;
+  } catch {
+    return "";
+  }
+}
+
+let cachedApiBase: string | null = null;
+
+function getApiBase() {
+  if (cachedApiBase === null) {
+    cachedApiBase = parseApiBase(import.meta.env.VITE_API_BASE_URL);
+  }
+  return cachedApiBase;
+}
 
 function buildApiUrl(path: string) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${apiBase}${normalizedPath}`;
+  const base = getApiBase();
+  return base ? `${base}${normalizedPath}` : normalizedPath;
 }
 
 const CSRF_COOKIE_NAME = "csrf_token";

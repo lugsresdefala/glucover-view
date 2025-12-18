@@ -16,10 +16,21 @@ interface PatientAuthenticatedRequest extends Request {
   patient?: Patient;
 }
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = new Set(
+  (process.env.ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0)
+    .map((origin) => {
+      try {
+        const parsed = new URL(origin);
+        return `${parsed.protocol}//${parsed.host}`;
+      } catch {
+        return null;
+      }
+    })
+    .filter((origin): origin is string => origin !== null),
+);
 
 function getRequestHost(req: Request) {
   const proto =
@@ -30,10 +41,21 @@ function getRequestHost(req: Request) {
   return `${proto}://${host}`;
 }
 
+function normalizeOrigin(origin: string | undefined) {
+  if (!origin) return undefined;
+  try {
+    const parsed = new URL(origin);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return undefined;
+  }
+}
+
 function isTrustedOrigin(origin: string | undefined, host: string | undefined) {
-  if (!origin) return false;
-  if (host && origin.startsWith(host)) return true;
-  return allowedOrigins.some((allowed) => origin.startsWith(allowed));
+  const normalizedOrigin = normalizeOrigin(origin);
+  if (!normalizedOrigin) return false;
+  if (host && normalizedOrigin === host) return true;
+  return allowedOrigins.has(normalizedOrigin);
 }
 
 // Patient session middleware
@@ -193,8 +215,9 @@ export async function registerRoutes(
       return next();
     }
 
-    const origin = (req.headers.origin ||
-      req.headers.referer) as string | undefined;
+    const originHeader = req.headers.origin as string | undefined;
+    const refererHeader = req.headers.referer as string | undefined;
+    const origin = originHeader || normalizeOrigin(refererHeader);
     const host = getRequestHost(req);
 
     if (isTrustedOrigin(origin, host)) {
