@@ -1,0 +1,270 @@
+Introdução
+O tratamento de mulheres com diabetes mellitus gestacional (DMG) diminui os eventos adversos perinatais.1 Em 2005, um estudo randomizado controlado comparou gestantes com DMG que monitorizaram a glicemia e ajustaram frequentemente a terapia nutricional e com insulina com mulheres com DMG que não foram submetidas a esta intervenção. O risco de eventos adversos perinatais sérios (como morte, distocia de ombro, fratura óssea e injúria do plexo braquial) foi significativamente maior nas que não sofreram intervenção (RR 0,33; IC 95% 0.14 – 0.75; p = 0.01).2
+
+Em 2009, outro estudo randomizado comparou 485 gestantes com DMG considerado leve, ou seja, com glicemias de jejum abaixo de 95 mg/dl ao diagnóstico, que receberam intervenção nutricional e, quando necessário, insulina, com 473 mulheres com DMG que não receberam intervenção. Os autores encontraram reduções significativas com o tratamento, em comparação com os cuidados habituais, em vários resultados secundários pré especificados, como peso médio ao nascer (3.302 g vs. 3.408 g), tecido adiposo  neonatal (427 g vs. 464 g), bebês  grandes para a idade gestacional (7,1% vs. 14,5%), bebês macrossômicos (5,9% vs.14,3%), distocia de ombro (1,5% vs. 4,0%) e parto cesáreo (26,9% vs. 33,8%). Além disso, o tratamento do DMG, em comparação com os cuidados habituais, reduziu significativamente a frequência de pré-eclâmpsia e hipertensão gestacional (8,6% vs. 13,6%; p = 0,01).3
+
+A eficácia das medidas terapêuticas para controle glicêmico no DMG sobre diversos desfechos perinatais foi confirmada em metanálise que incluiu 3.317 gestantes que receberam tratamento para DMG e 4.407 gestantes com DMG que não foram tratadas. Além disso, o tratamento do DMG não aumentou o risco de bebês pequenos para a idade gestacional (PIG), admissão na UTI neonatal ou parto prematuro.4
+
+A falta de tratamento da gestante com DMG também tem consequências no longo prazo sobre a prole. A avaliação dos filhos das gestantes incluídas no estudo observacional (Hyperglycemia and Adverse Pregnancy Outcomes -HAPO),  10 anos a 14 anos após o parto, mostrou que 10,6% dos filhos de mulheres com critério diagnóstico para DMG e que não sofreram intervenção apresentavam intolerância à glicose (IGT), comparados com 5,0% dos filhos de mães sem DMG. As frequências de glicemia de jejum alterada (IFG) foram de 9,2% e 7,4%, respectivamente. Os autores do estudo encontraram OR ajustado de 1,09 (0,78 – 1,52) para IFG e 1,96 (1,41 – 2,73) para IGT. Além disso, foi observado, nos filhos de mulheres com DMG sem intervenção, aumento nos indicadores de adiposidade, como IMC, gordura corporal, pregas cutâneas e circunferência abdominal.5 
+
+A abordagem terapêutica de todas as gestantes com diabetes inclui necessariamente orientação nutricional adequada e individualizada e atividade física, na ausência de contra indicações obstétricas.
+
+Além da abordagem nutricional e de estímulo a mudanças no estilo de vida, a terapia farmacológica está sempre indicada para gestantes com DM1 e DM2 pré-gestacional.
+
+Especificamente nos casos de DMG, após até duas semanas de terapia nutricional, caso os objetivos terapêuticos não sejam atingidos, está indicada a associação com terapia farmacológica.  
+
+É importante destacar que, em razão da dinâmica das mudanças fisiológicas ao longo da gestação, que têm impacto sobre o metabolismo materno, ajustes na terapia farmacológica, tanto na gestante com DMG quanto nas gestantes com DM pré-gestacional, devem ser realizados, no mínimo a cada 15 dias até a 30ª semana de idade gestacional e semanalmente após a 30ª semana. Os ajustes devem ser individualizados, baseando-se nos resultados do monitoramento da glicemia capilar ou da glicose intersticial.
+
+Recomendações
+R1 – PODE SER CONSIDERADO o início da terapia farmacológica  na mulher com DMG quando duas ou mais medidas de glicemia, avaliadas após 7 a 14 dias de terapia não farmacológica, estiverem acima da meta.
+
+Classe IIb	Nível C
+Sumário de evidências:
+
+Em revisão sistemática de 15 RCTs com o objetivo de descrever quais critérios foram utilizados para o início da terapia com insulina, Caissutti e colaboradores6 encontraram relatos de sete critérios diferentes para iniciar a terapia farmacológica após a dieta.
+A maioria dos estudos usou o critério de um ou dois valores em período de uma ou duas semanas maior do que os valores-alvo para iniciar terapia com insulina, dos quais 47% dos estudos usaram apenas um valor e 40% usaram dois valores. Os demais estudos utilizaram como critério para iniciar terapia farmacológica a presença de 30% a 50% das medidas fora da meta em uma semana.6 
+Como não houve RCT comparando os diferentes critérios com desfechos perinatais, considera-se importante alertar sobre a necessidade de avaliação da resposta à terapia não farmacológica por um período não superior a duas semanas.
+Nota importante 1: Terapia farmacológica no DMG
+
+Este painel considera que a opção de iniciar o uso da terapia farmacológica baseada no percentual de 30% a 50% das medidas alteradas, avaliadas em um período máximo de uma semana, também é eficaz para o controle glicêmico da gestante com DMG.
+R2 – É RECOMENDADA a insulina como terapia farmacológica de primeira escolha para controle glicêmico na mulher com DMG.
+
+Classe I	Nível A
+Sumário de evidências:
+
+Em revisão de 14 publicações da base de dados Cochrane7 avaliando diferentes terapias no tratamento do DMG, a evidência sobre a comparação entre o uso de insulina e antidiabéticos orais foi inconclusiva para os desfechos: pré‐eclâmpsia (RR 1,14, IC 95% 0,86 a 1,52; 10 RCTs; n = 2.060), cesariana (RR 1,03, IC 95% 0,93 a 1,14; 17 RCTs; n = 1.988), bebês GIG (RR médio 1,01, IC 95% 0,76 a 1,35; 13 RCTs; n = 2.352) e morte perinatal ou composto de morbidade grave (RR 1,03; IC 95% 0,84 a 1,26; 2 RCTs; n = 760). A revisão aponta que dados sobre custos de saúde e desfechos no longo prazo são limitados.7
+Em metanálise desenhada com o objetivo de avaliar os desfechos fetais do DMG comparando o uso de metformina com insulina, foram avaliados dados de 28 estudos (n = 3.976 participantes). Observou-se que, apesar do peso médio mais baixo ao nascer, as crianças expostas à metformina apresentaram crescimento acelerado no primeiro ano de vida, o que resulta em infantes mais pesados, com maior IMC durante a infância em relação às crianças tratadas com insulina.8 Esses dados sugerem a necessidade de estudos de seguimento da prole exposta ao tratamento com metformina no período intrauterino.
+Nota importante 2: Insulina
+
+Este painel considera que a insulina é a medicação de primeira linha para o tratamento farmacológico do DMG, por sua eficácia e segurança comprovadas durante a gravidez e pelo fato de o tamanho da sua molécula limitar a passagem placentária do fármaco.9
+Nota importante 3: Metformina
+
+O uso de metformina é considerado uma opção na terapia do DMG. No entanto, ainda mais estudos são necessários para fornecer evidências de segurança no longo prazo na prole que foi exposta à metformina no ambiente intrauterino.
+R3 – O critério de crescimento fetal para início da insulinoterapia, independentemente dos valores da glicose, PODE SER CONSIDERADO quando a medida da circunferência abdominal fetal for igual ou superior ao percentil 75 em uma ultrassonografia realizada entre a 29a e a 33a semana de gestação.
+
+Classe IIb	Nível B
+Sumário de evidências:
+
+Alterações na antropometria fetal verificadas na ultrassonografia de gestantes com DMG estão associadas com mal controle glicêmico e ganho excessivo de peso materno.
+Um estudo randomizado controlado comparou a estratégia de acompanhamento do DMG baseado no crescimento fetal pelo ultrassom com a estratégia baseada apenas nas glicemias maternas. Mulheres com DMG que atingiram uma glicemia capilar em jejum <120mg/dL e glicemia capilar 2h pós alimentar < 200 mg/dL, após 1 semana de dieta foram randomizadas para as duas estratégias. No grupo estratégia padrão (n=100) a insulina era iniciada quando a glicemia capilar em jejum estivesse acima de 90 mg/dL ou a glicemia capilar de 2h acima de 120mg/dL. No grupo ultrassom (n=99) a decisão para o início da insulina era respectivamente quando as glicemias de jejum ultrapassassem 120, a glicemia de 2h >200 mg/dL ou ainda se a  circunferência abdominal fetal ultrapassasse o percentil 75. Os desfechos foram as taxas de cesariana, incidência de recém-nascidos pequenos e grandes para a idade gestacional, hipoglicemia neonatal (<40mg/dL) e admissão na unidade de cuidados neonatais. Em 34% das gestantes com glicemia capilar dentro das metas, a terapia com insulina foi indicada apenas pela avaliação da CA fetal indicando que a antropometria fetal e a monitorização da glicemia são  medidas complementares. Os resultados mostraram que as duas estratégias são equivalentes em relação aos desfechos, entretanto, neste estudo foram incluídas apenas gestantes de centros alemães e de etnia branca. Estudos em outras populações são necessários.¹⁰
+Em outro estudo, a avaliação de 524 gestantes com DMG, incluídas em metanálise de três estudos randomizados, reportou que, por causa da escassa descrição de desfechos perinatais, as evidências não são suficientes para avaliar o benefício do uso do ultrassom fetal como parâmetro para auxiliar na indicação de insulina durante o manejo do DMG.11
+R4 – A terapia com insulina para gestantes com DMG PODE SER CONSIDERADA na dose total inicial de 0,5 ui /kg/dia, com ajustes individualizados baseados no monitoramento diário da glicose a cada uma semana a duas semanas.
+
+Classe IIb	Nível C
+Sumário de evidências:
+
+Nota importante 4: Distribuição das doses de insulina
+
+A distribuição das doses da insulina deve ser baseada no perfil obtido no monitoramento diário da glicose. Frequentemente, será necessário indicar um regime de múltiplas injeções usando insulinas de ação prolongada ou de ação intermediária em combinação com insulina de ação prandial. Entretanto, nos casos em que os valores alterados da glicose ocorram em uma hora específica do dia, o regime de insulina pode ser simplificado. Quando os valores elevados da glicose ocorrem apenas no período pós-prandial do café da manhã, está indicado uso de insulina prandial especificamente nessa refeição. Nas gestantes com valores elevados de glicose apenas em jejum, o uso noturno de insulina de ação intermediária (NPH) é o mais adequado. Em ambos os casos, as doses iniciais são inferiores, podendo ser entre 0,1 unidade/kg/dia e 0,2 unidades/kg/dia.
+R5 – DEVE SER CONSIDERADO o uso de insulinas humanas NPH/ Regular, e de análogos de insulina aprovados para uso na gestação,  como opções para o tratamento farmacológico do DMG.
+
+Classe IIa	Nível C
+Sumário de evidências:
+
+As insulinas humanas são de baixo custo e mais facilmente acessíveis no Brasil. Além das insulinas humanas (NPH e Regular), alguns análogos de insulina são considerados seguros para serem utilizados durante a gestação (Quadro 1).
+Dados comparando insulinas humanas com análogas no DMG são inconclusivos.12 Embora conhecidas as vantagens fora da gestação ou nas gestantes com DM1, os dados disponíveis sobre o uso de análogos de insulina no DMG são limitados.13–14
+R6 – DEVE SER CONSIDERADA a indicação de análogos de insulina de ação rápida ou ultrarrápida, aprovados para uso na gestação em casos de DMG que apresentem difícil controle das excursões glicêmicas no período pós-prandial.
+
+Classe IIa	Nível B
+Sumário de evidências:
+
+Pequeno estudo randomizado controlado comparou uso da insulina Regular com insulina Asparte em mulheres com DMG. Ambas as insulinas foram eficazes na redução da glicose; entretanto, as leituras da glicose pós-prandial (60 minutos após o início da refeição) foram significativamente mais baixas com uso de insulina Asparte.13
+Metanálise de dez estudos que compararam a insulina humana Regular com análogo da insulina de ação rápida no tratamento do DMG não encontrou evidência de diferença entre os grupos para qualquer um dos desfechos maternos ou neonatais, primários ou secundários.14
+Quadro 1 – Classificação de risco da ANVISA* de uso na gestação das insulinas atualmente disponíveis no Brasil.
+
+Insulina/Análogo	Categoria de Risco
+Insulina R	B
+Insulina Inalada	C
+Insulina Lispro	B
+Insulina Asparte	A
+Insulina Glulisina	C
+Insulina Fast-Asparte	A
+Insulina NPH	B
+Insulina Glargina e biossimilar	C
+Insulina Detemir (não está mais disponível)	A
+Insulina Degludeca	A
+Insulina Glargina U300	C
+Insulina Lispro Mix 75/25 e 50/50	B
+Insulina Asparte Mix 70/30	C
+Classificação de risco conforme resolução RDC Nº 60, de 17 dezembro de 2010, do Ministério da Saúde/Anvisa
+
+Categoria A: Em estudos controlados em mulheres grávidas, o fármaco não demonstrou risco para o feto no primeiro trimestre de gravidez. Não há evidências de risco nos trimestres posteriores, sendo remota a possibilidade de dano fetal.
+
+Categoria B: Os estudos em animais não demonstraram risco fetal, mas também não há estudos controlados em mulheres grávidas; ou, então, os estudos em animais revelaram riscos, mas que não foram confirmados em estudos controlados em mulheres grávidas.
+
+Categoria C: Não foram realizados estudos em animais e nem em mulheres grávidas; ou, então, os estudos em animais revelaram risco, mas não existem estudos disponíveis realizados em mulheres grávidas.
+
+Fonte: ANVISA
+
+Tratamento do DMG com antidiabéticos orais
+Em razão da comodidade posológica, da facilidade de uso em situações de reduzida infraestrutura e da viabilidade técnica, além da plausibilidade dos mecanismos de ação, o uso de alguns antidiabéticos orais na gestação complicada pelo DMG tem sido estudado, principalmente, a metformina e a glibenclamida.15
+
+Ambos os medicamentos ultrapassam a barreira placentária. Estima-se que as concentrações plasmáticas de glibenclamida no cordão são de 70% a 77% dos níveis maternos.16 Após o uso de metformina pela gestante, rapidamente são observadas concentrações semelhantes do fármaco no sangue materno e fetal.17
+
+Há um número crescente de estudos observacionais e ensaios clínicos randomizados que avaliaram a segurança e a eficácia do uso da glibenclamida e da metformina no tratamento do DMG. Ambos os fármacos têm eficácia no controle glicêmico durante a gestação. A metformina pode diminuir a incidência de hipertensão gestacional e deve ser considerada uma alternativa à insulina, embora os dados de segurança em longo prazo da criança ainda sejam limitados.15 
+
+R7 – É RECOMENDADO o uso da metformina em mulheres com DMG sem controle glicêmico adequado com medidas não farmacológicas, como alternativa terapêutica, na inviabilidade do uso de insulina.
+
+Classe I	Nível B
+Sumário de evidências:
+
+Estudo randomizado controlado MiG (Metformin in Gestational Diabetes) incluiu 751 mulheres com DMG para receber tratamento com doses tituladas de insulina e de metformina de até 2.500 mg/dia.  O desfecho primário foi o composto de hipoglicemia neonatal, dificuldade respiratória, necessidade de fototerapia, índice de Apgar de 5 min < 7 e nascimento prematuro, antes de 37 semanas. O desfecho primário foi observado em 32% de todas as participantes, não sendo diferente entre os dois grupos de tratamento, mas com não inferioridade para a metformina em relação à insulina.18
+Desfechos secundários do MiG, como peso ao nascer, antropometria neonatal e taxas de recém nascidos grandes para a idade gestacional (GIG > percentil 90), também foram semelhantes entre os grupos. No entanto, as taxas de hipoglicemia neonatal mais grave (< 30 mg/dL) foram menores no grupo da metformina, em relação à terapia com insulina. A frequência de parto prematuro foi maior no grupo que usou metformina. É importante notar que cerca de 46,3% das mulheres no grupo da metformina necessitou de tratamento suplementar com insulina para manter o controle glicêmico. Os efeitos colaterais gastrointestinais levaram à descontinuação da metformina em 1,9% das mulheres e redução da dose em 8,8%.18
+Em metanálise com dados de 17 estudos RCTs com 2.828 pacientes, o tratamento do DMG com metformina comparado com insulina reduziu o risco de hipertensão gestacional (p = 0,03; RR 0,64; IC 95% 0,44 a 0,95); GIG (p = 0,04; RR  0,82; IC 95% 0.68 a 0.99), macrossomia (p = 0,01; RR 0,63; IC 95%  0,45 a 0,90); hipoglicemia neonatal (p = 0,001; RR 0,72; IC 95% 0,59 a 0,88) e admissão em UTI neonatal (p = 0.01; RR 0,74; IC 95% 0,59 a 0,88).19
+Em contraste com outras metanálises20–21 que não encontraram maior risco de parto prematuro no DMG randomizado para uso de metformina ou insulina, os autores sugeriram que o tratamento com metformina tem potenciais benefícios maternos e fetais, sem aumento de riscos.19 Entretanto, o resultado desta metanálise também sugere que a metformina encurtou significativamente o tempo final da gestação (p = 0,001). Além disso, os dados de seguimento da prole no longo prazo foram inconclusivos.19 
+Filhos de mulheres incluídas no estudo MiG foram acompanhados e avaliados prospectivamente, em comparação com a prole de mães tratadas com insulina durante a gestação, configurando a coorte MiG TOFU (do inglês “The Offspring Follow-Up”). A análise aos dois anos de idade das crianças expostas à metformina durante o período intrauterino evidenciou aumento na circunferência braquial e pregas cutâneas subescapular e em região de bíceps. Não houve diferença na massa gorda total e na porcentagem de gordura corporal.22 
+Apesar da importante perda de seguimento de 72% das crianças incluídas, a avaliação aos sete anos em um dos centros das que mantiveram seguimento clínico não encontrou diferenças em medidas antropométricas e nas características metabólicas. Por sua vez, a análise aos nove anos de outro centro evidenciou maiores medidas de peso, circunferência de braço e cintura, relação cintura/altura. No entanto, outras medidas clínicas, laboratoriais e de imagem de análise metabólica foram semelhantes.23
+Nota importante 5: Falha da Metformina
+
+A metformina em monoterapia pode falhar no alcance das metas de controle glicêmico. Idade materna avançada, glicemia de jejum elevada e diagnóstico precoce do DMG indicam provável ineficácia desse fármaco.24 Nesses casos, o uso de insulina é mandatório.
+R8 – DEVE SER CONSIDERADA a associação de metformina com insulina em gestantes com DMG que necessitem altas doses de insulina (> 2 UI/Kg/dia) sem controle glicêmico adequado ou com ganho excessivo de peso materno ou fetal.
+
+Classe IIa	Nível B
+Sumário de evidências:
+
+No estudo randomizado controlado MiG que comparou uso da metformina com insulina na mulher com DMG, a metformina foi associada a menor ganho de peso materno do início do estudo até 36 semanas ou 37 semanas de gravidez (0,4 kg ± 2,9 kg no grupo da metformina vs. 2,0 kg ± 3,3 kg no grupo da insulina; p < 0,001), e a dose final de insulina foi menor nas gestantes randomizadas para uso de metformina, mas que necessitaram associar o fármaco (mediana da dose diária máxima de insulina 42 unidades  interquartil 22 a 81 unidades vs. 50 unidades; interquartil 30 a 90; p = 0,002). Além disso, a metformina comparada com insulina reduziu risco de bebês GIG (p = 0,04; RR  0,82; IC 95% 0,68 a 0,99) e macrossomia (p = 0,01; RR 0,63; IC 95%  0,45 a 90).18
+Metanálise que avaliou o uso de metformina em 8.033 gestantes com ou sem diabetes comparado com insulina, glibenclamida ou placebo mostrou evidência de benefício da randomização para metformina, observada em todos os subgrupos sobre a redução no ganho de peso gestacional (1,57 kg ± 0,60 kg; I2 = 86%, p < 0,0001).25
+Nota importante 6:  Metformina na gestação
+
+A metformina promove supressão da respiração mitocondrial.26 Por causa da livre passagem de metformina para o sangue fetal, considera-se que este fármaco não deve ser iniciado e deve ser suspenso nos casos em que se observe ao ultrassom baixo peso ou restrição de crescimento fetal (Quadro 2).
+Quadro 2. Indicações e contra indicações do uso de metformina no DMG.
+
+Indicações para uso da metformina* no Diabetes Gestacional
+Como alternativa à insulina
+
+Falta de adesão à insulinoterapia
+Não acessibilidade à insulina
+Dificuldade na auto administração da insulina
+Estresse em níveis exacerbados decorrentes do uso de insulina
+Restrição alimentar excessiva da gestante para evitar o uso da insulina
+Associada à insulina
+
+Doses elevadas de insulina (> 2 U/kg/dia) sem controle glicêmico adequado
+Ganho de peso materno excessivo
+Ganho de peso fetal excessivo
+Contraindicações para uso da metformina no Diabetes Gestacional
+Fetos abaixo do percentil 50
+Presença de crescimento intrauterino restrito
+Gestante com doença renal crônica
+* Dose inicial de 500 mg uma ou duas vezes ao dia junto com a alimentação. Titular a dose a cada uma semana a duas semanas, para atingir as metas glicêmicas até uma dose diária máxima de 2.500 mg.
+
+R9 – O uso de glibenclamida NÃO É RECOMENDADO para gestante com Diabetes Gestacional (DMG), devido ao aumento de risco de macrossômia e hipoglicemia neonatal.
+
+Classe III	Nível A
+Sumário de evidências:
+
+Estudos randomizados incluídos em metanálise comparando o uso da glibenclamida com insulina no tratamento do DMG demonstram associação da glibenclamida com aumento do risco de hipoglicemia neonatal (RR 2,29; IC 95% 1.49 a 3.54; p = 0.0002).27
+Avaliação de 1.722 recém-natos filhos de mulheres com DMG revelou, independentemente do controle glicêmico materno, que aqueles expostos à glibenclamida eram mais pesados ao nascer (58,20 g, IC 95%  10,10 a 106,31; p = 0,02) e apresentavam risco aumentado de macrossomia (OR 1,38, IC 95% 1,01 a 1,89; p = 0,04 ), quando comparados com  recém-nascidos de mães tratadas com insulina.28
+Tratamento farmacológico nas gestantes com DM pré-gestacional
+R10 – É RECOMENDADO que gestantes com DM 2 interrompam o tratamento não insulínico antes ou logo após o início da gestação, quando estiver garantida a imediata substituição pela insulinoterapia.
+
+Classe I	Nível C
+Sumário de evidências:
+
+O risco de piora do controle glicêmico e suas consequências nas fases mais precoces da gestação é maior que o baixo potencial de efeitos deletérios sobre o embrião exposto aos medicamentos antidiabéticos orais. 
+Consta na bula, por determinação da ANVISA, que o uso de metformina durante a gestação é categoria B; isto é, os estudos realizados em animais não demonstraram risco fetal, não havendo trabalhos controlados em mulheres ou animais grávidos. 
+Estudos observacionais com uso de metformina durante o primeiro trimestre da gestação em mulheres com síndrome do ovário policístico indicam que a metformina é segura no início da gravidez, sem evidência de aumento nas malformações congênitas ou aborto espontâneo com seu uso.29–30
+O uso de outras classes de medicamentos antidiabéticos durante a gestação não foi estudado e não há relatos de efeitos teratogênicos associados com esses fármacos.
+R11 – É RECOMENDADO o uso de esquemas intensivos de insulinização com múltiplas doses de insulina (MDI) ou com infusão contínua (SICI) para se obter um controle glicêmico adequado em gestantes com DM1 e DM2.
+
+Classe I	Nível B
+Sumário de evidências:
+
+Metanálise que incluiu cinco estudos de centro único com 153 mulheres e 154 gestações encontrou evidências de baixa qualidade ao comparar o tratamento de gestante com DM1, com MDI ou SICI. Não houve diferenças entre SICI e MDI nos desfechos de cesariana (RR 1,09, IC 95% 0,66 a 1,77), bebês GIGs (RR 4,15, IC 95% 0,49 a 34,95) e mortalidade perinatal (RR 2,33, IC 95% 0,38 a 14,32).31
+
+Outra metanálise que incluiu 47 estudos, sendo 43 não randomizados (7.824 gestações), observou que usuárias de SICI apresentavam nível mais baixo de HbA1c no primeiro trimestre gestacional ( -0,45%; IC 95% -0,62 a -0,27), mas essa diferença desapareceu nos trimestres subsequentes. Em comparação com MDI, a terapia com infusão contínua de insulina (SICI) resultou em maior ganho de peso gestacional (1,02 kg; IC 95 0,41  a 1,62) e menores doses diárias de insulina no primeiro semestre ( -0,46; IC 95%: -0,68  a 0,24) e também nos trimestres subsequentes. O uso de SICI aumentou o risco de bebês GIG (RR 1,16; IC95% 1,07 a 1,24) e reduziu risco de bebês PIG (RR 0,66; IC 95% 0,45 a 0,97).32
+
+Nota importante 7: Métodos de Insulinização
+
+Não há, até o momento, evidências de superioridade de um método de insulinização durante a gestação. A escolha deverá ser individualizada, levando em consideração a capacidade de compreensão e os recursos da gestante e da equipe de saúde.
+Nota importante 8: Hipoglicemias na gestação
+
+No primeiro trimestre da gestação ocorre aumento da sensibilidade à insulina e maior frequência de náusea e vômitos, que dificultam a ingestão regular de alimentos. Por isso, será necessária redução da dose de insulina ao diagnóstico da gestação em algumas gestantes com DM1, principalmente aquelas que já apresentavam hipoglicemia severa ou sem aviso e nas primigestas.33–34
+Nota importante 9: Ajustes de dose de insulina
+
+Os ajustes de dose da insulina devem ser realizados em intervalos curtos, baseados nos valores obtidos na automonitorização da glicose, não devendo ultrapassar duas semanas até a obtenção do controle glicêmico.  A partir da 30ª semana da gestação, independentemente do controle glicêmico, o seguimento clínico deve ser feito, no mínimo, a cada duas semanas. É esperado que seja necessário um aumento progressivo da dose de insulina, entre a 28a semana e a 32a semana de idade gestacional, junto com o aumento da resistência à insulina que ocorre nessa fase da gestação. Outros fatores, como a distribuição dos macronutrientes da dieta, sedentarismo, atividade física, consumo fetal de glicose materna, presença de gastroparesia e comprometimento renal estão associados à necessidade de individualização e adequação frequente do tratamento com insulina.35
+R12 – Nas primeiras horas após o parto, em mulheres com DM1, É RECOMENDADO reduzir em 50% a dose de insulina utilizada antes da gestação ou no primeiro trimestre  ou em 70% da dose utilizada no final da gravidez. Ajustes adicionais são necessários ao longo do puerpério.
+
+Classe I	Nível C
+Sumário de evidências:
+
+A necessidade de insulina na mulher com DM1 diminui rapidamente nas primeiras horas após o parto. Pequeno estudo avaliou retrospectivamente 52 gestações de mulheres com DM1 que iniciaram ingestão oral sete horas em média após o parto e mostrou que o uso de 50% a 60% da necessidade de insulina de antes da gravidez resultou na menor taxa de hipoglicemia e excursões glicêmicas.36
+
+Outro estudo retrospectivo, que incluiu 44 puérperas com DM1, encontrou que, mesmo seis semanas após o parto, a necessidade de insulina foi 34% menor do que antes da gestação.37
+
+R13 – É RECOMENDADO o aumento da dose da insulina e a intensificação do monitoramento da glicose por até 72 horas após a última dose do corticóide para a gestante que tenha indicação de uso de corticosteróide para promover amadurecimento pulmonar fetal.
+
+Classe I	Nível C
+Sumário de evidências:
+
+O uso materno de corticosteróide, geralmente betametasona, tem sido indicado nos casos de necessidade  de interrupção precoce da gestação ou entrada em trabalho de parto prematuro. A betametasona aumenta a maturação pulmonar fetal, reduz a mortalidade perinatal e a incidência e gravidade da síndrome do desconforto respiratório em bebês nascidos antes de 34 semanas de gestação [38]. 
+Sem ajuste adequado do tratamento do DM, o uso de corticosteróide pode levar a piora do controle glicêmico e à cetoacidose diabética. Pequeno estudo  avaliou retrospectivamente o controle glicêmico de 59 gestantes em tratamento com insulina que fizeram uso de betametasona e que tinha como objetivo primário verificar a segurança do uso deste fármaco em gestantes com DM fora de ambiente de terapia intensiva. Episódios de glicemia acima de 200 mg/dl ocorreram em 28,8% das gestantes . A maioria dos episódios hiperglicêmicos (60.7%), ocorreram no período pós prandial e, em 85,3% dos casos foram foram precedidos por medições pré-prandiais > 160 mg/dl. A maioria (83,9%) dos episódios hiperglicêmicos ocorreram durante as primeiras 48 horas após o início da betametasona. Nove episódios hiperglicêmicos ocorreram de 49-72 h e nenhum após 73 a 96 horas [39].
+R14 – O uso dos análogos de insulina rápida (Lispro, Asparte) ou ultra rápida (“fast-aspart”) pela gestante com DM1 É RECOMENDADO para controle da glicemia pós-prandial, por estarem associados a um menor risco de hipoglicemia.
+
+Classe I	Nível B
+Sumário de evidências:
+
+Em não gestantes com DM1, os análogos de insulina de ação rápida têm vantagens sobre a insulina Regular, promovendo melhor controle dos níveis de glicemia pós-prandial com menor ocorrência de hipoglicemia.40
+Estudo randomizado controlado comparando análogo Lispro com insulina Regular em apenas 33 gestantes com DM1 não foi capaz de revelar evidência de diferença entre a insulina Lispro e a insulina Regular sobre o risco de episódios de hiperglicemia e hipoglicemia materna, que requerem intervenção (RR 0,21, IC 95% 0,01 a 4,10).41
+Estudo randomizado que comparou o análogo de  insulina Asparte com insulina Regular em 322 mulheres planejando a gestação ou grávidas com DM1 usuárias de insulina NPH encontrou menor excursão glicêmica pós-prandial no final do primeiro e do terceiro trimestres entre as usuárias de Asparte (p = 0,003 e p = 0,044, respectivamente), assim como menor média de glicose 90 min após o café da manhã (p = 0,044 e p = 0,001, respectivamente).42
+Revisão de estudos randomizados controlados com o objetivo de avaliar uso de diferentes tipos e métodos de insulinização na gestante com diabetes pré-gestacional, realizado em 2017, concluiu que os dados eram insuficientes para avaliar a superioridade da eficácia de um tipo ou regime de insulina.43
+Nota importante 10: Análogos de insulina de ação rápida na gestação
+
+A indicação do uso de análogos de ação rápida e ultrarrápida na gestação pode ser respaldada pelo potencial de maior adequação da farmacocinética desses fármacos ao perfil do metabolismo da glicose durante esta fase da mulher.
+R15 – DEVE SER CONSIDERADO manter os análogos de insulina de ação prolongada em mulheres com DM1 e DM2 que estavam em uso destes fármacos antes da gestação.
+
+Classe IIa	Nível A
+Sumário de evidências:
+
+Detemir (Categoria A) (Não está mais disponível)
+
+Estudo randomizado controlado comparou o tratamento com múltiplas doses diárias (MDI)  entre o análogo de efeito basal Detemir (n 79) com insulina NPH (n 83), ambas associadas com insulina Asparte em gestantes com DM1. Na análise primária, a insulina Detemir revelou-se não inferior à NPH sobre a medida da HbA1c na 36ª semana de idade gestacional. A glicemia plasmática em jejum foi significativamente menor com Detemir versus NPH na 24ª semana (96,8 vs. 113,8 mg/dL, p = 0,012) e na 36ª semana de idade gestacional (85,7 vs. 97,4 mg/dL, p = 0,017). As frequências de hipoglicemia materna foram semelhantes entre os grupos.44 A idade gestacional no parto foi maior com uso de Detemir, com diferença de tratamento de 0,49 por semana (IC 95% 0,11 a 0,88; p = 0,012). A incidência de eventos adversos perinatais não diferiu entre os tratamentos.45 O análogo de ação prolongada Detemir, após a conclusão deste estudo, foi classificado pela ANVISA como categoria A para uso durante a gestação (Quadro 1). 
+Glargina (Categoria C)
+
+Embora o uso de insulina Glargina na gestação esteja classificado pela ANVISA como categoria C, grande quantidade de dados em mulheres grávidas não indica efeitos adversos específicos da Glargina na gravidez, aumento do risco de malformações fetais ou toxicidade neonatal. Dados de animais também não indicam toxicidade reprodutiva. 
+Metanálise que incluiu oito estudos observacionais envolvendo um total de 702 mulheres com diabetes pré-gestacional ou DMG tratadas com insulina Glargina (n = 331) ou insulina NPH (n = 371) não encontrou diferenças estatisticamente significativas na ocorrência de desfechos fetais com o uso de insulina Glargina, em comparação com a insulina NPH.46
+Degludeca (Categoria A)
+
+A insulina Degludeca é classificada como categoria A para uso na gestação. Estudo aberto, randomizado, controlado comparou o uso de insulina Degludeca com insulina Detemir durante o planejamento e ao final da gestação de 225 mulheres com DM1. Os desfechos de controle glicêmico, medido através de HbA1c, e o perfil de segurança da insulina Degludeca não foram inferiores ao do grupo controle que fazia uso da insulina Detemir. 47
+Nota importante 11: Análogos de ação lenta na gestação
+
+Considera-se que nas mulheres que engravidam em uso de Glargina e têm risco de piora do controle glicêmico com a mudança do tratamento, este análogo de insulina pode ser mantido durante a gravidez, se clinicamente necessário. Entretanto, alerta-se que a indicação de análogos de insulina de ação prolongada, classificados pela ANVISA como categoria C durante a gestação, seja feita com cautela e com esclarecimento e concordância da paciente.
+R16 – DEVE SER CONSIDERADO o uso de metformina associado à insulina em gestantes com DM2, principalmente nas que apresentem ganho de peso gestacional excessivo ou fetos grandes para a idade gestacional.
+
+Classe IIa	Nível B
+Sumário de evidências:
+
+O estudo randomizado controlado com placebo e duplo-cego denominado Metformin in women with type 2 diabetes in pregnancy (MiTy) avaliou o uso da metformina associada à insulina em 502 gestantes com DM2, a partir da sexta semana de idade gestacional. A dose de metformina foi titulada até 2.000 mg/dia. Ambos os grupos tiveram as doses de insulina ajustadas visando alvos de glicose idênticos (glicose em jejum < 95 mg/dL e glicose duas horas pós-prandial < 120 mg/dL). As pacientes foram vistas a cada uma semana a quatro semanas, conforme necessário. O desfecho composto primário incluiu uma combinação de desfechos fetais e neonatais (aborto ou interrupção da gestação, natimorto ou morte neonatal até 28 dias, nascimento prematuro < 37 semanas de gestação, tocotraumatismo, síndrome da dificuldade respiratória, hipoglicemia neonatal e internação na UTI neonatal por > 24 h.48
+Não houve diferença entre os grupos nos desfechos neonatais primários. As gestantes que usaram metformina tiveram melhor controle glicêmico, menor ganho de peso, utilizaram doses menores de insulina e houve menos parto cesariana. Os bebês tiveram menor peso ao nascer e menor quantidade de tecido adiposo. A incidência de bebês GIGs também foi menor. Entretanto, houve aumento da frequência de bebês pequenos para idade gestacional (PIG).48
+R17 – É RECOMENDADO indicar o ácido acetilsalicílico (AAS) em doses de 75 a 100 mg/dia para gestantes com DM1 ou DM2 pré-gestacional. O uso deve ser iniciado entre 12 e 28 semanas de gestação, preferencialmente antes da 16a  semana de gestação, e devendo ser mantido até o parto.
+
+Classe I	Nível A
+Sumário de evidências:
+
+A OMS recomenda AAS em baixa dose (75 mg) antes da 20a semana de gravidez para mulheres com alto risco de pré-eclâmpsia (PE).⁴⁹
+Mulheres com diabetes pré-gestacional têm risco elevado de desenvolver pré-eclâmpsia (taxa combinada 11,0%, 8,4% a 13,8%; RR combinado 3,7, 3,1 a 4,3).50
+A maioria dos estudos randomizados sobre o efeito de baixa dose de AAS na prevenção primária da PE incluiu um número pequeno de gestantes com DM1 e DM2 que iniciaram o uso do AAS após a 20ª semana de idade gestacional. Os estudos não encontraram eficácia do AAS, comparado com placebo.51
+A invasão do trofoblasto que se associa ao risco de desenvolvimento de PE ocorre no primeiro e no segundo trimestre gestacionais. Entretanto, é mais ativa no primeiro. Portanto, é esperado que o efeito do AAS sobre a invasão do trofoblasto seja mais eficaz quanto mais precocemente forem instituídas medidas de prevenção primária.52
+Em abrangente revisão sistemática e metanálise, foi encontrado, em 36.716 gestantes, sem especificação de subgrupos de risco, que o uso de AAS em doses de 50 mg/dia até 150 mg/dia reduziu em 18% o risco de PE proteinúrica (RR 0,82, IC 95% 0,77 a 0,88; o número necessário para tratar para que haja benefício (NNTB ) = 61 (IC 95% 45 a 92).53
+Embora os estudos não tenham descrito o subgrupo de mulheres com DM, o uso de baixas doses de AAS em fases precoces da gestação (idealmente antes da 16a semana de idade gestacional) foi associado à redução da incidência de PE (OR 0,71; IC 95% 0,57 a 0,87) e de PE grave (OR 0,37; IC 95% 0,23 a 0,61) em gestantes de alto risco.52
+Estudo randomizado e controlado com placebo que avalia o papel do AAS iniciado até a 16ª semana de idade gestacional, especificamente na população de gestantes com diabetes na gestação, está em andamento.54
+
+Tabela de Recomendações
+RECOMENDAÇÕES	CLASSE	NÍVEL
+R1 – PODE SER CONSIDERADO o início da terapia farmacológica na mulher com DMG quando duas ou mais medidas de glicemia, avaliadas após 7 a 14 dias de terapia não farmacológica, estiverem acima da meta.	IIb	C
+R2 – É RECOMENDADA a insulina como terapia farmacológica de primeira escolha para controle glicêmico na mulher com DMG.	I	A
+R3 – O critério de crescimento fetal para início da insulinoterapia, independentemente dos valores da glicose, PODE SER CONSIDERADO quando a medida da circunferência abdominal fetal for igual ou superior ao percentil 75 em uma ecografia realizada entre a 29a e a 33a semana de gestação	IIb	B
+R4 – A terapia com insulina para gestantes com DMG PODE SER CONSIDERADA na dose total inicial de 0,5 U/kg/dia, e ajustes individualizados baseados no monitoramento diário da glicose a cada uma semana a duas semanas.	IIb	C
+R5 – DEVE SER CONSIDERADO o uso de insulinas humanas NPH e Regular, e de análogos de insulina aprovados para uso na gestação, como opções para o tratamento farmacológico do DMG.	IIa	C
+R6 – DEVE SER CONSIDERADA a indicação de análogos de insulina de ação rápida ou ultrarrápida, aprovados para uso na gestação em casos de DMG que apresentem difícil controle das excursões glicêmicas no período pós-prandial.	IIa	B
+R7 – É RECOMENDADO o uso da metformina em mulheres com DMG sem controle glicêmico adequado com medidas não farmacológicas, como alternativa terapêutica, na inviabilidade do uso de insulina.	I	B
+R8 – DEVE SER CONSIDERADA a associação de metformina com insulina nas gestantes com DMG que necessitem altas doses de insulina (> 2 UI/Kg/dia) sem controle glicêmico adequado ou com ganho excessivo de peso materno ou fetal.	IIa	B
+R9 – O uso de glibenclamida NÃO É RECOMENDADO para gestante com DMG.	III	A
+R10 – É RECOMENDADO que gestantes com DM 2 interrompam o tratamento não insulínico antes ou logo após o início da gestação, quando estiver garantida a imediata substituição pela insulinoterapia.	I	C
+R11 – É RECOMENDADO o uso de esquemas intensivos de insulinização com múltiplas doses de insulina (MDI) ou com infusão contínua (SICI) para obter um controle glicêmico adequado em gestantes com DM1 e DM2.	I	B
+R12 – Em mulheres com DM1, nas primeiras horas após o parto, É RECOMENDADO reduzir em 50% a dose de insulina em relação à utilizada antes da gestação ou no primeiro trimestre  ou em 70% da dose utilizada no final da gravidez. Ajustes adicionais são necessários ao longo do puerpério.	I	C
+R13 - É RECOMENDADO o aumento da dose da insulina e a intensificação do monitoramento da glicose por até 72 horas após a última dose do corticóide para a gestante que tenha indicação de uso de corticosteróide para promover amadurecimento pulmonar fetal.	I	C
+R14 – O uso dos análogos de insulina rápida (Lispro, Asparte) ou ultra rápida (“fast-aspart”) pela gestante com DM1 É RECOMENDADO para controle da glicemia pós-prandial, por estarem associados a um menor risco de hipoglicemia.	I	B
+R15 – DEVE SER CONSIDERADO manter os análogos de insulina de ação prolongada em mulheres com DM1 e DM2 que estavam em uso destes fármacos antes da gestação.	IIa	A
+R16 – DEVE SER CONSIDERADO o uso de metformina associado à insulina em gestantes com DM2, principalmente nas que apresentem ganho de peso gestacional excessivo ou fetos grandes para a idade gestacional.	IIa	B
+R17 – É RECOMENDADO indicar o ácido acetilsalicílico (AAS) em doses de 75 a 100 mg/dia para gestantes com DM1 ou DM2 pré-gestacional. O uso deve ser iniciado entre 12 e 28 semanas de gestação, preferencialmente antes da 16a semana de gestação, e devendo ser mantido até o parto.
