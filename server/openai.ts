@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import type { PatientEvaluation, ClinicalRecommendation, GlucoseReading, CriticalAlert } from "@shared/schema";
 import { glucoseTargets, calculateGlucosePercentageInTarget, calculateAverageGlucose, checkCriticalGlucose, criticalGlucoseThresholds } from "@shared/schema";
-import { generateClinicalAnalysis, formatAnalysisForAI, type ClinicalAnalysis } from "./clinical-engine";
+import { generateClinicalAnalysis, formatAnalysisForAI, CLINICAL_RULES, type ClinicalAnalysis } from "./clinical-engine";
 
 // Keep compatibility with legacy Replit variables while preferring standard OPENAI_* envs.
 const openaiApiKey =
@@ -16,41 +16,55 @@ const openai = openaiApiKey
     })
   : null;
 
-// DMG Guidelines prompt context
+// DMG Guidelines prompt context - Based on SBD 2025, FEBRASGO 2019, WHO 2025
 const DMG_GUIDELINES = `
-Você é um especialista em diabetes mellitus gestacional (DMG) e deve analisar dados clínicos para sugerir condutas baseadas nas diretrizes brasileiras.
+Você é um especialista em diabetes mellitus gestacional (DMG) e deve analisar dados clínicos para sugerir condutas baseadas nas diretrizes oficiais:
+- SBD (Sociedade Brasileira de Diabetes) 2025
+- FEBRASGO (Federação Brasileira das Associações de Ginecologia e Obstetrícia) 2019 - Femina 47(11):786-96
+- OMS (Organização Mundial da Saúde) 2025 - ISBN 9789240117044
 
-## METAS GLICÊMICAS (DMG)
-- Jejum: ≤ 95 mg/dL
-- 1 hora pós-prandial: ≤ 140 mg/dL
-- 2 horas pós-prandial: ≤ 120 mg/dL
+## METAS GLICÊMICAS (SBD 2025)
+- Jejum: 65-95 mg/dL
+- 1 hora pós-prandial: < 140 mg/dL
+- 2 horas pós-prandial: < 120 mg/dL
 
-## RECOMENDAÇÕES PRINCIPAIS (R1-R7)
+## RECOMENDAÇÕES CLÍNICAS SBD 2025 (R1-R11)
 
-R1 - INÍCIO DA TERAPIA FARMACOLÓGICA:
-PODE SER CONSIDERADO iniciar terapia farmacológica quando duas ou mais medidas de glicemia, avaliadas após 7 a 14 dias de terapia não farmacológica, estiverem acima da meta.
-Alternativa: 30% a 50% das medidas alteradas em uma semana.
+R1 - INÍCIO DA TERAPIA FARMACOLÓGICA (Classe IIb, Nível C):
+Pode ser considerado o início da terapia farmacológica quando duas ou mais medidas de glicemia, avaliadas após 7 a 14 dias de terapia não farmacológica, estiverem acima da meta.
 
-R2 - INSULINA COMO PRIMEIRA ESCOLHA:
-É RECOMENDADA a insulina como terapia farmacológica de primeira escolha para controle glicêmico na mulher com DMG.
+R2 - INSULINA COMO PRIMEIRA ESCOLHA (Classe I, Nível A):
+É recomendada a insulina como terapia farmacológica de primeira escolha para controle glicêmico na mulher com DMG.
 
-R3 - CRITÉRIO DE CRESCIMENTO FETAL:
-PODE SER CONSIDERADO iniciar insulinoterapia quando a circunferência abdominal fetal for ≥ percentil 75 em ultrassonografia entre 29ª e 33ª semana.
+R3 - CRITÉRIO DE CRESCIMENTO FETAL (Classe IIb, Nível B):
+Pode ser considerado iniciar insulinoterapia quando a circunferência abdominal fetal for ≥ percentil 75 em USG entre 29ª e 33ª semana.
 
-R4 - DOSE INICIAL DE INSULINA:
-A terapia com insulina PODE SER CONSIDERADA na dose total inicial de 0,5 UI/kg/dia, com ajustes individualizados a cada 1-2 semanas.
+R4 - DOSE INICIAL DE INSULINA (Classe IIb, Nível C):
+A terapia com insulina pode ser considerada na dose total inicial de 0,5 UI/kg/dia, com ajustes individualizados a cada 1-2 semanas.
 
-R5 - TIPOS DE INSULINA:
-DEVE SER CONSIDERADO o uso de insulinas humanas NPH/Regular e análogos aprovados para gestação.
-- Categoria A (mais seguros): Asparte, Fast-Asparte, Detemir, Degludeca
+R5 - TIPOS DE INSULINA (Classe IIa, Nível C):
+Deve ser considerado o uso de insulinas humanas NPH/Regular e análogos aprovados para gestação.
+- Categoria A (ANVISA): Asparte, Fast-Asparte, Detemir, Degludeca
 - Categoria B: Regular, NPH, Lispro
 - Categoria C: Glargina, Glulisina (usar com cautela)
 
-R6 - ANÁLOGOS DE AÇÃO RÁPIDA:
-DEVE SER CONSIDERADA a indicação de análogos de insulina de ação rápida/ultrarrápida em casos de difícil controle das excursões glicêmicas pós-prandiais.
+R6 - ANÁLOGOS DE AÇÃO RÁPIDA (Classe IIa, Nível B):
+Deve ser considerada a indicação de análogos de ação rápida/ultrarrápida em casos de difícil controle das excursões glicêmicas pós-prandiais.
 
-R7 - METFORMINA COMO ALTERNATIVA:
-É RECOMENDADO o uso da metformina como alternativa terapêutica na inviabilidade do uso de insulina.
+R7 - METFORMINA COMO ALTERNATIVA (Classe I, Nível B):
+É recomendado o uso da metformina como alternativa terapêutica na inviabilidade do uso de insulina. Contraindicada em fetos abaixo do percentil 50 ou CIUR.
+
+R8 - ASSOCIAÇÃO METFORMINA + INSULINA (Classe IIa, Nível B):
+Deve ser considerada a associação de metformina com insulina em gestantes com DMG que necessitem altas doses de insulina (>2 UI/kg/dia) sem controle glicêmico adequado ou com ganho excessivo de peso materno ou fetal.
+
+R9 - GLIBENCLAMIDA NÃO RECOMENDADA (Classe III, Nível A):
+O uso de glibenclamida NÃO é recomendado para gestante com DMG, devido ao aumento de risco de macrossomia e hipoglicemia neonatal. CONTRAINDICAÇÃO.
+
+R10 - DM2 PRÉ-GESTACIONAL (Classe I, Nível C):
+É recomendado que gestantes com DM2 interrompam o tratamento não insulínico antes ou logo após o início da gestação, com imediata substituição pela insulinoterapia.
+
+R11 - ESQUEMAS INTENSIVOS (Classe I, Nível B):
+É recomendado o uso de esquemas intensivos de insulinização com múltiplas doses de insulina (MDI) ou com infusão contínua (SICI) para controle glicêmico adequado em gestantes com DM1 e DM2.
 
 ## AJUSTES DE INSULINA
 - Até 30ª semana: ajustes a cada 15 dias
@@ -193,12 +207,12 @@ SUA TAREFA:
   "justification": "Justificativa técnica citando OBRIGATORIAMENTE as regras R1-R7 aplicáveis e os critérios numéricos que as acionam. Exemplo: 'Conforme R1, 45% das medidas acima da meta justifica início de insulinoterapia'",
   "nextSteps": ["Passos práticos ESPECÍFICOS com prazos. Incluir doses quando relevante"],
   "urgencyLevel": "${clinicalAnalysis.urgencyLevel}",
-  "guidelineReferences": ${JSON.stringify(clinicalAnalysis.rulesTrigggered)}
+  "guidelineReferences": ${JSON.stringify(clinicalAnalysis.rulesTriggered.map(r => r.id))}
 }
 
 ## REGRAS CRÍTICAS
 1. urgencyLevel JÁ FOI CALCULADO: USE "${clinicalAnalysis.urgencyLevel}"
-2. guidelineReferences JÁ FORAM IDENTIFICADAS: USE ${JSON.stringify(clinicalAnalysis.rulesTrigggered)}
+2. guidelineReferences JÁ FORAM IDENTIFICADAS: USE ${JSON.stringify(clinicalAnalysis.rulesTriggered.map(r => r.id))}
 3. SEMPRE inclua os valores de dose calculados (ex: "NPH 15 UI", não apenas "insulina NPH")
 4. SEMPRE referencie os percentuais reais (ex: "32% acima da meta", não "várias medidas elevadas")
 5. Se há ajustes específicos calculados, INCLUA-OS na recomendação`;
@@ -221,17 +235,16 @@ SUA TAREFA:
 
     const parsed = JSON.parse(content) as ClinicalRecommendation;
 
+    const ruleIds = clinicalAnalysis.rulesTriggered.map(r => r.id);
     return {
       analysis: parsed.analysis || clinicalAnalysis.technicalSummary,
       mainRecommendation: parsed.mainRecommendation || clinicalAnalysis.insulinRecommendation,
-      justification: parsed.justification || `Baseado nas Diretrizes Brasileiras para DMG. ${clinicalAnalysis.percentInTarget}% das medidas dentro da meta.`,
+      justification: parsed.justification || `Baseado nas Diretrizes Brasileiras para DMG (SBD 2025, FEBRASGO 2019, OMS 2025). ${clinicalAnalysis.percentInTarget}% das medidas dentro da meta.`,
       nextSteps: Array.isArray(parsed.nextSteps) && parsed.nextSteps.length > 0 
         ? parsed.nextSteps 
         : clinicalAnalysis.recommendedActions,
       urgencyLevel: clinicalAnalysis.urgencyLevel,
-      guidelineReferences: clinicalAnalysis.rulesTrigggered.length > 0 
-        ? clinicalAnalysis.rulesTrigggered 
-        : [],
+      guidelineReferences: ruleIds.length > 0 ? ruleIds : [],
     };
   } catch (error) {
     console.error("Error with AI generation, using deterministic:", error);
@@ -240,17 +253,20 @@ SUA TAREFA:
 }
 
 function generateDeterministicRecommendation(analysis: ClinicalAnalysis): ClinicalRecommendation {
+  const ruleIds = analysis.rulesTriggered.map(r => r.id);
+  const rulesWithClassification = analysis.rulesTriggered.map(r => `${r.id} (${r.classification})`);
+  
   return {
     analysis: analysis.technicalSummary,
     mainRecommendation: analysis.insulinRecommendation,
-    justification: `Análise baseada nas Diretrizes Brasileiras para DMG. ` +
+    justification: `Análise baseada nas Diretrizes Brasileiras para DMG (${analysis.guidelineSources.join(", ")}). ` +
       `Métricas: ${analysis.percentInTarget}% na meta, ${analysis.percentAboveTarget}% acima da meta, média ${analysis.averageGlucose} mg/dL. ` +
-      (analysis.rulesTrigggered.length > 0 
-        ? `Regras clínicas aplicadas: ${analysis.rulesTrigggered.join(", ")}.`
+      (rulesWithClassification.length > 0 
+        ? `Regras clínicas aplicadas: ${rulesWithClassification.join(", ")}.`
         : "Controle glicêmico adequado conforme metas estabelecidas."),
     nextSteps: analysis.recommendedActions,
     urgencyLevel: analysis.urgencyLevel,
-    guidelineReferences: analysis.rulesTrigggered,
+    guidelineReferences: ruleIds,
   };
 }
 

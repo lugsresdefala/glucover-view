@@ -1,6 +1,14 @@
 import type { PatientEvaluation, GlucoseReading, InsulinRegimen, CriticalAlert } from "@shared/schema";
 import { glucoseTargets, criticalGlucoseThresholds, checkCriticalGlucose } from "@shared/schema";
 
+/**
+ * Clinical Engine for Gestational Diabetes Management
+ * Based on official guidelines:
+ * - SBD (Sociedade Brasileira de Diabetes) 2025
+ * - FEBRASGO (Federação Brasileira das Associações de Ginecologia e Obstetrícia) 2019
+ * - WHO (World Health Organization) 2025
+ */
+
 export interface GlucoseAnalysisByPeriod {
   period: string;
   total: number;
@@ -32,6 +40,94 @@ export interface InsulinDoseCalculation {
   specificAdjustments: string[];
 }
 
+export interface ClinicalRule {
+  id: string;
+  title: string;
+  classification: string;
+  description: string;
+  source: string;
+}
+
+export const CLINICAL_RULES: Record<string, ClinicalRule> = {
+  R1: {
+    id: "R1",
+    title: "Início de Terapia Farmacológica",
+    classification: "Classe IIb, Nível C",
+    description: "Pode ser considerado o início da terapia farmacológica na mulher com DMG quando duas ou mais medidas de glicemia, avaliadas após 7 a 14 dias de terapia não farmacológica, estiverem acima da meta.",
+    source: "SBD 2025"
+  },
+  R2: {
+    id: "R2",
+    title: "Insulina como Primeira Escolha",
+    classification: "Classe I, Nível A",
+    description: "É recomendada a insulina como terapia farmacológica de primeira escolha para controle glicêmico na mulher com DMG.",
+    source: "SBD 2025"
+  },
+  R3: {
+    id: "R3",
+    title: "Critério de Crescimento Fetal",
+    classification: "Classe IIb, Nível B",
+    description: "O critério de crescimento fetal para início da insulinoterapia pode ser considerado quando a medida da circunferência abdominal fetal for ≥ percentil 75 em USG realizada entre a 29ª e a 33ª semana de gestação.",
+    source: "SBD 2025"
+  },
+  R4: {
+    id: "R4",
+    title: "Dose Inicial de Insulina",
+    classification: "Classe IIb, Nível C",
+    description: "A terapia com insulina para gestantes com DMG pode ser considerada na dose total inicial de 0,5 UI/kg/dia, com ajustes individualizados baseados no monitoramento diário da glicose a cada 1-2 semanas.",
+    source: "SBD 2025"
+  },
+  R5: {
+    id: "R5",
+    title: "Tipos de Insulina",
+    classification: "Classe IIa, Nível C",
+    description: "Deve ser considerado o uso de insulinas humanas NPH/Regular, e de análogos de insulina aprovados para uso na gestação, como opções para o tratamento farmacológico do DMG.",
+    source: "SBD 2025"
+  },
+  R6: {
+    id: "R6",
+    title: "Análogos de Ação Rápida",
+    classification: "Classe IIa, Nível B",
+    description: "Deve ser considerada a indicação de análogos de insulina de ação rápida ou ultrarrápida, aprovados para uso na gestação, em casos de DMG que apresentem difícil controle das excursões glicêmicas pós-prandiais.",
+    source: "SBD 2025"
+  },
+  R7: {
+    id: "R7",
+    title: "Metformina como Alternativa",
+    classification: "Classe I, Nível B",
+    description: "É recomendado o uso da metformina em mulheres com DMG sem controle glicêmico adequado com medidas não farmacológicas, como alternativa terapêutica, na inviabilidade do uso de insulina.",
+    source: "SBD 2025"
+  },
+  R8: {
+    id: "R8",
+    title: "Associação Metformina + Insulina",
+    classification: "Classe IIa, Nível B",
+    description: "Deve ser considerada a associação de metformina com insulina em gestantes com DMG que necessitem altas doses de insulina (>2 UI/kg/dia) sem controle glicêmico adequado ou com ganho excessivo de peso materno ou fetal.",
+    source: "SBD 2025"
+  },
+  R9: {
+    id: "R9",
+    title: "Glibenclamida NÃO Recomendada",
+    classification: "Classe III, Nível A",
+    description: "O uso de glibenclamida NÃO é recomendado para gestante com DMG, devido ao aumento de risco de macrossomia e hipoglicemia neonatal.",
+    source: "SBD 2025"
+  },
+  R10: {
+    id: "R10",
+    title: "DM2 Pré-gestacional",
+    classification: "Classe I, Nível C",
+    description: "É recomendado que gestantes com DM2 interrompam o tratamento não insulínico antes ou logo após o início da gestação, quando estiver garantida a imediata substituição pela insulinoterapia.",
+    source: "SBD 2025"
+  },
+  R11: {
+    id: "R11",
+    title: "Esquemas Intensivos de Insulinização",
+    classification: "Classe I, Nível B",
+    description: "É recomendado o uso de esquemas intensivos de insulinização com múltiplas doses de insulina (MDI) ou com infusão contínua (SICI) para se obter um controle glicêmico adequado em gestantes com DM1 e DM2.",
+    source: "SBD 2025"
+  }
+};
+
 export interface ClinicalAnalysis {
   patientName: string;
   gestationalAge: string;
@@ -49,12 +145,13 @@ export interface ClinicalAnalysis {
   
   insulinCalculation: InsulinDoseCalculation | null;
   
-  rulesTrigggered: string[];
+  rulesTriggered: ClinicalRule[];
   urgencyLevel: "info" | "warning" | "critical";
   
   technicalSummary: string;
   recommendedActions: string[];
   insulinRecommendation: string;
+  guidelineSources: string[];
 }
 
 function analyzeByPeriod(readings: GlucoseReading[]): GlucoseAnalysisByPeriod[] {
@@ -196,36 +293,52 @@ function determineTriggeredRules(
   usesInsulin: boolean,
   gestationalWeeks: number,
   hasCAFPercentile75: boolean,
-  criticalAlerts: CriticalAlert[]
-): string[] {
-  const rules: string[] = [];
+  criticalAlerts: CriticalAlert[],
+  currentTotalInsulinDose: number,
+  weight: number
+): ClinicalRule[] {
+  const rules: ClinicalRule[] = [];
   
   if (!usesInsulin && percentAbove >= 30) {
-    rules.push("R1");
-  }
-  
-  if (!usesInsulin && percentAbove >= 30) {
-    rules.push("R2");
+    rules.push(CLINICAL_RULES.R1);
+    rules.push(CLINICAL_RULES.R2);
   }
   
   if (hasCAFPercentile75 && gestationalWeeks >= 29 && gestationalWeeks <= 33 && !usesInsulin) {
-    rules.push("R3");
+    rules.push(CLINICAL_RULES.R3);
   }
   
   if (usesInsulin || percentAbove >= 30) {
-    rules.push("R4");
+    rules.push(CLINICAL_RULES.R4);
   }
   
   if (usesInsulin) {
-    rules.push("R5");
+    rules.push(CLINICAL_RULES.R5);
   }
   
   const hasHighPostprandial = percentAbove >= 50;
   if (usesInsulin && hasHighPostprandial) {
-    rules.push("R6");
+    rules.push(CLINICAL_RULES.R6);
   }
   
-  return Array.from(new Set(rules));
+  if (!usesInsulin && percentAbove >= 30) {
+    rules.push(CLINICAL_RULES.R7);
+  }
+  
+  const insulinDosePerKg = currentTotalInsulinDose / weight;
+  if (usesInsulin && insulinDosePerKg > 2 && percentAbove >= 30) {
+    rules.push(CLINICAL_RULES.R8);
+  }
+  
+  return rules;
+}
+
+function calculateCurrentTotalInsulinDose(regimens: InsulinRegimen[]): number {
+  let total = 0;
+  regimens.forEach(r => {
+    total += (r.doseManhaUI || 0) + (r.doseAlmocoUI || 0) + (r.doseJantarUI || 0) + (r.doseDormirUI || 0);
+  });
+  return total;
 }
 
 export function generateClinicalAnalysis(evaluation: PatientEvaluation): ClinicalAnalysis {
@@ -254,13 +367,16 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   const averageGlucose = totalReadings > 0 ? Math.round(sumGlucose / totalReadings) : 0;
   
   const hasCAFPercentile75 = (evaluation.abdominalCircumferencePercentile || 0) >= 75;
+  const currentTotalInsulinDose = calculateCurrentTotalInsulinDose(insulinRegimens || []);
   
-  const rulesTrigggered = determineTriggeredRules(
+  const rulesTriggered = determineTriggeredRules(
     percentAboveTarget,
     usesInsulin,
     gestationalWeeks,
     hasCAFPercentile75,
-    criticalAlerts
+    criticalAlerts,
+    currentTotalInsulinDose,
+    weight
   );
   
   let urgencyLevel: "info" | "warning" | "critical" = "info";
@@ -281,7 +397,7 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   technicalSummary += `Média glicêmica: ${averageGlucose} mg/dL. `;
   
   if (usesInsulin) {
-    technicalSummary += `Em uso de insulinoterapia. `;
+    technicalSummary += `Em uso de insulinoterapia (dose total: ${currentTotalInsulinDose} UI/dia, ${(currentTotalInsulinDose/weight).toFixed(2)} UI/kg/dia). `;
   } else {
     technicalSummary += `Sem insulinoterapia atual. `;
   }
@@ -308,24 +424,34 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   }
   
   if (!usesInsulin && percentAboveTarget >= 30) {
-    insulinRecommendation = `INDICAÇÃO DE INSULINOTERAPIA (R1, R2): ${percentAboveTarget}% das medidas acima da meta após terapia não-farmacológica. `;
-    insulinRecommendation += `Dose inicial sugerida: ${insulinCalculation.initialTotalDose} UI/dia (0,5 UI/kg × ${weight} kg). `;
-    insulinRecommendation += `Distribuição sugerida: NPH ${insulinCalculation.distribution.nphManha} UI manhã + ${insulinCalculation.distribution.nphNoite} UI ao deitar. `;
+    insulinRecommendation = `INDICAÇÃO DE INSULINOTERAPIA (${CLINICAL_RULES.R1.id}, ${CLINICAL_RULES.R2.id} - ${CLINICAL_RULES.R1.classification}): `;
+    insulinRecommendation += `${percentAboveTarget}% das medidas acima da meta após terapia não-farmacológica. `;
+    insulinRecommendation += `Dose inicial sugerida: ${insulinCalculation.initialTotalDose} UI/dia (0,5 UI/kg × ${weight} kg) conforme ${CLINICAL_RULES.R4.id}. `;
+    insulinRecommendation += `Distribuição sugerida: NPH ${insulinCalculation.distribution.nphManha} UI manhã + ${insulinCalculation.distribution.nphNoite} UI ao deitar (${CLINICAL_RULES.R5.id}). `;
     
     if (analysisByPeriod.some(p => p.period.includes("pós") && p.percentAbove >= 50)) {
-      insulinRecommendation += `Adicionar insulina rápida/ultrarrápida antes das refeições com excursões pós-prandiais (R6): `;
+      insulinRecommendation += `Adicionar insulina rápida/ultrarrápida antes das refeições com excursões pós-prandiais (${CLINICAL_RULES.R6.id}): `;
       insulinRecommendation += `Café ${insulinCalculation.distribution.rapidaManha} UI, Almoço ${insulinCalculation.distribution.rapidaAlmoco} UI, Jantar ${insulinCalculation.distribution.rapidaJantar} UI. `;
     }
+    
+    insulinRecommendation += `Metformina pode ser considerada como alternativa se insulina inviável (${CLINICAL_RULES.R7.id} - ${CLINICAL_RULES.R7.classification}). `;
+    insulinRecommendation += `ATENÇÃO: Glibenclamida é CONTRAINDICADA (${CLINICAL_RULES.R9.id} - ${CLINICAL_RULES.R9.classification}).`;
     
     recommendedActions.push("Iniciar insulinoterapia conforme dose calculada");
     recommendedActions.push("Orientar técnica de aplicação e automonitorização");
     recommendedActions.push("Reavaliar em 7-14 dias para ajuste de dose");
   } else if (usesInsulin) {
+    const insulinDosePerKg = currentTotalInsulinDose / weight;
+    
     if (insulinCalculation.adjustmentNeeded) {
-      insulinRecommendation = `AJUSTE DE INSULINOTERAPIA (R4): `;
+      insulinRecommendation = `AJUSTE DE INSULINOTERAPIA (${CLINICAL_RULES.R4.id}): `;
       insulinCalculation.specificAdjustments.forEach(adj => {
         insulinRecommendation += adj + " ";
       });
+      
+      if (insulinDosePerKg > 2 && percentAboveTarget >= 30) {
+        insulinRecommendation += `Dose atual >2 UI/kg/dia sem controle adequado - considerar associação com metformina (${CLINICAL_RULES.R8.id} - ${CLINICAL_RULES.R8.classification}). `;
+      }
       
       if (gestationalWeeks >= 30) {
         recommendedActions.push("Reavaliar em 7 dias (ajustes semanais após 30 semanas)");
@@ -346,6 +472,8 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
     recommendedActions.push("Intensificar vigilância fetal (após 30 semanas)");
   }
   
+  const guidelineSources = ["SBD 2025", "FEBRASGO 2019", "OMS 2025"];
+  
   return {
     patientName,
     gestationalAge,
@@ -360,16 +488,18 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
     analysisByPeriod,
     criticalAlerts,
     insulinCalculation,
-    rulesTrigggered,
+    rulesTriggered,
     urgencyLevel,
     technicalSummary,
     recommendedActions,
     insulinRecommendation,
+    guidelineSources,
   };
 }
 
 export function formatAnalysisForAI(analysis: ClinicalAnalysis): string {
-  let prompt = `## ANÁLISE CLÍNICA COMPUTADA (DADOS REAIS DA PACIENTE)\n\n`;
+  let prompt = `## ANÁLISE CLÍNICA COMPUTADA (DADOS REAIS DA PACIENTE)\n`;
+  prompt += `### Baseado nas diretrizes: ${analysis.guidelineSources.join(", ")}\n\n`;
   
   prompt += `### IDENTIFICAÇÃO\n`;
   prompt += `- **Paciente:** ${analysis.patientName}\n`;
@@ -402,7 +532,7 @@ export function formatAnalysisForAI(analysis: ClinicalAnalysis): string {
   
   if (analysis.insulinCalculation) {
     const ic = analysis.insulinCalculation;
-    prompt += `\n### CÁLCULO DE DOSE DE INSULINA (0,5 UI/kg/dia)\n`;
+    prompt += `\n### CÁLCULO DE DOSE DE INSULINA (0,5 UI/kg/dia - ${CLINICAL_RULES.R4.id})\n`;
     prompt += `- **Dose total inicial:** ${ic.initialTotalDose} UI/dia\n`;
     prompt += `- **Basal (50%):** ${ic.basalDose} UI (NPH manhã ${ic.distribution.nphManha} UI + noite ${ic.distribution.nphNoite} UI)\n`;
     prompt += `- **Bolus (50%):** ${ic.bolusDose} UI (café ${ic.distribution.rapidaManha} UI + almoço ${ic.distribution.rapidaAlmoco} UI + jantar ${ic.distribution.rapidaJantar} UI)\n`;
@@ -415,9 +545,11 @@ export function formatAnalysisForAI(analysis: ClinicalAnalysis): string {
     }
   }
   
-  prompt += `\n### REGRAS CLÍNICAS ACIONADAS\n`;
-  if (analysis.rulesTrigggered.length > 0) {
-    prompt += `Regras aplicáveis: ${analysis.rulesTrigggered.join(", ")}\n`;
+  prompt += `\n### REGRAS CLÍNICAS ACIONADAS (${analysis.guidelineSources[0]})\n`;
+  if (analysis.rulesTriggered.length > 0) {
+    analysis.rulesTriggered.forEach(rule => {
+      prompt += `- **${rule.id}** (${rule.classification}): ${rule.title}\n`;
+    });
   } else {
     prompt += `Nenhuma regra de intervenção acionada. Controle adequado.\n`;
   }
