@@ -77,10 +77,7 @@ export default function Landing() {
             <div className="grid md:grid-cols-3 gap-4">
               <Card className="border-l-4 border-l-primary">
                 <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">SBD</CardTitle>
-                    <Badge variant="secondary">2024</Badge>
-                  </div>
+                  <CardTitle className="text-base">SBD</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
@@ -91,10 +88,7 @@ export default function Landing() {
 
               <Card className="border-l-4 border-l-primary">
                 <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">FEBRASGO</CardTitle>
-                    <Badge variant="secondary">2024</Badge>
-                  </div>
+                  <CardTitle className="text-base">FEBRASGO</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
@@ -105,14 +99,11 @@ export default function Landing() {
 
               <Card className="border-l-4 border-l-primary">
                 <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">OMS</CardTitle>
-                    <Badge variant="secondary">2025</Badge>
-                  </div>
+                  <CardTitle className="text-base">OMS</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Organização Mundial da Saúde - WHO Guideline on Diabetes Management in Pregnancy
+                    Organização Mundial da Saúde - Guideline on Diabetes Management in Pregnancy
                   </p>
                 </CardContent>
               </Card>
