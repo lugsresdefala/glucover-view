@@ -3,9 +3,13 @@ import { createServer, type Server } from "http";
 import crypto from "crypto";
 import { storage } from "./storage";
 import { generateClinicalRecommendation } from "./openai";
-import { patientEvaluationSchema, type Patient } from "@shared/schema";
+import { patientEvaluationSchema, type Patient, checkCriticalGlucose } from "@shared/schema";
 import { z } from "zod";
 import { getCookieSecurity, getSession } from "./session";
+import { AuditLogger } from "./audit-logger";
+import { NotificationService } from "./notification-service";
+import { PatientHistoryService } from "./patient-history-service";
+import { logger } from "./logger";
 
 // Extended request types
 interface AuthenticatedRequest extends Request {
@@ -767,14 +771,20 @@ export async function registerRoutes(
   app.post("/api/evaluations/batch", isAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {
       const { evaluations: evaluationsData } = req.body;
-      
+
       if (!Array.isArray(evaluationsData) || evaluationsData.length === 0) {
         return res.status(400).json({ message: "Lista de avaliações vazia" });
       }
-      
+
       const userId = req.userId;
       const results = [];
-      
+      const processedPatients = new Set<string>();
+
+      logger.info("Starting batch evaluation", {
+        count: evaluationsData.length,
+        userId,
+      });
+
       for (const data of evaluationsData) {
         try {
           const validationResult = patientEvaluationSchema.safeParse(data);
@@ -786,21 +796,59 @@ export async function registerRoutes(
             });
             continue;
           }
-          
+
           const evaluationData = validationResult.data;
+
+          // Check for duplicate in current batch
+          if (processedPatients.has(evaluationData.patientName)) {
+            logger.warn("Duplicate patient in batch", {
+              patientName: evaluationData.patientName,
+            });
+            results.push({
+              patientName: evaluationData.patientName,
+              success: false,
+              error: "Paciente duplicado neste lote",
+            });
+            continue;
+          }
+
+          processedPatients.add(evaluationData.patientName);
+
           const storedEvaluation = await storage.createEvaluation(evaluationData, userId);
+          const patient = await storage.getPatientByName(evaluationData.patientName);
+          const patientId = patient?.id;
+
           const recommendation = await generateClinicalRecommendation(evaluationData);
           const updatedEvaluation = await storage.updateEvaluationRecommendation(
             storedEvaluation.id,
             recommendation
           );
-          
+
+          // Log audit trail
+          if (patientId) {
+            await AuditLogger.logEvaluationCreate(userId, patientId, storedEvaluation.id, req);
+          }
+
+          // Check for critical glucose values
+          const criticalAlerts = checkCriticalGlucose(evaluationData.glucoseReadings);
+          if (criticalAlerts.length > 0 && patientId) {
+            await NotificationService.notifyCriticalGlucose(
+              patientId,
+              userId,
+              storedEvaluation.id,
+              criticalAlerts
+            );
+          }
+
           results.push({
             patientName: evaluationData.patientName,
             success: true,
             evaluation: updatedEvaluation,
           });
         } catch (err) {
+          logger.error("Error processing evaluation in batch", err as Error, {
+            patientName: data.patientName,
+          });
           results.push({
             patientName: data.patientName || "Desconhecido",
             success: false,
@@ -808,10 +856,18 @@ export async function registerRoutes(
           });
         }
       }
-      
+
+      logger.info("Batch evaluation completed", {
+        total: evaluationsData.length,
+        successful: results.filter(r => r.success).length,
+        failed: results.filter(r => !r.success).length,
+      });
+
       res.json({ results });
     } catch (error) {
-      console.error("Error in batch evaluation:", error);
+      logger.error("Error in batch evaluation", error as Error, {
+        userId: req.userId,
+      });
       res.status(500).json({ message: "Erro ao processar avaliações em lote" });
     }
   });
@@ -822,6 +878,14 @@ export async function registerRoutes(
       // Validate request body
       const validationResult = patientEvaluationSchema.safeParse(req.body);
       if (!validationResult.success) {
+        await AuditLogger.log({
+          userId: req.userId,
+          action: "create",
+          entityType: "evaluations",
+          req,
+          success: false,
+          errorMessage: "Dados inválidos",
+        });
         return res.status(400).json({
           message: "Dados inválidos",
           errors: validationResult.error.errors,
@@ -833,6 +897,10 @@ export async function registerRoutes(
 
       // Create evaluation in storage
       const storedEvaluation = await storage.createEvaluation(evaluationData, userId);
+
+      // Get patient ID if available
+      const patient = await storage.getPatientByName(evaluationData.patientName);
+      const patientId = patient?.id;
 
       // Generate recommendation using AI
       const recommendation = await generateClinicalRecommendation(evaluationData);
@@ -847,12 +915,52 @@ export async function registerRoutes(
         throw new Error("Failed to update evaluation");
       }
 
+      // Log the evaluation creation
+      await AuditLogger.logEvaluationCreate(userId, patientId || 0, storedEvaluation.id, req);
+
+      // Check for critical glucose values
+      const criticalAlerts = checkCriticalGlucose(evaluationData.glucoseReadings);
+      if (criticalAlerts.length > 0 && patientId) {
+        await NotificationService.notifyCriticalGlucose(
+          patientId,
+          userId,
+          storedEvaluation.id,
+          criticalAlerts
+        );
+      }
+
+      // Notify about recommendation
+      if (patientId) {
+        await NotificationService.notifyRecommendationReady(
+          patientId,
+          userId,
+          storedEvaluation.id,
+          recommendation.urgencyLevel
+        );
+      }
+
+      logger.info("Evaluation created successfully", {
+        evaluationId: storedEvaluation.id,
+        patientName: evaluationData.patientName,
+        userId,
+      });
+
       res.json({
         evaluation: updatedEvaluation,
         recommendation,
       });
     } catch (error) {
-      console.error("Error analyzing patient data:", error);
+      logger.error("Error analyzing patient data", error as Error, {
+        userId: req.userId,
+      });
+      await AuditLogger.log({
+        userId: req.userId,
+        action: "create",
+        entityType: "evaluations",
+        req,
+        success: false,
+        errorMessage: error instanceof Error ? error.message : "Erro desconhecido",
+      });
       const message = error instanceof Error ? error.message : "Erro ao analisar dados";
       res.status(500).json({ message });
     }

@@ -184,12 +184,7 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         
         const sheet = workbook.Sheets[sheetName];
         const rawData = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "" }) as unknown[][];
-        
-        console.log("[BatchImport] Parsing file:", file.name);
-        console.log("[BatchImport] Sheet name:", sheetName);
-        console.log("[BatchImport] Total rows:", rawData.length);
-        console.log("[BatchImport] First 10 rows:", rawData.slice(0, 10));
-        
+
         let patientName = extractPatientNameFromFileName(file.name);
         let gestationalWeeks = 0;
         let gestationalDays = 0;
@@ -248,7 +243,6 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
                 normalized === "ig semanas" ||
                 normalized === "idade gest") {
               tempGestationalAgeCol = j;
-              console.log("[BatchImport] Found IG column at index", j, "header:", cellStr);
             }
             
             const mapped = mapColumn(cellStr);
@@ -258,7 +252,6 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           }
           
           const score = Object.keys(tempColumnMap).length;
-          console.log(`[BatchImport] Row ${i} score:`, score, "columns:", Object.values(tempColumnMap));
           
           if (score > bestHeaderScore && score >= 1) {
             bestHeaderScore = score;
@@ -268,8 +261,6 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           }
         }
         
-        console.log("[BatchImport] Best header row:", headerRowIndex, "with score:", bestHeaderScore);
-        console.log("[BatchImport] Column map:", columnMap);
         
         if (headerRowIndex === -1 || Object.keys(columnMap).length === 0) {
           throw new Error("Cabeçalho da planilha não encontrado. Verifique se a planilha contém colunas como 'Jejum', 'Pós Café', 'Pós Almoço', etc.");
@@ -278,7 +269,6 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         const glucoseReadings: GlucoseReading[] = [];
         let lastGestationalAge = 0;
         
-        console.log("[BatchImport] Starting data extraction from row", headerRowIndex + 1);
         
         for (let i = headerRowIndex + 1; i < rawData.length; i++) {
           const row = rawData[i];
@@ -307,11 +297,9 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           
           if (hasAnyValue) {
             glucoseReadings.push(reading);
-            console.log(`[BatchImport] Row ${i} reading:`, reading);
           }
         }
         
-        console.log("[BatchImport] Total glucose readings extracted:", glucoseReadings.length);
         
         if (lastGestationalAge > 0) {
           gestationalWeeks = Math.floor(lastGestationalAge);
@@ -319,8 +307,6 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         }
         
         if (glucoseReadings.length === 0) {
-          console.log("[BatchImport] ERROR: No glucose data found!");
-          console.log("[BatchImport] Raw data after header:", rawData.slice(headerRowIndex, headerRowIndex + 5));
           throw new Error("Nenhum dado de glicemia encontrado na planilha. Verifique se os valores numéricos estão nas colunas corretas.");
         }
         
@@ -329,7 +315,6 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         ).length;
         const usesInsulin = insulinFieldsCount >= 3 || insulinFieldsCount >= glucoseReadings.length * 0.3;
         
-        console.log("[BatchImport] Insulin fields count:", insulinFieldsCount, "out of", glucoseReadings.length, "=> usesInsulin:", usesInsulin);
         
         resolve({
           fileName: file.name,
@@ -432,7 +417,6 @@ export function BatchImport() {
           ),
         };
         
-        console.log("[BatchImport] Sending evaluation for", patient.patientName, "usesInsulin:", patient.usesInsulin);
 
         const response = await apiRequest("POST", "/api/analyze", evaluationData);
         const result = await response.json();

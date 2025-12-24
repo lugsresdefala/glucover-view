@@ -26,6 +26,7 @@ export interface IStorage {
   createPatient(email: string, password: string, name: string, phone?: string): Promise<Patient>;
   getPatientByEmail(email: string): Promise<Patient | undefined>;
   getPatientById(id: number): Promise<Patient | undefined>;
+  getPatientByName(name: string): Promise<Patient | undefined>;
   validatePatientPassword(email: string, password: string): Promise<Patient | null>;
   getAllPatients(): Promise<Patient[]>;
   
@@ -176,10 +177,15 @@ export class DatabaseStorage implements IStorage {
     return patient;
   }
 
+  async getPatientByName(name: string): Promise<Patient | undefined> {
+    const [patient] = await db.select().from(patients).where(eq(patients.name, name)).limit(1);
+    return patient;
+  }
+
   async validatePatientPassword(email: string, password: string): Promise<Patient | null> {
     const patient = await this.getPatientByEmail(email);
     if (!patient) return null;
-    
+
     const isValid = await bcrypt.compare(password, patient.passwordHash);
     return isValid ? patient : null;
   }
