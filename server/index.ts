@@ -71,28 +71,15 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Rate limiting for AI/analysis routes - 60 per minute (more practical for clinical use)
-const analysisLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 60,
-  message: { message: "Limite de análises atingido. Aguarde um momento." },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Apply global rate limiter to API routes
+// Apply global rate limiter to API routes (100 requests/min - prevents abuse)
 app.use("/api/", globalLimiter);
 
-// Apply strict rate limiting to auth routes
+// Apply strict rate limiting to auth routes only (prevents brute force attacks)
 app.use("/api/auth/", authLimiter);
 app.use("/api/patient/auth/", authLimiter);
 
-// Apply analysis rate limiting
-app.use("/api/analyze", analysisLimiter);
-app.use("/api/batch-evaluate", analysisLimiter);
-
 // Export rate limiters for use in routes if needed
-export { authLimiter, analysisLimiter };
+export { authLimiter };
 
 app.use(
   express.json({
