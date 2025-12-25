@@ -237,7 +237,7 @@ export default function Dashboard() {
               data-testid="img-logo"
             />
             <div className="border-l border-border pl-3">
-              <h1 className="text-lg font-semibold">DMG Assist</h1>
+              <h1 className="text-lg font-semibold">GlucoVer</h1>
               <p className="text-xs text-muted-foreground">Suporte à Decisão Clínica</p>
             </div>
           </div>

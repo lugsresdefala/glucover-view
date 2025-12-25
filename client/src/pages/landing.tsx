@@ -19,8 +19,8 @@ export default function Landing() {
               data-testid="img-logo"
             />
             <div className="border-l border-border pl-3">
-              <h1 className="text-lg font-semibold">DMG Assist</h1>
-              <p className="text-xs text-muted-foreground">Sistema de Apoio à Decisão Clínica</p>
+              <h1 className="text-lg font-semibold">GlucoVer</h1>
+              <p className="text-xs text-muted-foreground">Apoio à Decisão Clínica em Diabetes na Gestação</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -49,10 +49,10 @@ export default function Landing() {
               </div>
               <div>
                 <h2 className="text-2xl font-semibold mb-2">
-                  Sistema de Apoio à Decisão Clínica para Diabetes Mellitus Gestacional
+                  Sistema de Apoio à Decisão Clínica para Diabetes Mellitus na Gestação
                 </h2>
                 <p className="text-muted-foreground">
-                  Ferramenta para análise de dados glicêmicos e suporte à conduta terapêutica em DMG, 
+                  Ferramenta para análise de dados glicêmicos e suporte à conduta terapêutica em DM1, DM2 e DMG, 
                   baseada nas diretrizes nacionais e internacionais vigentes.
                 </p>
               </div>
@@ -84,7 +84,7 @@ export default function Landing() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground">
-                    Sociedade Brasileira de Diabetes - Diretriz Oficial: Tratamento farmacológico do DM2 e DMG na gestação
+                    Sociedade Brasileira de Diabetes - Diretriz Oficial: Tratamento farmacológico do diabetes mellitus na gestação (DM1, DM2, DMG)
                   </p>
                 </CardContent>
               </Card>

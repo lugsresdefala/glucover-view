@@ -111,7 +111,7 @@ export default function ProfessionalAuth() {
               data-testid="img-logo"
             />
             <div className="border-l border-border pl-3">
-              <h1 className="text-xl font-bold">DMG Assist</h1>
+              <h1 className="text-xl font-bold">GlucoVer</h1>
             </div>
           </div>
           <p className="text-muted-foreground">Acesso para Profissionais de Saúde</p>

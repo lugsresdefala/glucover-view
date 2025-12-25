@@ -50,7 +50,7 @@ function PrintableReport({ evaluation }: { evaluation: StoredEvaluation }) {
             <Activity className="h-6 w-6 text-blue-600" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">DMG Assist</h1>
+            <h1 className="text-xl font-bold text-gray-900">GlucoVer</h1>
             <p className="text-sm text-gray-600">Relatório de Avaliação Clínica</p>
           </div>
         </div>
@@ -235,7 +235,7 @@ function PrintableReport({ evaluation }: { evaluation: StoredEvaluation }) {
       )}
 
       <footer className="mt-8 pt-4 border-t border-gray-300 text-xs text-gray-500">
-        <p>Este relatório foi gerado automaticamente pelo DMG Assist - Sistema de Suporte à Decisão Clínica para Diabetes Mellitus Gestacional.</p>
+        <p>Este relatório foi gerado automaticamente pelo GlucoVer - Sistema de Suporte à Decisão Clínica para Diabetes Mellitus Gestacional.</p>
         <p className="mt-1">As recomendações são baseadas em diretrizes clínicas e devem ser validadas pelo profissional de saúde responsável.</p>
       </footer>
     </div>

@@ -1,8 +1,8 @@
-# DMG Assist - Clinical Decision Support for Gestational Diabetes
+# GlucoVer - Clinical Decision Support for Diabetes in Pregnancy
 
 ## Overview
 
-DMG Assist is a full-stack clinical decision support system designed for healthcare professionals managing patients with Gestational Diabetes Mellitus (DMG). The application enables glucose monitoring, clinical analysis, and AI-powered treatment recommendations based on Brazilian medical guidelines.
+GlucoVer is a full-stack clinical decision support system designed for healthcare professionals managing patients with Diabetes Mellitus during pregnancy (DM1, DM2, and Gestational Diabetes - DMG). The application enables glucose monitoring, clinical analysis, and AI-powered treatment recommendations based on Brazilian and international medical guidelines (SBD 2025, FEBRASGO 2019, WHO 2025).
 
 Key capabilities:
 - Patient glucose data entry (manual and Excel import)

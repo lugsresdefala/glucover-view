@@ -103,7 +103,7 @@ export default function PatientAuth() {
             <div className="p-2 rounded-md bg-primary/10">
               <Activity className="h-6 w-6 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">DMG Assist</h1>
+            <h1 className="text-2xl font-bold">GlucoVer</h1>
           </div>
           <p className="text-muted-foreground">Acesso para Pacientes</p>
         </div>
