@@ -188,12 +188,24 @@ function parseGestationalAge(value: unknown): number {
     return 0;
   }
   
+  // Handle number format where decimal represents days (21.2 = 21 weeks + 2 days)
   if (typeof value === "number" && value > 0 && value < 45) {
+    const weeks = Math.floor(value);
+    const decimalPart = value - weeks;
+    // If decimal part looks like days (0.1-0.6), interpret as days
+    // Excel/Brazilian format: 21.2 = 21 weeks + 2 days
+    if (decimalPart > 0 && decimalPart < 1) {
+      const days = Math.round(decimalPart * 10); // 0.2 -> 2 days
+      if (days >= 0 && days <= 6) {
+        return weeks + (days / 7);
+      }
+    }
     return value;
   }
   
   const strValue = String(value).trim();
   
+  // Format: "21+2" or "21/2" (weeks+days)
   const weeksDaysMatch = strValue.match(/(\d+)\s*[+\/]\s*(\d+)/);
   if (weeksDaysMatch) {
     const weeks = parseInt(weeksDaysMatch[1]);
@@ -203,6 +215,17 @@ function parseGestationalAge(value: unknown): number {
     }
   }
   
+  // Format: "21,2" or "21.2" (Brazilian format: weeks,days)
+  const decimalMatch = strValue.match(/^(\d+)[,.](\d)$/);
+  if (decimalMatch) {
+    const weeks = parseInt(decimalMatch[1]);
+    const days = parseInt(decimalMatch[2]);
+    if (weeks >= 1 && weeks < 45 && days >= 0 && days <= 6) {
+      return weeks + (days / 7);
+    }
+  }
+  
+  // Format: just weeks like "21" or "21 semanas"
   const weeksOnlyMatch = strValue.match(/^(\d+)\s*(?:semanas?|sem|s)?$/i);
   if (weeksOnlyMatch) {
     const weeks = parseInt(weeksOnlyMatch[1]);
@@ -211,10 +234,20 @@ function parseGestationalAge(value: unknown): number {
     }
   }
   
+  // Fallback: try to parse any number
   const numMatch = strValue.match(/(\d+[,.]?\d*)/);
   if (numMatch) {
     const parsed = parseFloat(numMatch[1].replace(",", "."));
     if (!isNaN(parsed) && parsed > 0 && parsed < 45) {
+      // Interpret as weeks.days format
+      const weeks = Math.floor(parsed);
+      const decimalPart = parsed - weeks;
+      if (decimalPart > 0 && decimalPart < 1) {
+        const days = Math.round(decimalPart * 10);
+        if (days >= 0 && days <= 6) {
+          return weeks + (days / 7);
+        }
+      }
       return parsed;
     }
   }
@@ -273,10 +306,11 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
                   patientName = nextCell.trim();
                 }
               }
-              if (cellLower.includes("dum") && j + 1 < row.length) {
+              if ((cellLower === "dum" || cellLower.includes("dum:")) && j + 1 < row.length) {
                 const dumCell = row[j + 1];
-                if (dumCell) {
-                  dum = String(dumCell);
+                if (dumCell !== null && dumCell !== undefined && dumCell !== "") {
+                  // Keep as-is - could be string or number (Excel serial)
+                  dum = typeof dumCell === "number" ? String(dumCell) : String(dumCell);
                 }
               }
             }
