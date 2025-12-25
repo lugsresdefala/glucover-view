@@ -389,7 +389,7 @@ export const CLINICAL_RULES: Record<string, ClinicalRule> = {
 export interface ClinicalAnalysis {
   patientName: string;
   gestationalAge: string;
-  weight: number;
+  weight: number | null;
   diabetesType: "DMG" | "DM1" | "DM2";
   totalReadings: number;
   totalDaysAnalyzed: number;
@@ -460,7 +460,11 @@ function analyzeByPeriod(readings: GlucoseReading[]): GlucoseAnalysisByPeriod[] 
   return results;
 }
 
-function calculateInsulinDose(weight: number, readings: GlucoseReading[], currentRegimens: InsulinRegimen[]): InsulinDoseCalculation {
+function calculateInsulinDose(weight: number | null, readings: GlucoseReading[], currentRegimens: InsulinRegimen[]): InsulinDoseCalculation | null {
+  // Se peso não disponível, não podemos calcular dose de insulina
+  if (weight === null || weight <= 0) {
+    return null;
+  }
   // SBD-R4: 0.5 UI/kg/dia
   const initialTotalDose = Math.round(weight * 0.5);
   const basalDose = Math.round(initialTotalDose * 0.5);
@@ -555,7 +559,7 @@ function determineTriggeredRules(
   hasCAFPercentile75: boolean,
   criticalAlerts: CriticalAlert[],
   currentTotalInsulinDose: number,
-  weight: number,
+  weight: number | null,
   diabetesType: "DMG" | "DM1" | "DM2"
 ): ClinicalRule[] {
   const rules: ClinicalRule[] = [];
@@ -578,7 +582,7 @@ function determineTriggeredRules(
       rules.push(WHO_2025_RULES.W7);
     }
     
-    const insulinDosePerKg = currentTotalInsulinDose / weight;
+    const insulinDosePerKg = weight && weight > 0 ? currentTotalInsulinDose / weight : 0;
     if (usesInsulin && insulinDosePerKg > 2 && percentAbove >= 30) {
       rules.push(SBD_2025_RULES.R8);
     }
@@ -695,15 +699,22 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   const diabetesTypeLabel = diabetesType === "DMG" ? "Diabetes Mellitus Gestacional" : 
                             diabetesType === "DM1" ? "Diabetes Mellitus tipo 1" : "Diabetes Mellitus tipo 2";
   
-  let technicalSummary = `Paciente ${patientName}, ${gestationalAge} de idade gestacional, peso ${weight} kg. `;
-  technicalSummary += `Diagnóstico: ${diabetesTypeLabel}. `;
+  let technicalSummary = `Paciente ${patientName}, ${gestationalAge} de idade gestacional`;
+  if (weight && weight > 0) {
+    technicalSummary += `, peso ${weight} kg`;
+  }
+  technicalSummary += `. Diagnóstico: ${diabetesTypeLabel}. `;
   technicalSummary += `Análise de ${totalDaysAnalyzed} dias com ${totalReadings} medidas glicêmicas. `;
   technicalSummary += `Percentual dentro da meta: ${percentInTarget}%. `;
   technicalSummary += `Percentual acima da meta: ${percentAboveTarget}%. `;
   technicalSummary += `Média glicêmica: ${averageGlucose} mg/dL. `;
   
   if (usesInsulin) {
-    technicalSummary += `Em uso de insulinoterapia (dose total: ${currentTotalInsulinDose} UI/dia, ${(currentTotalInsulinDose/weight).toFixed(2)} UI/kg/dia). `;
+    if (weight && weight > 0) {
+      technicalSummary += `Em uso de insulinoterapia (dose total: ${currentTotalInsulinDose} UI/dia, ${(currentTotalInsulinDose/weight).toFixed(2)} UI/kg/dia). `;
+    } else {
+      technicalSummary += `Em uso de insulinoterapia (dose total: ${currentTotalInsulinDose} UI/dia). `;
+    }
   } else {
     technicalSummary += `Sem insulinoterapia atual. `;
   }
@@ -732,12 +743,17 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   if (!usesInsulin && percentAboveTarget >= 30) {
     insulinRecommendation = `INDICAÇÃO DE INSULINOTERAPIA (SBD-R1, SBD-R2): `;
     insulinRecommendation += `${percentAboveTarget}% das medidas acima da meta após terapia não-farmacológica. `;
-    insulinRecommendation += `Dose inicial sugerida: ${insulinCalculation.initialTotalDose} UI/dia (0,5 UI/kg × ${weight} kg) conforme SBD-R4. `;
-    insulinRecommendation += `Distribuição: NPH ${insulinCalculation.distribution.nphManha} UI manhã + ${insulinCalculation.distribution.nphNoite} UI ao deitar (SBD-R5). `;
     
-    if (analysisByPeriod.some(p => p.period.includes("pós") && p.percentAbove >= 50)) {
-      insulinRecommendation += `Adicionar insulina rápida antes das refeições (SBD-R6): `;
-      insulinRecommendation += `Café ${insulinCalculation.distribution.rapidaManha} UI, Almoço ${insulinCalculation.distribution.rapidaAlmoco} UI, Jantar ${insulinCalculation.distribution.rapidaJantar} UI. `;
+    if (insulinCalculation && weight && weight > 0) {
+      insulinRecommendation += `Dose inicial sugerida: ${insulinCalculation.initialTotalDose} UI/dia (0,5 UI/kg × ${weight} kg) conforme SBD-R4. `;
+      insulinRecommendation += `Distribuição: NPH ${insulinCalculation.distribution.nphManha} UI manhã + ${insulinCalculation.distribution.nphNoite} UI ao deitar (SBD-R5). `;
+      
+      if (analysisByPeriod.some(p => p.period.includes("pós") && p.percentAbove >= 50)) {
+        insulinRecommendation += `Adicionar insulina rápida antes das refeições (SBD-R6): `;
+        insulinRecommendation += `Café ${insulinCalculation.distribution.rapidaManha} UI, Almoço ${insulinCalculation.distribution.rapidaAlmoco} UI, Jantar ${insulinCalculation.distribution.rapidaJantar} UI. `;
+      }
+    } else {
+      insulinRecommendation += `Dose inicial: 0,5 UI/kg/dia (SBD-R4) - peso não informado para cálculo. `;
     }
     
     insulinRecommendation += `Metformina como alternativa se insulina inviável (SBD-R7, WHO-W7). `;
@@ -747,9 +763,9 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
     recommendedActions.push("Orientar técnica de aplicação e automonitorização (WHO-W5)");
     recommendedActions.push("Reavaliar em 7-14 dias para ajuste de dose");
   } else if (usesInsulin) {
-    const insulinDosePerKg = currentTotalInsulinDose / weight;
+    const insulinDosePerKg = weight && weight > 0 ? currentTotalInsulinDose / weight : 0;
     
-    if (insulinCalculation.adjustmentNeeded) {
+    if (insulinCalculation && insulinCalculation.adjustmentNeeded) {
       insulinRecommendation = `AJUSTE DE INSULINOTERAPIA (SBD-R4): `;
       insulinCalculation.specificAdjustments.forEach(adj => {
         insulinRecommendation += adj + " ";
@@ -819,7 +835,11 @@ export function formatAnalysisForAI(analysis: ClinicalAnalysis): string {
   prompt += `- **Paciente:** ${analysis.patientName}\n`;
   prompt += `- **Diagnóstico:** ${analysis.diabetesType === "DMG" ? "Diabetes Mellitus Gestacional" : analysis.diabetesType === "DM1" ? "DM tipo 1" : "DM tipo 2"}\n`;
   prompt += `- **Idade Gestacional:** ${analysis.gestationalAge}\n`;
-  prompt += `- **Peso:** ${analysis.weight} kg\n`;
+  if (analysis.weight && analysis.weight > 0) {
+    prompt += `- **Peso:** ${analysis.weight} kg\n`;
+  } else {
+    prompt += `- **Peso:** Não informado\n`;
+  }
   prompt += `- **Usa Insulina:** ${analysis.usesInsulin ? "SIM" : "NÃO"}\n\n`;
   
   prompt += `### MÉTRICAS CALCULADAS\n`;

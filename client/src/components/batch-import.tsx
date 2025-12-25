@@ -579,8 +579,8 @@ export function BatchImport() {
       try {
         const evaluationData = {
           patientName: patient.patientName,
-          weight: 70,
-          gestationalWeeks: patient.gestationalWeeks || 30,
+          weight: null, // Peso não disponível na planilha
+          gestationalWeeks: patient.gestationalWeeks || 0,
           gestationalDays: patient.gestationalDays || 0,
           usesInsulin: patient.usesInsulin,
           insulinRegimens: [],
