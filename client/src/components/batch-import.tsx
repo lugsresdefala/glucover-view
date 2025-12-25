@@ -127,11 +127,21 @@ function parseExcelDate(value: unknown): Date | null {
     return value;
   }
   
-  // Handle ISO date strings from Date.toString() or JSON
+  // Handle various date string formats
   if (typeof value === "string") {
     // Match ISO format: 2025-07-18T00:00:00.000Z
     const isoDateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})T/);
     if (isoDateMatch) {
+      const parsed = new Date(value);
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+    
+    // Match JavaScript Date.toString() format: "Fri Apr 25 2025 00:00:28 GMT-0300 (Horário Padrão de Brasília)"
+    // This format is produced when XLSX converts dates and they get stringified
+    const jsDateMatch = value.match(/^[A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4}/);
+    if (jsDateMatch) {
       const parsed = new Date(value);
       if (!isNaN(parsed.getTime())) {
         return parsed;
