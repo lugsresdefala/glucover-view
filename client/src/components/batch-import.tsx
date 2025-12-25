@@ -330,6 +330,7 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         
         const glucoseReadings: GlucoseReading[] = [];
         let lastGestationalAge = 0;
+        let lastGestationalAgeWithGlucose = 0; // IG da última linha com medidas de glicemia
         
         // Parse DUM date for calculating gestational age
         let dumDate: Date | null = null;
@@ -343,6 +344,7 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           
           const reading: GlucoseReading = {};
           let hasAnyValue = false;
+          let currentRowAge = 0;
           
           // Try to calculate gestational age from date column + DUM
           if (dumDate && dateColIndex >= 0) {
@@ -351,16 +353,18 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
             if (measurementDate) {
               const calculatedAge = calculateGestationalAgeFromDUM(measurementDate, dumDate);
               if (calculatedAge > 0) {
+                currentRowAge = calculatedAge;
                 lastGestationalAge = calculatedAge;
               }
             }
           }
           
           // Fallback: read gestational age directly from column if available
-          if (lastGestationalAge === 0 && gestationalAgeColIndex >= 0) {
+          if (currentRowAge === 0 && gestationalAgeColIndex >= 0) {
             const ageValue = row[gestationalAgeColIndex];
             const parsed = parseGestationalAge(ageValue);
             if (parsed > 0) {
+              currentRowAge = parsed;
               lastGestationalAge = parsed;
             }
           }
@@ -377,13 +381,22 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           
           if (hasAnyValue) {
             glucoseReadings.push(reading);
+            // Track the gestational age of the last row with actual glucose data
+            if (currentRowAge > 0) {
+              lastGestationalAgeWithGlucose = currentRowAge;
+            }
           }
         }
         
+        // If calculated IG > 40 weeks, use the last date with actual glucose measurements
+        let finalGestationalAge = lastGestationalAge;
+        if (lastGestationalAge > 40 && lastGestationalAgeWithGlucose > 0) {
+          finalGestationalAge = lastGestationalAgeWithGlucose;
+        }
         
-        if (lastGestationalAge > 0) {
-          gestationalWeeks = Math.floor(lastGestationalAge);
-          gestationalDays = Math.round((lastGestationalAge - gestationalWeeks) * 7);
+        if (finalGestationalAge > 0) {
+          gestationalWeeks = Math.floor(finalGestationalAge);
+          gestationalDays = Math.round((finalGestationalAge - gestationalWeeks) * 7);
         }
         
         if (glucoseReadings.length === 0) {
