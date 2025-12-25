@@ -681,7 +681,7 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
     hasCAFPercentile75,
     criticalAlerts,
     currentTotalInsulinDose,
-    weight,
+    weight ?? null,
     diabetesType
   );
   
@@ -694,7 +694,7 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
     urgencyLevel = "warning";
   }
   
-  const insulinCalculation = calculateInsulinDose(weight, glucoseReadings, insulinRegimens || []);
+  const insulinCalculation = calculateInsulinDose(weight ?? null, glucoseReadings, insulinRegimens || []);
   
   const diabetesTypeLabel = diabetesType === "DMG" ? "Diabetes Mellitus Gestacional" : 
                             diabetesType === "DM1" ? "Diabetes Mellitus tipo 1" : "Diabetes Mellitus tipo 2";
@@ -806,7 +806,7 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   return {
     patientName,
     gestationalAge,
-    weight,
+    weight: weight ?? null,
     diabetesType,
     totalReadings,
     totalDaysAnalyzed,

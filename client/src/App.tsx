@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
+import { ErrorBoundary } from "@/components/error-boundary";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Landing from "@/pages/landing";
@@ -96,16 +97,18 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="dmg-assist-theme">
         <TooltipProvider>
-          <div className="min-h-screen bg-background">
-            <div className="fixed top-3 right-4 z-50">
-              <ThemeToggle />
+          <ErrorBoundary>
+            <div className="min-h-screen bg-background">
+              <div className="fixed top-3 right-4 z-50">
+                <ThemeToggle />
+              </div>
+              <Switch>
+                <Route path="/paciente/:rest*" component={PatientRoutes} />
+                <Route path="/paciente" component={PatientRoutes} />
+                <Route component={AuthenticatedApp} />
+              </Switch>
             </div>
-            <Switch>
-              <Route path="/paciente/:rest*" component={PatientRoutes} />
-              <Route path="/paciente" component={PatientRoutes} />
-              <Route component={AuthenticatedApp} />
-            </Switch>
-          </div>
+          </ErrorBoundary>
           <Toaster />
         </TooltipProvider>
       </ThemeProvider>

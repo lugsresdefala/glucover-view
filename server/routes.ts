@@ -213,6 +213,36 @@ export async function registerRoutes(
     res.json({ csrfToken: token });
   });
 
+  // Health check endpoints for monitoring
+  app.get("/healthz", async (_req, res) => {
+    try {
+      res.status(200).json({
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      logger.error("Health check failed", error as Error);
+      res.status(503).json({ status: "unhealthy" });
+    }
+  });
+
+  app.get("/readyz", async (_req, res) => {
+    try {
+      // Readiness check - verify database connection without exposing data
+      await storage.getAllEvaluations();
+      res.status(200).json({
+        status: "ready",
+        timestamp: new Date().toISOString(),
+        database: "connected",
+      });
+    } catch (error) {
+      logger.error("Readiness check failed - database connection error", error as Error);
+      res.status(503).json({
+        status: "not ready",
+      });
+    }
+  });
+
   // Basic CSRF mitigation: ensure mutating requests originate from the same host.
   app.use((req, res, next) => {
     if (["GET", "HEAD", "OPTIONS"].includes(req.method)) {

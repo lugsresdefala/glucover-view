@@ -2,9 +2,23 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import crypto from "crypto";
+import { logger } from "./logger";
 
 const app = express();
 const httpServer = createServer(app);
+
+// Add trace ID to all requests using AsyncLocalStorage for proper isolation
+app.use((req, res, next) => {
+  const traceId = (req.headers["x-trace-id"] as string) || crypto.randomBytes(16).toString("hex");
+  (req as any).traceId = traceId;
+  res.setHeader("X-Trace-ID", traceId);
+  logger.runWithTraceId(traceId, () => {
+    next();
+  });
+});
 
 declare module "http" {
   interface IncomingMessage {
@@ -12,15 +26,84 @@ declare module "http" {
   }
 }
 
+// Security headers with helmet
+// In development, CSP is relaxed for HMR and dev tools
+// In production, CSP should be stricter (nonce-based)
+const isDevelopment = process.env.NODE_ENV !== "production";
+
+app.use(helmet({
+  contentSecurityPolicy: isDevelopment ? false : {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'"],
+      frameAncestors: ["'self'"],
+      formAction: ["'self'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: false,
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+
+// Global rate limiting - 100 requests per minute per IP
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  message: { message: "Muitas requisições. Tente novamente em alguns segundos." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Strict rate limiting for auth routes - 10 attempts per 15 minutes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { message: "Muitas tentativas de login. Tente novamente em 15 minutos." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiting for AI/analysis routes - 20 per minute
+const analysisLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: { message: "Limite de análises atingido. Aguarde um momento." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply global rate limiter to API routes
+app.use("/api/", globalLimiter);
+
+// Apply strict rate limiting to auth routes
+app.use("/api/auth/", authLimiter);
+app.use("/api/patient/auth/", authLimiter);
+
+// Apply analysis rate limiting
+app.use("/api/analyze", analysisLimiter);
+app.use("/api/batch-evaluate", analysisLimiter);
+
+// Export rate limiters for use in routes if needed
+export { authLimiter, analysisLimiter };
+
 app.use(
   express.json({
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
+    limit: "10mb",
   }),
 );
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: "10mb" }));
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
