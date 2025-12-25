@@ -416,8 +416,12 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         let dumDate: Date | null = null;
         if (dum) {
           dumDate = parseExcelDate(dum);
+          console.log(`[DEBUG ${patientName}] DUM raw: "${dum}" (type: ${typeof dum}), parsed: ${dumDate?.toISOString() || 'null'}`);
+        } else {
+          console.log(`[DEBUG ${patientName}] DUM not found in spreadsheet`);
         }
         
+        let debugRowCount = 0;
         for (let i = headerRowIndex + 1; i < rawData.length; i++) {
           const row = rawData[i];
           if (!row || row.length === 0) continue;
@@ -432,6 +436,9 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
             const measurementDate = parseExcelDate(dateValue);
             if (measurementDate) {
               const calculatedAge = calculateGestationalAgeFromDUM(measurementDate, dumDate);
+              if (debugRowCount < 3) {
+                console.log(`[DEBUG ${patientName}] Row ${i}: dateValue="${dateValue}" (type: ${typeof dateValue}), measurementDate=${measurementDate.toISOString()}, calculatedAge=${calculatedAge.toFixed(2)} weeks`);
+              }
               if (calculatedAge > 0) {
                 currentRowAge = calculatedAge;
                 lastGestationalAge = calculatedAge;
@@ -461,12 +468,15 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           
           if (hasAnyValue) {
             glucoseReadings.push(reading);
+            debugRowCount++;
             // Track the gestational age of the last row with actual glucose data
             if (currentRowAge > 0) {
               lastGestationalAgeWithGlucose = currentRowAge;
             }
           }
         }
+        
+        console.log(`[DEBUG ${patientName}] Final: lastGestationalAge=${lastGestationalAge.toFixed(2)}, lastGestationalAgeWithGlucose=${lastGestationalAgeWithGlucose.toFixed(2)}, dateColIndex=${dateColIndex}, gestationalAgeColIndex=${gestationalAgeColIndex}`);
         
         // Use the gestational age from the last row that had glucose readings
         // This avoids issues with empty rows at the end of spreadsheets
