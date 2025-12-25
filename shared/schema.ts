@@ -149,17 +149,24 @@ export interface AnalyzeResponse {
   recommendation: ClinicalRecommendation;
 }
 
-// Glucose targets according to DMG guidelines
+// Glucose targets according to SBD 2025 / FEBRASGO 2019 / OMS 2025
+// Metas glicêmicas para diabetes na gestação
 export const glucoseTargets = {
-  jejum: { min: 0, max: 95 },
-  posPrandial1h: { min: 0, max: 140 },
-  posPrandial2h: { min: 0, max: 120 },
+  jejum: { min: 65, max: 95 },           // Jejum: 65-95 mg/dL
+  posPrandial1h: { min: 65, max: 140 },  // 1h pós-prandial: <140 mg/dL
+  posPrandial2h: { min: 65, max: 120 },  // 2h pós-prandial: <120 mg/dL
 } as const;
 
 // Critical thresholds for alerts
 export const criticalGlucoseThresholds = {
-  hypo: 60, // Below this is hypoglycemia
-  severeHyper: 200, // Above this is severe hyperglycemia
+  hypo: 65,          // Abaixo de 65 mg/dL é hipoglicemia
+  severeHyper: 200,  // Acima de 200 mg/dL é hiperglicemia severa
+} as const;
+
+// Monitoring frequency according to guidelines
+export const monitoringFrequency = {
+  initialFollowUp: 4,    // 4 medidas/dia no início do seguimento (sem insulina)
+  onInsulin: 7,          // 7 medidas/dia quando em uso de insulina
 } as const;
 
 // Helper to check if glucose is within target
