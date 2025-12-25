@@ -15,7 +15,7 @@ export const evaluations = pgTable("evaluations", {
   userId: varchar("user_id").references(() => users.id),
   patientId: integer("patient_id").references(() => patients.id),
   patientName: text("patient_name").notNull(),
-  weight: real("weight").notNull(),
+  weight: real("weight"),
   gestationalWeeks: integer("gestational_weeks").notNull(),
   gestationalDays: integer("gestational_days").notNull(),
   usesInsulin: boolean("uses_insulin").notNull(),
@@ -108,7 +108,7 @@ export type DiabetesType = typeof diabetesTypes[number];
 export const patientEvaluationSchema = z.object({
   patientName: z.string().min(1, "Nome da paciente é obrigatório"),
   diabetesType: z.enum(diabetesTypes).default("DMG"),
-  weight: z.number().min(30).max(200, "Peso deve estar entre 30 e 200 kg"),
+  weight: z.number().min(30).max(200, "Peso deve estar entre 30 e 200 kg").nullable().optional(),
   gestationalWeeks: z.number().min(1).max(42, "Semanas devem estar entre 1 e 42"),
   gestationalDays: z.number().min(0).max(6, "Dias devem estar entre 0 e 6"),
   usesInsulin: z.boolean(),
