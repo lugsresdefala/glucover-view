@@ -109,6 +109,8 @@ Preferred communication style: Simple, everyday language.
 
 ### Security & Monitoring
 - **Security Headers**: Helmet with strict CSP in production, HSTS with preload
+- **Rate Limiting**: Auth routes protected (20 attempts/15min) - login/register only
+- **Data Isolation**: Patient evaluations require userId, preventing cross-user data leaks
 - **Structured Logging**: Per-request trace IDs via AsyncLocalStorage for request tracking
 - **Health Endpoints**: `/healthz` (liveness) and `/readyz` (readiness) for monitoring
 - **Error Boundary**: React ErrorBoundary with user-friendly Portuguese error messages
