@@ -122,10 +122,25 @@ function parseExcelDate(value: unknown): Date | null {
     return null;
   }
   
-  // Excel serial date number (days since 1900-01-01)
-  if (typeof value === "number" && value > 1000 && value < 100000) {
-    const excelEpoch = new Date(1899, 11, 30); // Excel epoch is Dec 30, 1899
-    const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
+  // Convert string serials to number
+  let numValue: number | null = null;
+  if (typeof value === "number") {
+    numValue = value;
+  } else if (typeof value === "string") {
+    const parsed = parseFloat(value.trim());
+    if (!isNaN(parsed) && parsed > 1000 && parsed < 100000) {
+      numValue = parsed;
+    }
+  }
+  
+  // Excel serial date number (days since 1899-12-30, using UTC to avoid timezone issues)
+  if (numValue !== null && numValue > 1000 && numValue < 100000) {
+    // Excel epoch: December 30, 1899 (accounting for Excel's leap year bug)
+    // Using UTC to avoid timezone/DST issues
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const excelEpochMs = Date.UTC(1899, 11, 30); // Dec 30, 1899 in UTC
+    const dateMs = excelEpochMs + numValue * msPerDay;
+    const date = new Date(dateMs);
     if (!isNaN(date.getTime())) {
       return date;
     }
