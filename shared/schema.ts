@@ -15,6 +15,7 @@ export const evaluations = pgTable("evaluations", {
   userId: varchar("user_id").references(() => users.id),
   patientId: integer("patient_id").references(() => patients.id),
   patientName: text("patient_name").notNull(),
+  diabetesType: text("diabetes_type").default("DMG"),
   weight: real("weight"),
   gestationalWeeks: integer("gestational_weeks").notNull(),
   gestationalDays: integer("gestational_days").notNull(),

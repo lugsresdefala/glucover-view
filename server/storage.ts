@@ -13,7 +13,9 @@ import bcrypt from "bcryptjs";
 export interface IStorage {
   // Evaluation operations
   createEvaluation(evaluation: PatientEvaluation, userId?: string, patientId?: number): Promise<StoredEvaluation>;
+  upsertEvaluation(evaluation: PatientEvaluation, userId?: string, patientId?: number): Promise<StoredEvaluation>;
   getEvaluation(id: number): Promise<StoredEvaluation | undefined>;
+  getEvaluationByPatientName(patientName: string, userId?: string): Promise<StoredEvaluation | undefined>;
   getAllEvaluations(userId?: string): Promise<StoredEvaluation[]>;
   getEvaluationsByPatient(patientId: number): Promise<StoredEvaluation[]>;
   getEvaluationsForDoctor(doctorId: string): Promise<StoredEvaluation[]>;
@@ -52,6 +54,7 @@ function toStoredEvaluation(record: EvaluationRecord): StoredEvaluation {
   return {
     id: record.id,
     patientName: record.patientName,
+    diabetesType: (record.diabetesType as "DMG" | "DM1" | "DM2") || "DMG",
     weight: record.weight,
     gestationalWeeks: record.gestationalWeeks,
     gestationalDays: record.gestationalDays,
@@ -76,6 +79,7 @@ export class DatabaseStorage implements IStorage {
         userId: userId || null,
         patientId: patientId || null,
         patientName: evaluation.patientName,
+        diabetesType: evaluation.diabetesType || "DMG",
         weight: evaluation.weight,
         gestationalWeeks: evaluation.gestationalWeeks,
         gestationalDays: evaluation.gestationalDays,
@@ -94,6 +98,61 @@ export class DatabaseStorage implements IStorage {
   async getEvaluation(id: number): Promise<StoredEvaluation | undefined> {
     const [record] = await db.select().from(evaluations).where(eq(evaluations.id, id));
     return record ? toStoredEvaluation(record) : undefined;
+  }
+
+  async getEvaluationByPatientName(patientName: string, userId?: string): Promise<StoredEvaluation | undefined> {
+    const normalizedName = patientName.trim().toUpperCase();
+    
+    let records;
+    if (userId) {
+      records = await db
+        .select()
+        .from(evaluations)
+        .where(and(eq(evaluations.userId, userId)))
+        .orderBy(desc(evaluations.createdAt));
+    } else {
+      records = await db
+        .select()
+        .from(evaluations)
+        .orderBy(desc(evaluations.createdAt));
+    }
+    
+    // Find by normalized name match
+    const record = records.find(r => r.patientName.trim().toUpperCase() === normalizedName);
+    return record ? toStoredEvaluation(record) : undefined;
+  }
+
+  async upsertEvaluation(evaluation: PatientEvaluation, userId?: string, patientId?: number): Promise<StoredEvaluation> {
+    // Check if evaluation exists for this patient
+    const existing = await this.getEvaluationByPatientName(evaluation.patientName, userId);
+    
+    if (existing) {
+      // Update existing evaluation
+      const [record] = await db
+        .update(evaluations)
+        .set({
+          patientId: patientId || null,
+          diabetesType: evaluation.diabetesType || "DMG",
+          weight: evaluation.weight,
+          gestationalWeeks: evaluation.gestationalWeeks,
+          gestationalDays: evaluation.gestationalDays,
+          usesInsulin: evaluation.usesInsulin,
+          insulinRegimens: evaluation.insulinRegimens || null,
+          dietAdherence: evaluation.dietAdherence,
+          glucoseReadings: evaluation.glucoseReadings,
+          abdominalCircumference: evaluation.abdominalCircumference || null,
+          abdominalCircumferencePercentile: evaluation.abdominalCircumferencePercentile || null,
+          recommendation: null, // Clear recommendation so new one is generated
+          createdAt: new Date(), // Update timestamp
+        })
+        .where(eq(evaluations.id, existing.id))
+        .returning();
+      
+      return toStoredEvaluation(record);
+    } else {
+      // Create new evaluation
+      return this.createEvaluation(evaluation, userId, patientId);
+    }
   }
 
   async getAllEvaluations(userId?: string): Promise<StoredEvaluation[]> {

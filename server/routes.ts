@@ -816,7 +816,8 @@ export async function registerRoutes(
 
           processedPatients.add(evaluationData.patientName);
 
-          const storedEvaluation = await storage.createEvaluation(evaluationData, userId);
+          // Use upsert to update existing patients instead of duplicating
+          const storedEvaluation = await storage.upsertEvaluation(evaluationData, userId);
           const patient = await storage.getPatientByName(evaluationData.patientName);
           const patientId = patient?.id;
 
