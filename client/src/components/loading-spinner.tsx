@@ -40,7 +40,7 @@ export function AnalyzingLoading() {
       <div className="text-center">
         <p className="text-lg font-medium">Analisando dados clínicos...</p>
         <p className="text-sm text-muted-foreground mt-1">
-          Gerando recomendações baseadas nas diretrizes DMG
+          Gerando recomendações baseadas nas diretrizes SBD 2025, FEBRASGO 2019 e OMS 2025
         </p>
       </div>
     </div>

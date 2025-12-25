@@ -833,7 +833,7 @@ export default function Dashboard() {
           <p className="text-xs text-muted-foreground text-center">
             Sistema de suporte à decisão clínica para Diabetes Mellitus Gestacional.
             <br />
-            Baseado nas Diretrizes DMG 2024. Decisões finais devem ser tomadas por profissional de saúde.
+            Baseado nas Diretrizes SBD 2025, FEBRASGO 2019 e OMS 2025. Decisões finais devem ser tomadas por profissional de saúde.
           </p>
         </div>
       </footer>

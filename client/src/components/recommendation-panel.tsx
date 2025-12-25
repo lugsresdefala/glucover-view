@@ -119,7 +119,7 @@ export function RecommendationPanel({ recommendation, patientName }: Recommendat
 
         <div className="pt-4 border-t border-border">
           <p className="text-xs text-muted-foreground italic">
-            Sistema de suporte à decisão. Decisões finais devem ser tomadas por profissional de saúde qualificado. Baseado nas Diretrizes DMG 2024.
+            Sistema de suporte à decisão. Decisões finais devem ser tomadas por profissional de saúde qualificado. Baseado nas Diretrizes SBD 2025, FEBRASGO 2019 e OMS 2025.
           </p>
         </div>
       </CardContent>
