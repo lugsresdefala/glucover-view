@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,6 +7,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Upload,
   FileSpreadsheet,
@@ -538,23 +544,46 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
   });
 }
 
+interface ImportError {
+  fileName: string;
+  message: string;
+  type: string;
+}
+
+function categorizeError(message: string): string {
+  if (message.includes("Cabeçalho") || message.includes("colunas")) return "Estrutura da Planilha";
+  if (message.includes("glicemia") || message.includes("dados")) return "Dados de Glicemia";
+  if (message.includes("ler o arquivo") || message.includes("formato")) return "Formato do Arquivo";
+  if (message.includes("nome") || message.includes("paciente")) return "Dados do Paciente";
+  return "Outros Erros";
+}
+
 export function BatchImport() {
   const [patients, setPatients] = useState<ParsedPatientData[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [importErrors, setImportErrors] = useState<ImportError[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const groupedErrors = useMemo(() => {
+    const groups: Record<string, ImportError[]> = {};
+    for (const err of importErrors) {
+      if (!groups[err.type]) groups[err.type] = [];
+      groups[err.type].push(err);
+    }
+    return groups;
+  }, [importErrors]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
     setIsProcessing(true);
-    setError(null);
+    setImportErrors([]);
     const newPatients: ParsedPatientData[] = [];
-    const errors: string[] = [];
+    const errors: ImportError[] = [];
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -563,14 +592,18 @@ export function BatchImport() {
         newPatients.push(patientData);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Erro desconhecido";
-        errors.push(`${file.name}: ${message}`);
+        errors.push({
+          fileName: file.name,
+          message,
+          type: categorizeError(message),
+        });
       }
     }
 
     setPatients(prev => [...prev, ...newPatients]);
     
     if (errors.length > 0) {
-      setError(`Erros em ${errors.length} arquivo(s):\n${errors.join("\n")}`);
+      setImportErrors(errors);
     }
 
     setIsProcessing(false);
@@ -653,7 +686,7 @@ export function BatchImport() {
 
   const clearAll = () => {
     setPatients([]);
-    setError(null);
+    setImportErrors([]);
     setProgress(0);
   };
 
@@ -744,10 +777,38 @@ export function BatchImport() {
           )}
         </div>
 
-        {error && (
+        {importErrors.length > 0 && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="whitespace-pre-line">{error}</AlertDescription>
+            <AlertDescription>
+              <div className="mb-2 font-medium">
+                {importErrors.length} erro(s) na importação
+              </div>
+              <Accordion type="multiple" className="w-full">
+                {Object.entries(groupedErrors).map(([type, errors]) => (
+                  <AccordionItem key={type} value={type} className="border-destructive/30">
+                    <AccordionTrigger className="text-sm py-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-destructive border-destructive/50">
+                          {errors.length}
+                        </Badge>
+                        {type}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <ul className="space-y-1 text-sm">
+                        {errors.map((err, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="font-medium">{err.fileName}:</span>
+                            <span className="text-muted-foreground">{err.message}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </AlertDescription>
           </Alert>
         )}
 

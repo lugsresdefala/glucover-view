@@ -53,7 +53,8 @@ import {
   Trash2,
   CheckSquare,
   Square,
-  X
+  X,
+  FileText
 } from "lucide-react";
 import {
   AlertDialog,
@@ -70,6 +71,7 @@ import { BatchImport } from "@/components/batch-import";
 import { GlucoseInput } from "@/components/glucose-input";
 import { InsulinInput } from "@/components/insulin-input";
 import { RecommendationPanel } from "@/components/recommendation-panel";
+import { RecommendationModal } from "@/components/recommendation-modal";
 import { GlucoseChart } from "@/components/glucose-chart";
 import { PatientStats } from "@/components/patient-stats";
 import { AnalyzingLoading } from "@/components/loading-spinner";
@@ -105,6 +107,7 @@ export default function Dashboard() {
   const [showPatientList, setShowPatientList] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showRecommendationModal, setShowRecommendationModal] = useState(false);
 
   const { data: patients = [], isLoading: isLoadingPatients } = useQuery<PatientItem[]>({
     queryKey: ["/api/doctor/patients"],
@@ -173,6 +176,7 @@ export default function Dashboard() {
       setCurrentRecommendation(data.evaluation);
       queryClient.invalidateQueries({ queryKey: ["/api/evaluations"] });
       setShowEvaluationForm(false);
+      setShowRecommendationModal(true);
       toast({
         title: "Análise concluída",
         description: "A recomendação clínica foi gerada com sucesso.",
@@ -967,15 +971,31 @@ export default function Dashboard() {
             </Card>
 
             {currentRecommendation?.recommendation && (
-              <div className="space-y-4">
-                <div className="flex justify-end">
-                  <PDFExportButton evaluation={currentRecommendation} />
-                </div>
-                <RecommendationPanel
-                  recommendation={currentRecommendation.recommendation}
-                  patientName={currentRecommendation.patientName}
-                />
-              </div>
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Recomendação Gerada</p>
+                        <p className="text-sm text-muted-foreground">
+                          Paciente: {currentRecommendation.patientName}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <PDFExportButton evaluation={currentRecommendation} />
+                      <Button 
+                        onClick={() => setShowRecommendationModal(true)}
+                        data-testid="button-view-recommendation"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Ver Análise
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {currentRecommendation && glucoseReadings.some((r) => Object.values(r).some((v) => v !== undefined)) && (
@@ -1061,6 +1081,13 @@ export default function Dashboard() {
           </p>
         </div>
       </footer>
+
+      <RecommendationModal
+        recommendation={currentRecommendation?.recommendation || null}
+        patientName={currentRecommendation?.patientName || ""}
+        open={showRecommendationModal}
+        onOpenChange={setShowRecommendationModal}
+      />
     </div>
   );
 }

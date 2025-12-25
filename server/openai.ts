@@ -317,7 +317,7 @@ function generateDeterministicRecommendation(
   
   if (hasHypo || hasSevereHyper) {
     if (hasHypo && hasSevereHyper) {
-      condutaImediata = `Revisar imediatamente esquema de insulinoterapia. Reduzir dose nos períodos com hipoglicemia e aumentar nos períodos com hiperglicemia. Avaliar padrão alimentar e horários de aplicação.`;
+      condutaImediata = `REVISÃO URGENTE do esquema insulínico. Perfil instável com hipo e hiperglicemia. Ajustar por período: reduzir nos horários com hipo, aumentar nos horários com hiper.`;
       condutaContinuada = `Monitoramento intensificado com reavaliação em 3-5 dias. Considerar ajuste individual por período do dia para reduzir variabilidade glicêmica.`;
       nextSteps.push("Mapear horários específicos de hipo e hiperglicemia");
       nextSteps.push("Ajustar doses de insulina por período");
@@ -326,19 +326,20 @@ function generateDeterministicRecommendation(
       nextSteps.push("Reavaliar em 3-5 dias");
     } else if (hasHypo) {
       condutaImediata = evaluation.usesInsulin 
-        ? `Reduzir dose de insulina em 10-20% no(s) período(s) relacionado(s) à hipoglicemia. Verificar intervalo entre insulina e refeição.`
-        : `Investigar causa da hipoglicemia. Avaliar jejum prolongado, atividade física e padrão alimentar.`;
+        ? `REDUZIR insulina: -2 a -4 UI nos períodos com hipoglicemia. Verificar intervalo insulina-refeição.`
+        : `Investigar causa da hipoglicemia: jejum prolongado, atividade física ou padrão alimentar.`;
       condutaContinuada = `Manter monitoramento intensificado. Orientar paciente sobre reconhecimento e tratamento de hipoglicemia.`;
       nextSteps.push("Identificar período específico das hipoglicemias");
       nextSteps.push("Ajustar dose de insulina correspondente");
       nextSteps.push("Orientar ingestão de 15g de carboidrato em caso de hipoglicemia");
       nextSteps.push("Reavaliar em 3-5 dias");
     } else {
+      const insulinAdjust = generateInsulinAdjustmentRecommendation(analysis, evaluation);
       condutaImediata = evaluation.usesInsulin 
-        ? `Aumentar doses de insulina em 20-30% nos períodos com hiperglicemia severa. ${generateInsulinAdjustmentRecommendation(analysis, evaluation)}`
-        : `Iniciar insulinoterapia imediatamente. Dose inicial: ${evaluation.weight ? `${Math.round(evaluation.weight * 0.5)} UI/dia` : "0,5 UI/kg/dia"} (SBD-R4).`;
-      condutaContinuada = `Intensificar vigilância fetal. Se persistência do descontrole, considerar internação hospitalar para ajuste supervisionado.`;
-      nextSteps.push("Aumentar doses de insulina conforme indicado");
+        ? `AUMENTAR insulina +20-30%. ${insulinAdjust || "Ajustar por período com hiperglicemia severa."}`
+        : `INICIAR insulinoterapia: ${evaluation.weight ? `${Math.round(evaluation.weight * 0.5)} UI/dia` : "0,5 UI/kg/dia"} (SBD-R4), esquema basal-bolus.`;
+      condutaContinuada = `Intensificar vigilância fetal. Se persistência, considerar internação para ajuste supervisionado.`;
+      nextSteps.push("Implementar ajustes de insulina conforme indicado");
       nextSteps.push("Reforçar aderência à dieta prescrita");
       nextSteps.push("Solicitar ultrassonografia para avaliação fetal");
       nextSteps.push("Reavaliar em 3-5 dias");
@@ -368,14 +369,16 @@ function generateDeterministicRecommendation(
     const urgencyModifier = isRecentWorsening ? " com urgência - tendência de piora detectada nos últimos 7 dias" : "";
     
     if (evaluation.usesInsulin) {
-      condutaImediata = `Otimizar insulinoterapia${urgencyModifier}. ${generateInsulinAdjustmentRecommendation(analysis, evaluation)} ${sevenDayAdjustments}`;
+      const insulinAdjust = generateInsulinAdjustmentRecommendation(analysis, evaluation);
+      condutaImediata = `OTIMIZAR insulina${urgencyModifier}. ${insulinAdjust || "Ajustar conforme perfil."} ${sevenDayAdjustments}`;
       condutaContinuada = isRecentWorsening 
-        ? `Reavaliação em 5-7 dias dado tendência de piora recente. Vigilância fetal intensificada.`
-        : `Reavaliar em 7-14 dias para verificar resposta aos ajustes. Manter vigilância fetal.`;
-      nextSteps.push("Implementar ajustes de insulina sugeridos");
+        ? `Reavaliação em 5-7 dias. Vigilância fetal intensificada.`
+        : `Reavaliar em 7-14 dias. Manter vigilância fetal.`;
+      nextSteps.push("Implementar ajustes de insulina indicados");
     } else {
-      condutaImediata = `Indicar início de insulinoterapia${urgencyModifier}. ${analysis.percentAboveTarget}% das medidas acima da meta (${recent7DayPercent}% na meta nos últimos 7 dias) cumpre critério SBD-R1. Dose inicial: ${evaluation.weight ? `${Math.round(evaluation.weight * 0.5)} UI/dia` : "0,5 UI/kg/dia"}.`;
-      condutaContinuada = `Iniciar com esquema basal-bolus ou conforme perfil glicêmico. Reavaliação em ${isRecentWorsening ? "5-7" : "7-14"} dias.`;
+      const doseInicial = evaluation.weight ? `${Math.round(evaluation.weight * 0.5)} UI/dia` : "0,5 UI/kg/dia";
+      condutaImediata = `INICIAR insulina${urgencyModifier}: ${doseInicial} (SBD-R1). ${analysis.percentAboveTarget}% acima da meta.`;
+      condutaContinuada = `Esquema basal-bolus. Reavaliação em ${isRecentWorsening ? "5-7" : "7-14"} dias.`;
       nextSteps.push("Prescrever insulinoterapia");
       nextSteps.push("Orientar técnica de aplicação");
     }
@@ -392,12 +395,14 @@ function generateDeterministicRecommendation(
         : "";
     
     if (evaluation.usesInsulin) {
-      condutaImediata = `Intensificar insulinoterapia com aumento de 20-30% das doses. ${generateInsulinAdjustmentRecommendation(analysis, evaluation)} ${sevenDayAdjustments}${trendNote}`;
+      const insulinAdjust = generateInsulinAdjustmentRecommendation(analysis, evaluation);
+      condutaImediata = `INTENSIFICAR insulina +20-30%. ${insulinAdjust || "Ajustar todos os períodos."} ${sevenDayAdjustments}${trendNote}`;
       condutaContinuada = isRecentWorsening 
-        ? `Considerar internação imediata. Vigilância fetal obrigatória e intensificada.`
+        ? `Considerar internação imediata. Vigilância fetal obrigatória.`
         : `Considerar internação se não houver resposta em 5-7 dias. Vigilância fetal obrigatória.`;
     } else {
-      condutaImediata = `Início imediato de insulinoterapia. Dose inicial: ${evaluation.weight ? `${Math.round(evaluation.weight * 0.5)} UI/dia` : "0,5 UI/kg/dia"} (SBD-R4), distribuída em esquema basal-bolus.${trendNote}`;
+      const doseInicial = evaluation.weight ? `${Math.round(evaluation.weight * 0.5)} UI/dia` : "0,5 UI/kg/dia";
+      condutaImediata = `INICIAR insulina URGENTE: ${doseInicial} (SBD-R4), esquema basal-bolus.${trendNote}`;
       condutaContinuada = `Reavaliação em ${isRecentWorsening ? "5" : "7"} dias com ajuste de doses. Vigilância fetal intensificada.`;
     }
     nextSteps.push("Iniciar ou intensificar insulinoterapia imediatamente");
@@ -480,33 +485,48 @@ function generatePeriodAnalysis(analysis: ClinicalAnalysis): string {
 
 function generateInsulinAdjustmentRecommendation(analysis: ClinicalAnalysis, evaluation: PatientEvaluation): string {
   if (!analysis.analysisByPeriod || analysis.analysisByPeriod.length === 0) {
-    return "Avaliar perfil glicêmico para determinar ajustes específicos.";
+    return "";
   }
   
   const adjustments: string[] = [];
   
   analysis.analysisByPeriod.forEach(period => {
-    if (period.percentAbove > 40) {
+    const avg = Math.round(period.average);
+    const excess = avg - (period.period === "Jejum" ? 95 : 140);
+    
+    if (period.percentAbove > 40 || excess > 20) {
+      // Calculate suggested adjustment based on excess (2 UI per 20 mg/dL above target)
+      const suggestedIncrease = Math.max(2, Math.min(6, Math.ceil(excess / 20) * 2));
+      
       switch (period.period) {
         case "Jejum":
-          adjustments.push("aumentar NPH noturna em 2-4 UI");
+          adjustments.push(`NPH noturna: +${suggestedIncrease} UI`);
           break;
         case "1h pós-café":
-          adjustments.push("aumentar insulina rápida da manhã em 1-2 UI");
+          adjustments.push(`Rápida manhã: +${suggestedIncrease} UI`);
           break;
         case "1h pós-almoço":
-          adjustments.push("aumentar insulina rápida do almoço em 1-2 UI");
+          adjustments.push(`Rápida almoço: +${suggestedIncrease} UI`);
           break;
         case "1h pós-jantar":
-          adjustments.push("aumentar insulina rápida do jantar em 1-2 UI");
+          adjustments.push(`Rápida jantar: +${suggestedIncrease} UI`);
+          break;
+        case "Pré-almoço":
+          adjustments.push(`NPH manhã: +${suggestedIncrease} UI`);
+          break;
+        case "Pré-jantar":
+          adjustments.push(`NPH/Rápida almoço: +${suggestedIncrease} UI`);
+          break;
+        case "Madrugada":
+          adjustments.push(`NPH jantar: -${Math.max(2, suggestedIncrease - 2)} UI (reduzir se hipoglicemia)`);
           break;
       }
     }
   });
   
   if (adjustments.length === 0) {
-    return "Avaliar perfil glicêmico para determinar ajustes específicos.";
+    return "";
   }
   
-  return `Sugestão de ajuste: ${adjustments.join("; ")}.`;
+  return `AJUSTES: ${adjustments.join(" | ")}.`;
 }
