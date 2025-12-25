@@ -386,6 +386,19 @@ export const CLINICAL_RULES: Record<string, ClinicalRule> = {
   ...WHO_2025_RULES
 };
 
+export interface SevenDayAnalysis {
+  totalReadings: number;
+  percentInTarget: number;
+  percentAboveTarget: number;
+  averageGlucose: number;
+  analysisByPeriod: GlucoseAnalysisByPeriod[];
+  criticalAlerts: CriticalAlert[];
+  trend: "improving" | "worsening" | "stable";
+  trendDescription: string;
+  dailyAverages: { day: number; average: number; inTarget: number; total: number }[];
+  periodComparison: { period: string; overall: number; last7Days: number; change: "better" | "worse" | "same" }[];
+}
+
 export interface ClinicalAnalysis {
   patientName: string;
   gestationalAge: string;
@@ -401,6 +414,9 @@ export interface ClinicalAnalysis {
   
   analysisByPeriod: GlucoseAnalysisByPeriod[];
   criticalAlerts: CriticalAlert[];
+  
+  // NEW: 7-day specific analysis
+  sevenDayAnalysis: SevenDayAnalysis | null;
   
   insulinCalculation: InsulinDoseCalculation | null;
   
@@ -458,6 +474,130 @@ function analyzeByPeriod(readings: GlucoseReading[]): GlucoseAnalysisByPeriod[] 
   }
   
   return results;
+}
+
+function generateSevenDayAnalysis(
+  allReadings: GlucoseReading[],
+  overallAnalysisByPeriod: GlucoseAnalysisByPeriod[]
+): SevenDayAnalysis | null {
+  if (allReadings.length < 7) {
+    return null;
+  }
+  
+  const last7Days = allReadings.slice(-7);
+  const last7DaysByPeriod = analyzeByPeriod(last7Days);
+  const last7DaysAlerts = checkCriticalGlucose(last7Days);
+  
+  let totalReadings = 0;
+  let totalInTarget = 0;
+  let totalAbove = 0;
+  let sumGlucose = 0;
+  
+  last7DaysByPeriod.forEach(p => {
+    totalReadings += p.total;
+    totalInTarget += p.inTarget;
+    totalAbove += p.aboveTarget;
+    sumGlucose += p.average * p.total;
+  });
+  
+  const percentInTarget = totalReadings > 0 ? Math.round((totalInTarget / totalReadings) * 100) : 0;
+  const percentAboveTarget = totalReadings > 0 ? Math.round((totalAbove / totalReadings) * 100) : 0;
+  const averageGlucose = totalReadings > 0 ? Math.round(sumGlucose / totalReadings) : 0;
+  
+  const dailyAverages: { day: number; average: number; inTarget: number; total: number }[] = [];
+  last7Days.forEach((reading, idx) => {
+    const dayNum = idx + 1;
+    const periods: (keyof GlucoseReading)[] = ["jejum", "posCafe1h", "preAlmoco", "posAlmoco1h", "preJantar", "posJantar1h", "madrugada"];
+    const dayValues: number[] = [];
+    let dayInTarget = 0;
+    
+    periods.forEach(p => {
+      const val = reading[p];
+      if (typeof val === "number" && val > 0) {
+        dayValues.push(val);
+        const pStr = String(p);
+        const targetMax = p === "jejum" ? glucoseTargets.jejum.max : 
+                         (pStr.includes("pos") ? glucoseTargets.posPrandial1h.max : glucoseTargets.prePrandial.max);
+        if (val <= targetMax && val >= criticalGlucoseThresholds.hypo) {
+          dayInTarget++;
+        }
+      }
+    });
+    
+    if (dayValues.length > 0) {
+      dailyAverages.push({
+        day: dayNum,
+        average: Math.round(dayValues.reduce((a, b) => a + b, 0) / dayValues.length),
+        inTarget: dayInTarget,
+        total: dayValues.length,
+      });
+    }
+  });
+  
+  const periodComparison: { period: string; overall: number; last7Days: number; change: "better" | "worse" | "same" }[] = [];
+  last7DaysByPeriod.forEach(recent => {
+    const overall = overallAnalysisByPeriod.find(o => o.period === recent.period);
+    if (overall) {
+      const diff = recent.average - overall.average;
+      let change: "better" | "worse" | "same" = "same";
+      if (diff < -5) change = "better";
+      else if (diff > 5) change = "worse";
+      periodComparison.push({
+        period: recent.period,
+        overall: overall.average,
+        last7Days: recent.average,
+        change,
+      });
+    }
+  });
+  
+  let trend: "improving" | "worsening" | "stable" = "stable";
+  let trendDescription = "";
+  
+  if (dailyAverages.length >= 3) {
+    const firstHalf = dailyAverages.slice(0, Math.floor(dailyAverages.length / 2));
+    const secondHalf = dailyAverages.slice(Math.floor(dailyAverages.length / 2));
+    
+    const firstAvg = firstHalf.reduce((sum, d) => sum + d.average, 0) / firstHalf.length;
+    const secondAvg = secondHalf.reduce((sum, d) => sum + d.average, 0) / secondHalf.length;
+    
+    const diff = secondAvg - firstAvg;
+    
+    if (diff < -8) {
+      trend = "improving";
+      trendDescription = `Tendência de melhora: média glicêmica reduzindo progressivamente ao longo dos últimos dias (de ${Math.round(firstAvg)} para ${Math.round(secondAvg)} mg/dL).`;
+    } else if (diff > 8) {
+      trend = "worsening";
+      trendDescription = `Tendência de piora: média glicêmica aumentando progressivamente ao longo dos últimos dias (de ${Math.round(firstAvg)} para ${Math.round(secondAvg)} mg/dL). Requer atenção.`;
+    } else {
+      trend = "stable";
+      trendDescription = `Padrão estável: média glicêmica mantendo-se relativamente constante nos últimos 7 dias (variação de ${Math.abs(Math.round(diff))} mg/dL).`;
+    }
+  } else {
+    trendDescription = "Dados insuficientes para análise de tendência detalhada.";
+  }
+  
+  const worsePeriods = periodComparison.filter(p => p.change === "worse");
+  const betterPeriods = periodComparison.filter(p => p.change === "better");
+  
+  if (worsePeriods.length > betterPeriods.length) {
+    trendDescription += ` Períodos com piora recente: ${worsePeriods.map(p => p.period).join(", ")}.`;
+  } else if (betterPeriods.length > worsePeriods.length) {
+    trendDescription += ` Períodos com melhora recente: ${betterPeriods.map(p => p.period).join(", ")}.`;
+  }
+  
+  return {
+    totalReadings,
+    percentInTarget,
+    percentAboveTarget,
+    averageGlucose,
+    analysisByPeriod: last7DaysByPeriod,
+    criticalAlerts: last7DaysAlerts,
+    trend,
+    trendDescription,
+    dailyAverages,
+    periodComparison,
+  };
 }
 
 function calculateInsulinDose(weight: number | null, readings: GlucoseReading[], currentRegimens: InsulinRegimen[]): InsulinDoseCalculation | null {
@@ -803,6 +943,8 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   
   const guidelineSources = ["SBD 2025 (R1-R17)", "FEBRASGO 2019 (F1-F10)", "OMS 2025 (W1-W12)"];
   
+  const sevenDayAnalysis = generateSevenDayAnalysis(glucoseReadings, analysisByPeriod);
+  
   return {
     patientName,
     gestationalAge,
@@ -817,6 +959,7 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
     currentInsulinRegimens: insulinRegimens || [],
     analysisByPeriod,
     criticalAlerts,
+    sevenDayAnalysis,
     insulinCalculation,
     rulesTriggered,
     urgencyLevel,
@@ -858,11 +1001,46 @@ export function formatAnalysisForAI(analysis: ClinicalAnalysis): string {
   });
   
   if (analysis.criticalAlerts.length > 0) {
-    prompt += `\n### ALERTAS CRÍTICOS\n`;
+    prompt += `\n### ALERTAS CRÍTICOS (PERÍODO TOTAL)\n`;
     analysis.criticalAlerts.forEach(alert => {
       const typeLabel = alert.type === "hypoglycemia" ? "HIPOGLICEMIA" : "HIPERGLICEMIA SEVERA";
       prompt += `- **${typeLabel}**: ${alert.value} mg/dL (${alert.timepoint}, Dia ${alert.day})\n`;
     });
+  }
+  
+  // 7-DAY ANALYSIS SECTION
+  if (analysis.sevenDayAnalysis) {
+    const s7 = analysis.sevenDayAnalysis;
+    prompt += `\n### ANÁLISE DOS ÚLTIMOS 7 DIAS (FOCO ESPECIAL)\n`;
+    prompt += `- **Medidas nos últimos 7 dias:** ${s7.totalReadings}\n`;
+    prompt += `- **Percentual na meta (7 dias):** ${s7.percentInTarget}%\n`;
+    prompt += `- **Percentual acima da meta (7 dias):** ${s7.percentAboveTarget}%\n`;
+    prompt += `- **Média glicêmica (7 dias):** ${s7.averageGlucose} mg/dL\n`;
+    prompt += `- **TENDÊNCIA:** ${s7.trend === "improving" ? "MELHORA" : s7.trend === "worsening" ? "PIORA" : "ESTÁVEL"}\n`;
+    prompt += `- **Descrição da tendência:** ${s7.trendDescription}\n\n`;
+    
+    prompt += `**Médias diárias (últimos 7 dias):**\n`;
+    s7.dailyAverages.forEach(d => {
+      prompt += `- Dia ${d.day}: média ${d.average} mg/dL (${d.inTarget}/${d.total} na meta)\n`;
+    });
+    
+    if (s7.periodComparison.length > 0) {
+      prompt += `\n**Comparativo por período (Geral vs Últimos 7 dias):**\n`;
+      s7.periodComparison.forEach(pc => {
+        const arrow = pc.change === "better" ? "↓ MELHOR" : pc.change === "worse" ? "↑ PIOR" : "= IGUAL";
+        prompt += `- ${pc.period}: ${pc.overall} → ${pc.last7Days} mg/dL (${arrow})\n`;
+      });
+    }
+    
+    if (s7.criticalAlerts.length > 0) {
+      prompt += `\n**Alertas críticos nos últimos 7 dias:**\n`;
+      s7.criticalAlerts.forEach(alert => {
+        const typeLabel = alert.type === "hypoglycemia" ? "HIPOGLICEMIA" : "HIPERGLICEMIA SEVERA";
+        prompt += `- **${typeLabel}**: ${alert.value} mg/dL (${alert.timepoint}, Dia ${alert.day})\n`;
+      });
+    } else {
+      prompt += `\n**Nenhum alerta crítico nos últimos 7 dias.**\n`;
+    }
   }
   
   if (analysis.insulinCalculation) {

@@ -50,6 +50,27 @@ Preferred communication style: Simple, everyday language.
 - **Function**: Calculates glucose metrics, identifies critical alerts, generates treatment recommendations
 - **AI Integration**: OpenAI for recommendations (optional - falls back to deterministic rules if not configured)
 
+#### Dual-Horizon Analysis System
+The clinical engine provides dual-horizon analysis for professional-quality recommendations:
+
+**1. Panorama Geral (Overall Period)**
+- Complete glucose profile analysis across all monitoring days
+- Period-by-period breakdown (jejum, pós-prandial, etc.)
+- Overall metrics: percent in target, average glucose, critical alerts
+
+**2. Últimos 7 Dias (Last 7 Days)**
+- Focused analysis on most recent clinical period
+- Trend classification: MELHORA / PIORA / ESTÁVEL
+- Day-by-day evolution with specific averages
+- Period comparison (overall vs 7-day) to detect recent changes
+- Critical alerts in recent period
+
+**3. Trend-Driven Conduta**
+- `Conduta Imediata`: Based on 7-day insights, adjusted urgency based on worsening/improving trends
+- `Estratégia Continuada`: Long-term approach considering overall profile
+- Automatic urgency escalation when recent trend is worsening
+- Targeted period-specific adjustments when recent periods show deterioration
+
 #### Diretrizes Catalogadas e Aplicadas
 
 **SBD 2025 - Sociedade Brasileira de Diabetes (R1-R17):**

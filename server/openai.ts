@@ -16,24 +16,35 @@ const openai = openaiApiKey
   : null;
 
 const CLINICAL_PROMPT = `Você é um endocrinologista especialista em diabetes na gestação. 
-Escreva recomendações clínicas em linguagem NATURAL e PROFISSIONAL, como um parecer médico real.
+Escreva recomendações clínicas em linguagem NATURAL e PROFISSIONAL, como um parecer médico real para apresentação acadêmica.
 
 REGRAS DE ESCRITA:
-- Use linguagem fluida, não robótica
-- Evite repetições
-- Seja direto e objetivo
-- Use frases completas, não tópicos soltos
-- Mantenha coerência entre análise e conduta
+- Use linguagem médica fluida e profissional
+- Evite repetições e termos genéricos
+- Seja ESPECÍFICO com números e dados concretos
+- Analise TANTO o panorama geral QUANTO os últimos 7 dias separadamente
+- Identifique TENDÊNCIAS (melhora/piora/estabilidade)
 - NUNCA contradiga a si mesmo
 
 FORMATO OBRIGATÓRIO (JSON):
 {
-  "resumoExecutivo": "Parágrafo único resumindo: estado do controle glicêmico, idade gestacional, e conduta principal indicada. Máximo 3 linhas.",
-  "interpretacaoClinica": "Análise dos dados em linguagem médica natural. Explique O QUE os números significam clinicamente, não apenas liste-os.",
-  "condutaTerapeutica": "Recomendação terapêutica específica com doses quando aplicável. Se indica insulina, forneça doses em UI. Se ajuste, especifique qual insulina e quanto aumentar/reduzir.",
-  "fundamentacao": "Justificativa breve citando as diretrizes (SBD, FEBRASGO, OMS) que embasam a conduta.",
+  "panoramaGeral": {
+    "resumo": "Síntese do controle glicêmico geral em todo período analisado (máximo 3 frases).",
+    "analise": "Análise detalhada dos padrões glicêmicos, períodos problemáticos, e resposta ao tratamento atual."
+  },
+  "ultimosSeteDias": {
+    "resumo": "Síntese focada nos últimos 7 dias - o que está acontecendo AGORA com a paciente.",
+    "tendencia": "MELHORA | PIORA | ESTÁVEL - com justificativa específica baseada nos dados.",
+    "comparativo": "Compare explicitamente: médias, percentuais na meta, e alertas críticos dos 7 dias vs período total.",
+    "analise": "Análise dia-a-dia identificando padrões recentes, picos, e variações significativas."
+  },
+  "condutaTerapeutica": {
+    "imediata": "O que fazer AGORA baseado nos últimos 7 dias. Seja específico com doses e ajustes.",
+    "continuada": "Estratégia de médio prazo considerando o panorama geral."
+  },
+  "fundamentacao": "Justificativa citando diretrizes SBD 2025, FEBRASGO 2019 e/ou OMS 2025 com códigos (ex: SBD-R4).",
   "urgencyLevel": "info | warning | critical",
-  "proximosPassos": ["Lista de 2-4 ações práticas prioritárias"]
+  "proximosPassos": ["Lista de 3-5 ações ESPECÍFICAS e MENSURÁVEIS"]
 }
 
 METAS GLICÊMICAS (SBD 2025):
@@ -46,16 +57,18 @@ CRITÉRIOS PARA INSULINA (SBD-R1):
 - Dose inicial: 0,5 UI/kg/dia (SBD-R4)
 
 AJUSTES DE INSULINA:
-- Jejum alto → NPH noturna
-- Pós-café alto → Rápida manhã
-- Pós-almoço alto → Rápida almoço
-- Pós-jantar alto → Rápida jantar
-- Aumento típico: 10-20% da dose
+- Jejum alto → NPH noturna (+10-20%)
+- Pós-café alto → Rápida manhã (+10-20%)
+- Pós-almoço alto → Rápida almoço (+10-20%)
+- Pós-jantar alto → Rápida jantar (+10-20%)
 
 COERÊNCIA OBRIGATÓRIA:
-- Se urgencyLevel="critical" → conduta deve refletir urgência
+- Se urgencyLevel="critical" → conduta deve refletir URGÊNCIA real
 - Se urgencyLevel="info" → não alarmar desnecessariamente
-- Se indica manter conduta → não sugerir ajustes no mesmo texto`;
+- Se tendência de PIORA → condutas devem ser mais agressivas
+- Se tendência de MELHORA → reforçar conduta atual, monitorar
+
+FOCO ESPECIAL: Analise os ÚLTIMOS 7 DIAS com detalhamento maior. É o período mais relevante clinicamente.`;
 
 export async function generateClinicalRecommendation(
   evaluation: PatientEvaluation
@@ -106,15 +119,48 @@ export async function generateClinicalRecommendation(
 function formatAIResponse(parsed: any, analysis: ClinicalAnalysis): ClinicalRecommendation {
   const ruleIds = analysis.rulesTriggered.map(r => r.id);
   
-  const fullAnalysis = [
-    parsed.resumoExecutivo || "",
-    "",
-    parsed.interpretacaoClinica || "",
-  ].filter(Boolean).join("\n\n");
+  // Build panorama geral section
+  let panoramaGeral = "";
+  if (parsed.panoramaGeral) {
+    panoramaGeral = `PANORAMA GERAL\n\n${parsed.panoramaGeral.resumo || ""}\n\n${parsed.panoramaGeral.analise || ""}`;
+  } else if (parsed.resumoExecutivo) {
+    panoramaGeral = `PANORAMA GERAL\n\n${parsed.resumoExecutivo}\n\n${parsed.interpretacaoClinica || ""}`;
+  }
+  
+  // Build últimos 7 dias section
+  let ultimos7Dias = "";
+  if (parsed.ultimosSeteDias) {
+    const u7 = parsed.ultimosSeteDias;
+    ultimos7Dias = `ÚLTIMOS 7 DIAS\n\n`;
+    if (u7.resumo) ultimos7Dias += `${u7.resumo}\n\n`;
+    if (u7.tendencia) ultimos7Dias += `Tendência: ${u7.tendencia}\n\n`;
+    if (u7.comparativo) ultimos7Dias += `${u7.comparativo}\n\n`;
+    if (u7.analise) ultimos7Dias += `${u7.analise}`;
+  } else if (analysis.sevenDayAnalysis) {
+    const s7 = analysis.sevenDayAnalysis;
+    ultimos7Dias = `ÚLTIMOS 7 DIAS\n\n`;
+    ultimos7Dias += `${s7.trendDescription}\n\n`;
+    ultimos7Dias += `Média glicêmica: ${s7.averageGlucose} mg/dL (${s7.percentInTarget}% na meta)`;
+  }
+  
+  const fullAnalysis = [panoramaGeral, ultimos7Dias].filter(Boolean).join("\n\n---\n\n");
+  
+  // Build conduta
+  let conduta = "";
+  if (parsed.condutaTerapeutica) {
+    if (typeof parsed.condutaTerapeutica === "object") {
+      if (parsed.condutaTerapeutica.imediata) conduta += `Conduta Imediata: ${parsed.condutaTerapeutica.imediata}\n\n`;
+      if (parsed.condutaTerapeutica.continuada) conduta += `Estratégia Continuada: ${parsed.condutaTerapeutica.continuada}`;
+    } else {
+      conduta = parsed.condutaTerapeutica;
+    }
+  } else {
+    conduta = analysis.insulinRecommendation;
+  }
   
   return {
     analysis: fullAnalysis || analysis.technicalSummary,
-    mainRecommendation: parsed.condutaTerapeutica || analysis.insulinRecommendation,
+    mainRecommendation: conduta.trim(),
     justification: parsed.fundamentacao || `Baseado nas Diretrizes SBD 2025, FEBRASGO 2019 e OMS 2025.`,
     nextSteps: Array.isArray(parsed.proximosPassos) && parsed.proximosPassos.length > 0 
       ? parsed.proximosPassos 
@@ -142,107 +188,267 @@ function generateDeterministicRecommendation(
   const hasHypo = criticalAlerts.some(a => a.type === "hypoglycemia");
   const hasSevereHyper = criticalAlerts.some(a => a.type === "severe_hyperglycemia");
   
-  let resumo = "";
-  let interpretacao = "";
-  let conduta = "";
-  let fundamentacao = "";
   const nextSteps: string[] = [];
   let urgency: "info" | "warning" | "critical" = analysis.urgencyLevel;
   
   const igText = `${evaluation.gestationalWeeks} semanas e ${evaluation.gestationalDays} dias`;
   const diasAnalise = evaluation.glucoseReadings.length;
+  const s7 = analysis.sevenDayAnalysis;
+  
+  // ============== PANORAMA GERAL ==============
+  let panoramaResumo = "";
+  let panoramaAnalise = "";
   
   if (hasHypo || hasSevereHyper) {
     urgency = "critical";
+    const hypoCount = criticalAlerts.filter(a => a.type === "hypoglycemia").length;
+    const hyperCount = criticalAlerts.filter(a => a.type === "severe_hyperglycemia").length;
+    
+    panoramaResumo = `Gestante com ${igText}, diagnóstico de ${analysis.diabetesType}, apresentando controle glicêmico instável no período de ${diasAnalise} dias analisados.`;
     
     if (hasHypo && hasSevereHyper) {
-      resumo = `Paciente com ${igText} de idade gestacional apresenta controle glicêmico instável com episódios de hipoglicemia E hiperglicemia severa. Requer ajuste imediato do esquema terapêutico.`;
-      interpretacao = `A análise de ${diasAnalise} dias revela padrão de grande variabilidade glicêmica. Foram detectados ${criticalAlerts.filter(a => a.type === "hypoglycemia").length} episódio(s) de hipoglicemia (<65 mg/dL) e ${criticalAlerts.filter(a => a.type === "severe_hyperglycemia").length} episódio(s) de hiperglicemia severa (>200 mg/dL). Esta instabilidade representa risco tanto materno quanto fetal.`;
-      conduta = `Revisar esquema de insulinoterapia com urgência. Avaliar horários de aplicação e alimentação. Considerar ajuste das doses com base no perfil glicêmico: reduzir dose nos horários com hipoglicemia e aumentar nos horários com hiperglicemia.`;
-      nextSteps.push("Revisar doses de insulina por período");
-      nextSteps.push("Avaliar padrão alimentar e horários de refeições");
-      nextSteps.push("Orientar sobre reconhecimento de hipoglicemia");
-      nextSteps.push("Reavaliar em 3-5 dias");
+      panoramaAnalise = `O perfil glicêmico revela grande variabilidade, com ${hypoCount} episódio(s) de hipoglicemia (<65 mg/dL) e ${hyperCount} episódio(s) de hiperglicemia severa (>200 mg/dL). Esta oscilação representa risco significativo para mãe e feto. A média glicêmica de ${analysis.averageGlucose} mg/dL mascara a real instabilidade do controle, com apenas ${analysis.percentInTarget}% das medidas dentro da meta terapêutica.`;
     } else if (hasHypo) {
-      const hypoCount = criticalAlerts.filter(a => a.type === "hypoglycemia").length;
-      resumo = `Paciente com ${igText} apresenta ${hypoCount} episódio(s) de hipoglicemia. Necessário ajuste do tratamento para evitar risco materno-fetal.`;
-      interpretacao = `A análise de ${diasAnalise} dias identificou episódios de glicemia <65 mg/dL, configurando hipoglicemia. ${evaluation.usesInsulin ? "Como a paciente está em uso de insulina, há possível excesso de dose." : "A causa deve ser investigada."}`;
-      conduta = evaluation.usesInsulin 
-        ? `Reduzir dose de insulina em 10-20% no período relacionado à hipoglicemia. Avaliar ajuste do plano alimentar.`
-        : `Investigar causa da hipoglicemia. Avaliar padrão alimentar e intervalo entre refeições.`;
-      nextSteps.push("Revisar doses de insulina");
-      nextSteps.push("Orientar tratamento de hipoglicemia (15g carboidrato)");
-      nextSteps.push("Reavaliar em 3-5 dias");
-    } else if (hasSevereHyper) {
-      const hyperCount = criticalAlerts.filter(a => a.type === "severe_hyperglycemia").length;
-      resumo = `Paciente com ${igText} apresenta ${hyperCount} episódio(s) de hiperglicemia severa (>200 mg/dL). Controle glicêmico inadequado requerendo intervenção imediata.`;
-      interpretacao = `A análise de ${diasAnalise} dias revela glicemias muito elevadas, acima de 200 mg/dL. Este nível de descontrole está associado a risco aumentado de complicações fetais, incluindo macrossomia e complicações neonatais.`;
-      conduta = evaluation.usesInsulin 
-        ? `Aumentar doses de insulina em 20-30%. Se persistência, considerar internação para ajuste intensivo.`
-        : `Iniciar insulinoterapia com urgência. Dose inicial sugerida: 0,5 UI/kg/dia (SBD-R4).`;
-      nextSteps.push("Aumentar doses de insulina");
-      nextSteps.push("Reforçar orientação dietética");
-      nextSteps.push("Considerar avaliação hospitalar se persistência");
-      nextSteps.push("Reavaliar em 3-5 dias");
+      panoramaAnalise = `Identificados ${hypoCount} episódio(s) de hipoglicemia (<65 mg/dL) ao longo do período. ${evaluation.usesInsulin ? "A ocorrência de hipoglicemia em paciente insulinizada sugere possível excesso de dose ou inadequação do esquema alimentar." : "Investigar causa da hipoglicemia (jejum prolongado, atividade física excessiva, alimentação inadequada)."} Média glicêmica: ${analysis.averageGlucose} mg/dL, com ${analysis.percentInTarget}% na meta.`;
+    } else {
+      panoramaAnalise = `Detectados ${hyperCount} episódio(s) de hiperglicemia severa (>200 mg/dL), indicando falha significativa no controle glicêmico. A média de ${analysis.averageGlucose} mg/dL e apenas ${analysis.percentInTarget}% das medidas na meta refletem a gravidade do descontrole, com risco aumentado de complicações fetais.`;
     }
-    fundamentacao = "Valores críticos de glicemia requerem intervenção imediata para prevenção de complicações materno-fetais (SBD 2025, FEBRASGO 2019).";
   } else if (analysis.percentInTarget >= 70) {
     urgency = "info";
-    resumo = `Paciente com ${igText} apresenta bom controle glicêmico, com ${analysis.percentInTarget}% das medidas dentro da meta. ${evaluation.usesInsulin ? "Manter esquema atual de insulinoterapia." : "Manter acompanhamento com medidas não-farmacológicas."}`;
-    interpretacao = `A análise de ${diasAnalise} dias demonstra controle glicêmico adequado, com média de ${analysis.averageGlucose} mg/dL. Os valores estão predominantemente dentro das metas estabelecidas pelas diretrizes brasileiras.`;
-    conduta = evaluation.usesInsulin 
-      ? `Manter esquema de insulinoterapia atual. Controle glicêmico está adequado.`
-      : `Manter orientação dietética e atividade física. Não há indicação de insulinoterapia no momento.`;
-    nextSteps.push("Manter monitoramento glicêmico conforme protocolo");
-    nextSteps.push("Continuar orientação nutricional");
-    if (evaluation.gestationalWeeks >= 32) {
-      nextSteps.push("Intensificar vigilância fetal");
-      nextSteps.push("Reavaliar semanalmente");
-    } else {
-      nextSteps.push("Reavaliar em 15 dias");
-    }
-    fundamentacao = `Controle adequado conforme metas SBD 2025 (jejum 65-95, 1h pós-prandial <140 mg/dL). ${evaluation.gestationalWeeks >= 32 ? "Vigilância fetal intensificada após 32 semanas (FEBRASGO-F8)." : ""}`;
+    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}, demonstrando bom controle glicêmico ao longo de ${diasAnalise} dias de monitoramento.`;
+    panoramaAnalise = `O perfil glicêmico é satisfatório, com ${analysis.percentInTarget}% das medidas dentro das metas estabelecidas (jejum 65-95, 1h pós-prandial <140 mg/dL). A média glicêmica de ${analysis.averageGlucose} mg/dL encontra-se em faixa adequada. ${evaluation.usesInsulin ? "A insulinoterapia atual está eficaz e deve ser mantida." : "O manejo não-farmacológico está sendo bem-sucedido."}`;
   } else if (analysis.percentInTarget >= 50) {
     urgency = "warning";
-    resumo = `Paciente com ${igText} apresenta controle glicêmico parcial, com ${analysis.percentAboveTarget}% das medidas acima da meta. ${evaluation.usesInsulin ? "Necessário ajuste do esquema de insulina." : "Considerar início de insulinoterapia."}`;
     const periodInfo = generatePeriodAnalysis(analysis);
-    interpretacao = `A análise de ${diasAnalise} dias revela ${analysis.percentAboveTarget}% das medidas acima da meta, com média de ${analysis.averageGlucose} mg/dL.${periodInfo ? " " + periodInfo : ""}`;
-    
-    if (evaluation.usesInsulin) {
-      conduta = generateInsulinAdjustmentRecommendation(analysis, evaluation);
-      nextSteps.push("Ajustar doses de insulina conforme recomendado");
-    } else {
-      conduta = `Indicado início de insulinoterapia. Mais de 30% das medidas estão fora da meta após período de terapia não-farmacológica, cumprindo critério SBD-R1.${evaluation.weight ? ` Dose inicial sugerida: ${Math.round(evaluation.weight * 0.5)} UI/dia (0,5 UI/kg).` : " Dose inicial: 0,5 UI/kg/dia."}`;
-      nextSteps.push("Iniciar insulinoterapia conforme dose sugerida");
-    }
-    nextSteps.push("Reavaliar em 7-14 dias para ajuste de dose");
-    if (evaluation.gestationalWeeks >= 29) {
-      nextSteps.push("Intensificar vigilância fetal");
-    }
-    fundamentacao = `Conforme SBD-R1, ${analysis.percentAboveTarget}% das medidas acima da meta após terapia não-farmacológica justifica intervenção farmacológica. Insulina é primeira escolha (SBD-R2, Classe I, Nível A).`;
+    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}, apresentando controle glicêmico parcialmente adequado nos ${diasAnalise} dias analisados.`;
+    panoramaAnalise = `O monitoramento revela ${analysis.percentAboveTarget}% das medidas acima da meta, com média glicêmica de ${analysis.averageGlucose} mg/dL. ${periodInfo} Este padrão indica necessidade de otimização terapêutica para atingir as metas preconizadas pelas diretrizes.`;
   } else {
     urgency = "critical";
-    resumo = `Paciente com ${igText} apresenta controle glicêmico inadequado, com apenas ${analysis.percentInTarget}% das medidas na meta. Intervenção terapêutica necessária com urgência.`;
     const periodInfo2 = generatePeriodAnalysis(analysis);
-    interpretacao = `A análise de ${diasAnalise} dias revela descontrole glicêmico significativo, com ${analysis.percentAboveTarget}% das medidas acima da meta e média de ${analysis.averageGlucose} mg/dL.${periodInfo2 ? " " + periodInfo2 : ""}`;
+    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}, com controle glicêmico inadequado requerendo intervenção prioritária.`;
+    panoramaAnalise = `A análise de ${diasAnalise} dias evidencia descontrole significativo: apenas ${analysis.percentInTarget}% das medidas na meta, com ${analysis.percentAboveTarget}% acima do alvo e média de ${analysis.averageGlucose} mg/dL. ${periodInfo2} Este padrão está associado a risco elevado de macrossomia, hipoglicemia neonatal e outras complicações perinatais.`;
+  }
+  
+  // ============== ÚLTIMOS 7 DIAS ==============
+  let ultimos7Resumo = "";
+  let ultimos7Tendencia = "";
+  let ultimos7Comparativo = "";
+  let ultimos7Analise = "";
+  
+  if (s7) {
+    const tendenciaLabel = s7.trend === "improving" ? "MELHORA" : s7.trend === "worsening" ? "PIORA" : "ESTÁVEL";
+    
+    ultimos7Resumo = `Nos últimos 7 dias, a paciente apresenta ${s7.percentInTarget}% das medidas na meta, com média glicêmica de ${s7.averageGlucose} mg/dL.`;
+    
+    ultimos7Tendencia = `${tendenciaLabel}: ${s7.trendDescription}`;
+    
+    // Comparativo detalhado
+    const diffPercent = s7.percentInTarget - analysis.percentInTarget;
+    const diffMedia = s7.averageGlucose - analysis.averageGlucose;
+    if (diffPercent > 5) {
+      ultimos7Comparativo = `Melhora recente: percentual na meta subiu de ${analysis.percentInTarget}% (geral) para ${s7.percentInTarget}% (últimos 7 dias). Média glicêmica ${diffMedia < 0 ? `reduziu ${Math.abs(diffMedia)} mg/dL` : `aumentou ${diffMedia} mg/dL`}.`;
+    } else if (diffPercent < -5) {
+      ultimos7Comparativo = `Piora recente: percentual na meta caiu de ${analysis.percentInTarget}% (geral) para ${s7.percentInTarget}% (últimos 7 dias). Média glicêmica ${diffMedia > 0 ? `aumentou ${diffMedia} mg/dL` : `reduziu ${Math.abs(diffMedia)} mg/dL`}.`;
+    } else {
+      ultimos7Comparativo = `Padrão consistente: percentual na meta mantido em torno de ${s7.percentInTarget}% nos últimos 7 dias, similar ao período total (${analysis.percentInTarget}%). Média glicêmica estável em ${s7.averageGlucose} mg/dL.`;
+    }
+    
+    // Análise dia-a-dia
+    if (s7.dailyAverages.length > 0) {
+      const dailyDetails = s7.dailyAverages.map(d => 
+        `Dia ${d.day}: ${d.average} mg/dL (${d.inTarget}/${d.total} na meta)`
+      ).join("; ");
+      ultimos7Analise = `Evolução diária: ${dailyDetails}.`;
+      
+      // Períodos com mudança
+      const worsePeriods = s7.periodComparison.filter(p => p.change === "worse");
+      const betterPeriods = s7.periodComparison.filter(p => p.change === "better");
+      
+      if (worsePeriods.length > 0) {
+        ultimos7Analise += ` Atenção aos períodos com piora recente: ${worsePeriods.map(p => `${p.period} (${p.overall}→${p.last7Days} mg/dL)`).join(", ")}.`;
+      }
+      if (betterPeriods.length > 0) {
+        ultimos7Analise += ` Melhora observada em: ${betterPeriods.map(p => `${p.period} (${p.overall}→${p.last7Days} mg/dL)`).join(", ")}.`;
+      }
+    }
+    
+    // Alertas recentes
+    if (s7.criticalAlerts.length > 0) {
+      const hypoRecent = s7.criticalAlerts.filter(a => a.type === "hypoglycemia").length;
+      const hyperRecent = s7.criticalAlerts.filter(a => a.type === "severe_hyperglycemia").length;
+      if (hypoRecent > 0) ultimos7Analise += ` ALERTA: ${hypoRecent} episódio(s) de hipoglicemia nos últimos 7 dias.`;
+      if (hyperRecent > 0) ultimos7Analise += ` ALERTA: ${hyperRecent} episódio(s) de hiperglicemia severa nos últimos 7 dias.`;
+    }
+  } else {
+    ultimos7Resumo = `Período de análise inferior a 7 dias (${diasAnalise} dias disponíveis).`;
+    ultimos7Tendencia = "Dados insuficientes para análise de tendência detalhada.";
+    ultimos7Comparativo = "Comparativo não disponível com menos de 7 dias de dados.";
+    ultimos7Analise = "Recomenda-se continuar monitoramento para permitir análise de tendência mais robusta.";
+  }
+  
+  // ============== CONDUTA TERAPÊUTICA ==============
+  // Use 7-day trend to inform immediate actions
+  // Refined trend detection: consider BOTH percent-in-target AND average changes to avoid misclassification
+  const recentTrend = s7?.trend || "stable";
+  const recent7DayPercent = s7?.percentInTarget ?? analysis.percentInTarget;
+  const percentDelta = s7 ? (s7.percentInTarget - analysis.percentInTarget) : 0;
+  const avgDelta = s7 ? (s7.averageGlucose - analysis.averageGlucose) : 0;
+  
+  // Worsening: either explicit trend OR significant drop in percent-in-target AND higher average
+  const isRecentWorsening = (
+    recentTrend === "worsening" ||
+    (s7 && percentDelta < -10 && avgDelta > 5)
+  );
+  // Improving: either explicit trend OR significant increase in percent-in-target AND lower average
+  const isRecentImproving = (
+    recentTrend === "improving" ||
+    (s7 && percentDelta > 10 && avgDelta < -5)
+  );
+  
+  let condutaImediata = "";
+  let condutaContinuada = "";
+  let fundamentacao = "";
+  
+  // Get 7-day specific period issues for targeted adjustments - always include when worsening
+  const sevenDayWorseningPeriods = s7?.periodComparison?.filter(p => p.change === "worse") || [];
+  const sevenDayAdjustments = sevenDayWorseningPeriods.length > 0 
+    ? `Atenção especial aos períodos com piora recente: ${sevenDayWorseningPeriods.map(p => `${p.period} (${p.overall}→${p.last7Days} mg/dL)`).join(", ")}.`
+    : (isRecentWorsening && s7 ? `Piora observada na média geral (${analysis.averageGlucose}→${s7.averageGlucose} mg/dL nos últimos 7 dias).` : "");
+  
+  if (hasHypo || hasSevereHyper) {
+    if (hasHypo && hasSevereHyper) {
+      condutaImediata = `Revisar imediatamente esquema de insulinoterapia. Reduzir dose nos períodos com hipoglicemia e aumentar nos períodos com hiperglicemia. Avaliar padrão alimentar e horários de aplicação.`;
+      condutaContinuada = `Monitoramento intensificado com reavaliação em 3-5 dias. Considerar ajuste individual por período do dia para reduzir variabilidade glicêmica.`;
+      nextSteps.push("Mapear horários específicos de hipo e hiperglicemia");
+      nextSteps.push("Ajustar doses de insulina por período");
+      nextSteps.push("Revisar técnica de aplicação e armazenamento");
+      nextSteps.push("Orientar tratamento de hipoglicemia (15g carboidrato)");
+      nextSteps.push("Reavaliar em 3-5 dias");
+    } else if (hasHypo) {
+      condutaImediata = evaluation.usesInsulin 
+        ? `Reduzir dose de insulina em 10-20% no(s) período(s) relacionado(s) à hipoglicemia. Verificar intervalo entre insulina e refeição.`
+        : `Investigar causa da hipoglicemia. Avaliar jejum prolongado, atividade física e padrão alimentar.`;
+      condutaContinuada = `Manter monitoramento intensificado. Orientar paciente sobre reconhecimento e tratamento de hipoglicemia.`;
+      nextSteps.push("Identificar período específico das hipoglicemias");
+      nextSteps.push("Ajustar dose de insulina correspondente");
+      nextSteps.push("Orientar ingestão de 15g de carboidrato em caso de hipoglicemia");
+      nextSteps.push("Reavaliar em 3-5 dias");
+    } else {
+      condutaImediata = evaluation.usesInsulin 
+        ? `Aumentar doses de insulina em 20-30% nos períodos com hiperglicemia severa. ${generateInsulinAdjustmentRecommendation(analysis, evaluation)}`
+        : `Iniciar insulinoterapia imediatamente. Dose inicial: ${evaluation.weight ? `${Math.round(evaluation.weight * 0.5)} UI/dia` : "0,5 UI/kg/dia"} (SBD-R4).`;
+      condutaContinuada = `Intensificar vigilância fetal. Se persistência do descontrole, considerar internação hospitalar para ajuste supervisionado.`;
+      nextSteps.push("Aumentar doses de insulina conforme indicado");
+      nextSteps.push("Reforçar aderência à dieta prescrita");
+      nextSteps.push("Solicitar ultrassonografia para avaliação fetal");
+      nextSteps.push("Reavaliar em 3-5 dias");
+    }
+    fundamentacao = "Valores críticos de glicemia requerem intervenção imediata para prevenção de complicações materno-fetais conforme SBD 2025 e FEBRASGO 2019 (F8 - vigilância fetal).";
+  } else if (analysis.percentInTarget >= 70) {
+    // Good overall control - check if recent trend is worsening
+    if (isRecentWorsening) {
+      condutaImediata = evaluation.usesInsulin 
+        ? `Atenção: tendência de piora nos últimos 7 dias (${recent7DayPercent}% na meta vs ${analysis.percentInTarget}% geral). Avaliar necessidade de ajuste preventivo. ${sevenDayAdjustments}`
+        : `Tendência de piora recente observada (${recent7DayPercent}% na meta nos últimos 7 dias). Intensificar orientação dietética e monitorar de perto.`;
+      condutaContinuada = `Reavaliação antecipada em 7 dias para confirmar tendência. Se piora persistir, considerar ajuste terapêutico.`;
+      nextSteps.push("Reavaliação antecipada em 7 dias");
+      nextSteps.push("Intensificar orientação nutricional");
+    } else {
+      condutaImediata = evaluation.usesInsulin 
+        ? `Manter esquema atual de insulinoterapia. Controle adequado demonstrado${isRecentImproving ? ", com tendência de melhora recente confirmando eficácia do tratamento" : ""}.`
+        : `Manter orientação dietética e atividade física regular. Não há indicação de insulinoterapia no momento.`;
+      condutaContinuada = `Continuar monitoramento conforme protocolo. ${evaluation.gestationalWeeks >= 32 ? "Intensificar vigilância fetal a partir de 32 semanas." : "Manter seguimento ambulatorial regular."}`;
+    }
+    nextSteps.push("Manter automonitorização glicêmica");
+    nextSteps.push("Continuar orientação nutricional");
+    nextSteps.push(evaluation.gestationalWeeks >= 32 ? "Vigilância fetal semanal (CTG, PBF)" : "Próxima consulta em 15 dias");
+    fundamentacao = `Controle adequado conforme metas SBD 2025 (jejum 65-95, 1h pós-prandial <140 mg/dL).${isRecentWorsening ? " Tendência de piora recente requer vigilância." : ""} ${evaluation.gestationalWeeks >= 32 ? "Vigilância fetal intensificada após 32 semanas (FEBRASGO-F8, OMS-W8)." : ""}`;
+  } else if (analysis.percentInTarget >= 50) {
+    // Moderate control - use 7-day data to guide urgency
+    const urgencyModifier = isRecentWorsening ? " com urgência - tendência de piora detectada nos últimos 7 dias" : "";
     
     if (evaluation.usesInsulin) {
-      conduta = `Intensificar esquema de insulinoterapia. Aumentar doses em 20-30% nos períodos com maior descontrole. ${generateInsulinAdjustmentRecommendation(analysis, evaluation)}`;
+      condutaImediata = `Otimizar insulinoterapia${urgencyModifier}. ${generateInsulinAdjustmentRecommendation(analysis, evaluation)} ${sevenDayAdjustments}`;
+      condutaContinuada = isRecentWorsening 
+        ? `Reavaliação em 5-7 dias dado tendência de piora recente. Vigilância fetal intensificada.`
+        : `Reavaliar em 7-14 dias para verificar resposta aos ajustes. Manter vigilância fetal.`;
+      nextSteps.push("Implementar ajustes de insulina sugeridos");
     } else {
-      conduta = `Início imediato de insulinoterapia. ${evaluation.weight ? `Dose inicial: ${Math.round(evaluation.weight * 0.5)} UI/dia (0,5 UI/kg), distribuída conforme perfil glicêmico.` : "Dose inicial: 0,5 UI/kg/dia (SBD-R4)."}`;
+      condutaImediata = `Indicar início de insulinoterapia${urgencyModifier}. ${analysis.percentAboveTarget}% das medidas acima da meta (${recent7DayPercent}% na meta nos últimos 7 dias) cumpre critério SBD-R1. Dose inicial: ${evaluation.weight ? `${Math.round(evaluation.weight * 0.5)} UI/dia` : "0,5 UI/kg/dia"}.`;
+      condutaContinuada = `Iniciar com esquema basal-bolus ou conforme perfil glicêmico. Reavaliação em ${isRecentWorsening ? "5-7" : "7-14"} dias.`;
+      nextSteps.push("Prescrever insulinoterapia");
+      nextSteps.push("Orientar técnica de aplicação");
     }
-    nextSteps.push("Iniciar ou intensificar insulinoterapia");
+    nextSteps.push("Reforçar adesão à dieta prescrita");
+    nextSteps.push(isRecentWorsening ? "Reavaliar em 5-7 dias" : "Reavaliar em 7-14 dias");
+    if (evaluation.gestationalWeeks >= 29) nextSteps.push("Solicitar USG para avaliação de crescimento fetal");
+    fundamentacao = `Conforme SBD-R1 (Classe IIb, Nível C), ${analysis.percentAboveTarget}% das medidas acima da meta justifica início ou intensificação de insulinoterapia.${isRecentWorsening ? " Tendência de piora recente reforça necessidade de intervenção." : ""} Insulina é primeira escolha (SBD-R2, Classe I, Nível A).`;
+  } else {
+    // Poor control
+    const trendNote = isRecentImproving 
+      ? " Nota: tendência de melhora nos últimos 7 dias sugere resposta inicial ao tratamento."
+      : isRecentWorsening 
+        ? " URGENTE: tendência de piora progressiva nos últimos 7 dias."
+        : "";
+    
+    if (evaluation.usesInsulin) {
+      condutaImediata = `Intensificar insulinoterapia com aumento de 20-30% das doses. ${generateInsulinAdjustmentRecommendation(analysis, evaluation)} ${sevenDayAdjustments}${trendNote}`;
+      condutaContinuada = isRecentWorsening 
+        ? `Considerar internação imediata. Vigilância fetal obrigatória e intensificada.`
+        : `Considerar internação se não houver resposta em 5-7 dias. Vigilância fetal obrigatória.`;
+    } else {
+      condutaImediata = `Início imediato de insulinoterapia. Dose inicial: ${evaluation.weight ? `${Math.round(evaluation.weight * 0.5)} UI/dia` : "0,5 UI/kg/dia"} (SBD-R4), distribuída em esquema basal-bolus.${trendNote}`;
+      condutaContinuada = `Reavaliação em ${isRecentWorsening ? "5" : "7"} dias com ajuste de doses. Vigilância fetal intensificada.`;
+    }
+    nextSteps.push("Iniciar ou intensificar insulinoterapia imediatamente");
     nextSteps.push("Reforçar orientação nutricional");
-    nextSteps.push("Reavaliar em 7 dias");
-    nextSteps.push("Intensificar vigilância fetal");
-    fundamentacao = `Descontrole glicêmico importante requer intervenção imediata conforme SBD-R1 e SBD-R2. Metas não atingidas associam-se a risco aumentado de complicações materno-fetais.`;
+    nextSteps.push("Solicitar USG obstétrica");
+    nextSteps.push(isRecentWorsening ? "Reavaliar em 5 dias" : "Reavaliar em 7 dias");
+    if (isRecentWorsening) nextSteps.push("Considerar internação para ajuste supervisionado");
+    else nextSteps.push("Considerar internação se necessário");
+    fundamentacao = `Descontrole glicêmico grave (apenas ${analysis.percentInTarget}% na meta${s7 ? `, ${recent7DayPercent}% nos últimos 7 dias` : ""}) requer intervenção imediata conforme SBD-R1 e SBD-R2. Associação com complicações materno-fetais bem documentada.`;
   }
-
+  
   const ruleIds = analysis.rulesTriggered.map(r => r.id);
   
+  // Montar análise completa com duas seções - ensure consistent format even with empty content
+  const panoramaSection = [
+    `PANORAMA GERAL`,
+    ``,
+    panoramaResumo || `Gestante com ${igText}, ${analysis.diabetesType}, em acompanhamento.`,
+    ``,
+    panoramaAnalise || `Análise baseada em ${diasAnalise} dias de monitoramento glicêmico.`,
+  ].join("\n");
+  
+  const ultimos7Section = [
+    `ÚLTIMOS 7 DIAS`,
+    ``,
+    ultimos7Resumo,
+    ``,
+    `Tendência: ${ultimos7Tendencia}`,
+    ``,
+    ultimos7Comparativo,
+    ``,
+    ultimos7Analise,
+  ].join("\n");
+  
+  const fullAnalysis = [
+    panoramaSection,
+    ``,
+    `---`,
+    ``,
+    ultimos7Section,
+  ].join("\n");
+  
+  const mainRec = [
+    `Conduta Imediata: ${condutaImediata}`,
+    ``,
+    `Estratégia Continuada: ${condutaContinuada}`,
+  ].join("\n");
+  
   return {
-    analysis: `${resumo}\n\n${interpretacao}`,
-    mainRecommendation: conduta,
+    analysis: fullAnalysis,
+    mainRecommendation: mainRec,
     justification: fundamentacao,
     nextSteps,
     urgencyLevel: urgency,
