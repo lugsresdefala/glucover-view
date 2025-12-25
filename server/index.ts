@@ -3,7 +3,6 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import crypto from "crypto";
 import { logger } from "./logger";
 
@@ -53,33 +52,6 @@ app.use(helmet({
   },
 }));
 
-// Global rate limiting - 100 requests per minute per IP
-const globalLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 100,
-  message: { message: "Muitas requisições. Tente novamente em alguns segundos." },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Strict rate limiting for auth routes - 10 attempts per 15 minutes
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: { message: "Muitas tentativas de login. Tente novamente em 15 minutos." },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Apply global rate limiter to API routes (100 requests/min - prevents abuse)
-app.use("/api/", globalLimiter);
-
-// Apply strict rate limiting to auth routes only (prevents brute force attacks)
-app.use("/api/auth/", authLimiter);
-app.use("/api/patient/auth/", authLimiter);
-
-// Export rate limiters for use in routes if needed
-export { authLimiter };
 
 app.use(
   express.json({
