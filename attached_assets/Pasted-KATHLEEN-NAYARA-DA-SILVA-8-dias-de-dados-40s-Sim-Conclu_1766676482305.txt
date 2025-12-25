@@ -1,0 +1,131 @@
+KATHLEEN NAYARA DA SILVA
+8 dias de dados
+40s	Sim	Concluído	OK	
+2	
+LARISSA LEITE ZURITA
+58 dias de dados
+40s	Sim	Concluído	OK	
+3	
+Sandra Gonzaga dos Santos
+39 dias de dados
+40s	Sim	Concluído	OK	
+4	
+CINTHIA PARRA TEIXEIRA
+36 dias de dados
+1s+6d	Sim	Concluído	OK	
+5	
+DANIELE DE PAULA GUIMARÃES
+103 dias de dados
+1s+6d	Sim	Concluído	OK	
+6	
+ERICA SILVA PIO
+35 dias de dados
+40s	Não	Concluído	OK	
+7	
+GABRIELA SANTOS FONSECA
+86 dias de dados
+40s	Sim	Concluído	OK	
+8	
+LARISSA DE ANDRADE
+21 dias de dados
+40s	Sim	Concluído	OK	
+9	
+MICHELLE MARQUES DE OLIVEIRA SANTOS
+114 dias de dados
+40s	Sim	Concluído	OK	
+10	
+MILENA FELIX DA SILVA
+6 dias de dados
+40s	Sim	Concluído	OK	
+11	
+Pamela de Fatima Ruiz Pereira
+180 dias de dados
+40s	Sim	Concluído	OK	
+12	
+STEPHANE DE OLIVEIRA
+113 dias de dados
+1s+6d	Sim	Concluído	OK	
+13	
+VANESSA VIEIRA CRUZ VEGE
+7 dias de dados
+35s+5d	Sim	Concluído	OK	
+14	
+VANIERE LOPES DOS SANTOS
+46 dias de dados
+40s	Sim	Concluído	OK	
+15	
+VIVIANE CARNERO DA SILVA
+68 dias de dados
+1s+6d	Sim	Concluído	OK	
+16	
+ALANA FRANCA DO NASCIMENTO
+85 dias de dados
+40s	Sim	Concluído	OK	
+17	
+ALICIA LUANARA DA SILVA PIMENTEL
+54 dias de dados
+40s	Sim	Concluído	OK	
+18	
+ALLANY TALITA TAVARES DE ANDRADE
+150 dias de dados
+40s	Sim	Concluído	OK	
+19	
+AMANDA MICHELLE DE ANDRADE CANADO ROSA DA CUN
+124 dias de dados
+40s	Sim	Concluído	OK	
+20	
+ANA CAROLINA GOMES
+69 dias de dados
+40s	Sim	Concluído	OK	
+21	
+ANA CLAUDIA VICENTINO
+153 dias de dados
+40s	Sim	Concluído	OK	
+22	
+ANA PAULA DE ASSIS DIAS
+77 dias de dados
+40s	Sim	Concluído	OK	
+23	
+ANA PAULA SOARES DE AZEVEDO
+18 dias de dados
+40s	Sim	Concluído	OK	
+24	
+ANDREZA THALITA DE ARAUJO FARIAS
+40 dias de dados
+38s+3d	Sim	Concluído	OK	
+25	
+ANGELICA COELHO DA CRUZ
+14 dias de dados
+-	Sim	Erro	400: {"message":"Dados inválidos","errors":[{"code":"too_small","minimum":1,"type":"number","inclusive":true,"exact":false,"message":"Number must be greater than or equal to 1","path":["gestationalWeeks"]}]}	
+26	
+ANNE CAROLINE DOMINGUES CALVO
+88 dias de dados
+40s	Sim	Concluído	OK	
+27	
+ARIADNY BEZERRA FERREIRA DA SILVA
+6 dias de dados
+-	Sim	Erro	400: {"message":"Dados inválidos","errors":[{"code":"too_small","minimum":1,"type":"number","inclusive":true,"exact":false,"message":"Number must be greater than or equal to 1","path":["gestationalWeeks"]}]}	
+28	
+BARBARA JACQUELINE FLAVIANA RODRIGUES
+174 dias de dados
+40s	Sim	Concluído	OK	
+29	
+BEATRIZ SANTANA DE JESUS
+176 dias de dados
+40s	Sim	Concluído	OK	
+30	
+Bruna bianca Miquilino brotas
+104 dias de dados
+40s	Sim	Concluído	OK	
+31	
+Bruna da Silva Ribeiro
+25 dias de dados
+40s	Sim	Concluído	OK	
+32	
+BRUNA DIAS DE OLIVEIRA LEITE
+60 dias de dados
+40s	Sim	Concluído	OK	
+33	
+BRUNA PAIXÃO PESSOA PIOVESANA
+31 dias de dados
+40s	Não

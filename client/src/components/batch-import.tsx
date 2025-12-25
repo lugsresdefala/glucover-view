@@ -468,15 +468,24 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           }
         }
         
-        // If calculated IG > 40 weeks, use the last date with actual glucose measurements
-        let finalGestationalAge = lastGestationalAge;
-        if (lastGestationalAge > 40 && lastGestationalAgeWithGlucose > 0) {
-          finalGestationalAge = lastGestationalAgeWithGlucose;
+        // Use the gestational age from the last row that had glucose readings
+        // This avoids issues with empty rows at the end of spreadsheets
+        let finalGestationalAge = lastGestationalAgeWithGlucose > 0 
+          ? lastGestationalAgeWithGlucose 
+          : lastGestationalAge;
+        
+        // Cap at 42 weeks maximum (as per schema validation)
+        if (finalGestationalAge > 42) {
+          finalGestationalAge = 0; // Invalid - will be flagged as error
         }
         
         if (finalGestationalAge > 0) {
           gestationalWeeks = Math.floor(finalGestationalAge);
           gestationalDays = Math.round((finalGestationalAge - gestationalWeeks) * 7);
+          // Ensure days don't exceed 6
+          if (gestationalDays > 6) {
+            gestationalDays = 6;
+          }
         }
         
         if (glucoseReadings.length === 0) {
