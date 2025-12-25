@@ -54,18 +54,20 @@ export function RecommendationPanel({ recommendation, patientName }: Recommendat
       <CardContent className="space-y-6">
         <section>
           <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-2">
-            Análise dos Dados
+            Análise Clínica
           </h3>
-          <p className="text-base leading-relaxed" data-testid="text-analysis">
-            {recommendation.analysis}
-          </p>
+          <div className="text-base leading-relaxed space-y-3" data-testid="text-analysis">
+            {recommendation.analysis.split("\n\n").map((paragraph, index) => (
+              <p key={index}>{paragraph}</p>
+            ))}
+          </div>
         </section>
 
         <Separator />
 
         <section>
           <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-2">
-            Recomendação Principal
+            Conduta Terapêutica
           </h3>
           <div className="bg-muted/50 rounded-md p-4">
             <p className="text-base font-medium leading-relaxed" data-testid="text-main-recommendation">
@@ -76,7 +78,7 @@ export function RecommendationPanel({ recommendation, patientName }: Recommendat
 
         <section>
           <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-2">
-            Justificativa
+            Fundamentação
           </h3>
           <p className="text-base leading-relaxed text-muted-foreground" data-testid="text-justification">
             {recommendation.justification}

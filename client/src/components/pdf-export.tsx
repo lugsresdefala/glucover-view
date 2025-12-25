@@ -103,9 +103,9 @@ function PrintableReport({ evaluation }: { evaluation: StoredEvaluation }) {
                 <th className="border border-gray-300 px-2 py-1 text-center font-medium">Jejum</th>
                 <th className="border border-gray-300 px-2 py-1 text-center font-medium">1h pós-café</th>
                 <th className="border border-gray-300 px-2 py-1 text-center font-medium">Pré-almoço</th>
-                <th className="border border-gray-300 px-2 py-1 text-center font-medium">2h pós-almoço</th>
+                <th className="border border-gray-300 px-2 py-1 text-center font-medium">1h pós-almoço</th>
                 <th className="border border-gray-300 px-2 py-1 text-center font-medium">Pré-jantar</th>
-                <th className="border border-gray-300 px-2 py-1 text-center font-medium">2h pós-jantar</th>
+                <th className="border border-gray-300 px-2 py-1 text-center font-medium">1h pós-jantar</th>
                 <th className="border border-gray-300 px-2 py-1 text-center font-medium">Madrugada</th>
               </tr>
             </thead>
@@ -123,13 +123,13 @@ function PrintableReport({ evaluation }: { evaluation: StoredEvaluation }) {
                     {reading.preAlmoco ?? "-"}
                   </td>
                   <td className="border border-gray-300 px-2 py-1 text-center font-mono">
-                    {typeof reading.posAlmoco2h === "number" ? reading.posAlmoco2h : "-"}
+                    {(reading as any).posAlmoco1h ?? (reading as any).posAlmoco2h ?? "-"}
                   </td>
                   <td className="border border-gray-300 px-2 py-1 text-center font-mono">
                     {reading.preJantar ?? "-"}
                   </td>
                   <td className="border border-gray-300 px-2 py-1 text-center font-mono">
-                    {typeof reading.posJantar2h === "number" ? reading.posJantar2h : "-"}
+                    {(reading as any).posJantar1h ?? (reading as any).posJantar2h ?? "-"}
                   </td>
                   <td className="border border-gray-300 px-2 py-1 text-center font-mono">
                     {reading.madrugada ?? "-"}
@@ -201,13 +201,17 @@ function PrintableReport({ evaluation }: { evaluation: StoredEvaluation }) {
           </div>
 
           <div className="mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Análise</h3>
-            <p className="text-sm text-gray-800 whitespace-pre-line">{recommendation.analysis}</p>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Análise Clínica</h3>
+            <div className="text-sm text-gray-800 space-y-2">
+              {recommendation.analysis.split("\n\n").map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+              ))}
+            </div>
           </div>
 
           <div className="mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Justificativa</h3>
-            <p className="text-sm text-gray-800 whitespace-pre-line">{recommendation.justification}</p>
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Fundamentação</h3>
+            <p className="text-sm text-gray-800">{recommendation.justification}</p>
           </div>
 
           {recommendation.nextSteps && recommendation.nextSteps.length > 0 && (
