@@ -153,8 +153,9 @@ export interface AnalyzeResponse {
 // Metas glicêmicas para diabetes na gestação
 export const glucoseTargets = {
   jejum: { min: 65, max: 95 },           // Jejum: 65-95 mg/dL
-  posPrandial1h: { min: 65, max: 140 },  // 1h pós-prandial: <140 mg/dL
-  posPrandial2h: { min: 65, max: 120 },  // 2h pós-prandial: <120 mg/dL
+  prePrandial: { min: 65, max: 100 },    // Pré-prandial (pré-almoço, pré-jantar): <100 mg/dL
+  madrugada: { min: 65, max: 100 },      // Madrugada (3h): <100 mg/dL
+  posPrandial1h: { min: 65, max: 140 },  // 1h pós-prandial: <140 mg/dL (medição padrão)
 } as const;
 
 // Critical thresholds for alerts
@@ -164,13 +165,17 @@ export const criticalGlucoseThresholds = {
 } as const;
 
 // Monitoring frequency according to guidelines
+// Sem insulina: 4 medidas (jejum, 1h pós-café, 1h pós-almoço, 1h pós-jantar)
+// Com insulina: 7 medidas (adiciona pré-almoço, pré-jantar, madrugada 3h)
 export const monitoringFrequency = {
   initialFollowUp: 4,    // 4 medidas/dia no início do seguimento (sem insulina)
   onInsulin: 7,          // 7 medidas/dia quando em uso de insulina
 } as const;
 
 // Helper to check if glucose is within target
-export function isGlucoseWithinTarget(value: number, type: "jejum" | "posPrandial1h" | "posPrandial2h"): boolean {
+export type GlucoseTargetType = "jejum" | "prePrandial" | "madrugada" | "posPrandial1h";
+
+export function isGlucoseWithinTarget(value: number, type: GlucoseTargetType): boolean {
   const target = glucoseTargets[type];
   return value >= target.min && value <= target.max;
 }
@@ -238,34 +243,23 @@ export function calculateGlucosePercentageInTarget(readings: GlucoseReading[]): 
     }
     if (reading.preAlmoco !== undefined) {
       total++;
-      if (isGlucoseWithinTarget(reading.preAlmoco, "jejum")) inTarget++;
+      if (isGlucoseWithinTarget(reading.preAlmoco, "prePrandial")) inTarget++;
     }
     if (reading.posAlmoco1h !== undefined) {
       total++;
       if (isGlucoseWithinTarget(reading.posAlmoco1h, "posPrandial1h")) inTarget++;
     }
-    // Compatibilidade com dados legados usando 2h pós-almoço
-    // Dados legados podem trazer valores nulos/objetos; só contamos números válidos.
-    if (typeof reading.posAlmoco2h === "number") {
-      total++;
-      if (isGlucoseWithinTarget(reading.posAlmoco2h, "posPrandial2h")) inTarget++;
-    }
     if (reading.preJantar !== undefined) {
       total++;
-      if (isGlucoseWithinTarget(reading.preJantar, "jejum")) inTarget++;
+      if (isGlucoseWithinTarget(reading.preJantar, "prePrandial")) inTarget++;
     }
     if (reading.posJantar1h !== undefined) {
       total++;
       if (isGlucoseWithinTarget(reading.posJantar1h, "posPrandial1h")) inTarget++;
     }
-    // Compatibilidade com dados legados usando 2h pós-jantar
-    if (typeof reading.posJantar2h === "number") {
-      total++;
-      if (isGlucoseWithinTarget(reading.posJantar2h, "posPrandial2h")) inTarget++;
-    }
     if (reading.madrugada !== undefined) {
       total++;
-      if (isGlucoseWithinTarget(reading.madrugada, "jejum")) inTarget++;
+      if (isGlucoseWithinTarget(reading.madrugada, "madrugada")) inTarget++;
     }
   });
 

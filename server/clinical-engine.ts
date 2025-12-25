@@ -414,14 +414,14 @@ export interface ClinicalAnalysis {
 }
 
 function analyzeByPeriod(readings: GlucoseReading[]): GlucoseAnalysisByPeriod[] {
-  const periods: { key: keyof GlucoseReading; name: string; targetType: "jejum" | "posPrandial1h" }[] = [
+  const periods: { key: keyof GlucoseReading; name: string; targetType: "jejum" | "prePrandial" | "madrugada" | "posPrandial1h" }[] = [
     { key: "jejum", name: "Jejum", targetType: "jejum" },
     { key: "posCafe1h", name: "1h pós-café da manhã", targetType: "posPrandial1h" },
-    { key: "preAlmoco", name: "Pré-almoço", targetType: "jejum" },
+    { key: "preAlmoco", name: "Pré-almoço", targetType: "prePrandial" },
     { key: "posAlmoco1h", name: "1h pós-almoço", targetType: "posPrandial1h" },
-    { key: "preJantar", name: "Pré-jantar", targetType: "jejum" },
+    { key: "preJantar", name: "Pré-jantar", targetType: "prePrandial" },
     { key: "posJantar1h", name: "1h pós-jantar", targetType: "posPrandial1h" },
-    { key: "madrugada", name: "Madrugada (3h)", targetType: "jejum" },
+    { key: "madrugada", name: "Madrugada (3h)", targetType: "madrugada" },
   ];
   
   const results: GlucoseAnalysisByPeriod[] = [];

@@ -99,8 +99,13 @@ Preferred communication style: Simple, everyday language.
 
 **Metas Glicêmicas:**
 - Jejum: 65-95 mg/dL
-- 1 hora pós-prandial: <140 mg/dL
-- 2 horas pós-prandial: <120 mg/dL
+- Pré-prandial (pré-almoço, pré-jantar): <100 mg/dL
+- Madrugada (3h): <100 mg/dL
+- 1 hora pós-prandial: <140 mg/dL (medição padrão)
+
+**Frequência de Monitorização:**
+- Sem insulina: 4 medidas/dia (jejum, 1h pós-café, 1h pós-almoço, 1h pós-jantar)
+- Com insulina: 7 medidas/dia (adiciona pré-almoço, pré-jantar, madrugada 3h)
 
 ### Key Design Patterns
 - **Shared Types**: Single source of truth in `shared/schema.ts` for database schema, Zod validation, and TypeScript types
