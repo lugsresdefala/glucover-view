@@ -49,8 +49,23 @@ import {
   Calendar,
   Plus,
   Eye,
-  Clock
+  Clock,
+  Trash2,
+  CheckSquare,
+  Square,
+  X
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { BatchImport } from "@/components/batch-import";
 import { GlucoseInput } from "@/components/glucose-input";
 import { InsulinInput } from "@/components/insulin-input";
@@ -88,6 +103,8 @@ export default function Dashboard() {
   const [showEvaluationForm, setShowEvaluationForm] = useState(false);
   const [showBatchImport, setShowBatchImport] = useState(false);
   const [showPatientList, setShowPatientList] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const { data: patients = [], isLoading: isLoadingPatients } = useQuery<PatientItem[]>({
     queryKey: ["/api/doctor/patients"],
@@ -180,6 +197,67 @@ export default function Dashboard() {
       });
     },
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (params: { id?: number; ids?: number[]; deleteAll?: boolean }) => {
+      if (params.id) {
+        await apiRequest("DELETE", `/api/evaluations/${params.id}`);
+      } else {
+        await apiRequest("DELETE", "/api/evaluations", params);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/evaluations"] });
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+      setCurrentRecommendation(null);
+      toast({
+        title: "Removido com sucesso",
+        description: "As avaliações foram removidas do histórico.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao remover",
+        description: error.message || "Não foi possível remover as avaliações.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleSelection = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setSelectedIds(newSet);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === evaluations.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(evaluations.map(e => e.id)));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.size > 0) {
+      deleteMutation.mutate({ ids: Array.from(selectedIds) });
+    }
+  };
+
+  const handleDeleteAll = () => {
+    deleteMutation.mutate({ deleteAll: true });
+  };
+
+  const handleDeleteSingle = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteMutation.mutate({ id });
+  };
 
   const usesInsulin = form.watch("usesInsulin");
   const weight = form.watch("weight") || 70;
@@ -679,13 +757,114 @@ export default function Dashboard() {
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Avaliações Recentes
-                </CardTitle>
-                <CardDescription>
-                  Últimas análises realizadas
-                </CardDescription>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      Avaliações Recentes
+                    </CardTitle>
+                    <CardDescription>
+                      Últimas análises realizadas
+                    </CardDescription>
+                  </div>
+                  {evaluations.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      {selectionMode ? (
+                        <>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={toggleSelectAll}
+                            data-testid="button-select-all"
+                          >
+                            {selectedIds.size === evaluations.length ? (
+                              <><CheckSquare className="h-4 w-4 mr-1" /> Desmarcar</>
+                            ) : (
+                              <><Square className="h-4 w-4 mr-1" /> Selec. Todos</>
+                            )}
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                disabled={selectedIds.size === 0 || deleteMutation.isPending}
+                                data-testid="button-delete-selected"
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Remover ({selectedIds.size})
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar remoção</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja remover {selectedIds.size} avaliação(ões)? 
+                                  Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteSelected}>
+                                  Confirmar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => { setSelectionMode(false); setSelectedIds(new Set()); }}
+                            data-testid="button-cancel-selection"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setSelectionMode(true)}
+                            data-testid="button-enable-selection"
+                          >
+                            <CheckSquare className="h-4 w-4 mr-1" />
+                            Selecionar
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                className="text-destructive hover:text-destructive"
+                                disabled={deleteMutation.isPending}
+                                data-testid="button-delete-all"
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                Limpar Tudo
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Limpar todo o histórico</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja remover TODAS as {evaluations.length} avaliações? 
+                                  Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteAll} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  Limpar Tudo
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {isLoadingHistory ? (
@@ -703,13 +882,27 @@ export default function Dashboard() {
                     <div className="space-y-3">
                       {[...evaluations].sort((a, b) => 
                         new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-                      ).slice(0, 20).map((evaluation) => (
+                      ).map((evaluation) => (
                         <div
                           key={evaluation.id}
-                          className="flex items-center justify-between gap-3 p-3 rounded-md border hover-elevate cursor-pointer"
-                          onClick={() => handleViewEvaluation(evaluation)}
+                          className={`flex items-center justify-between gap-3 p-3 rounded-md border hover-elevate cursor-pointer ${
+                            selectedIds.has(evaluation.id) ? "bg-muted/50 border-primary" : ""
+                          }`}
+                          onClick={() => selectionMode ? toggleSelection(evaluation.id, { stopPropagation: () => {} } as React.MouseEvent) : handleViewEvaluation(evaluation)}
                           data-testid={`card-evaluation-${evaluation.id}`}
                         >
+                          {selectionMode && (
+                            <div 
+                              className="flex-shrink-0"
+                              onClick={(e) => toggleSelection(evaluation.id, e)}
+                            >
+                              {selectedIds.has(evaluation.id) ? (
+                                <CheckSquare className="h-5 w-5 text-primary" />
+                              ) : (
+                                <Square className="h-5 w-5 text-muted-foreground" />
+                              )}
+                            </div>
+                          )}
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <Avatar className="h-9 w-9">
                               <AvatarFallback>
@@ -730,9 +923,40 @@ export default function Dashboard() {
                             <span className="text-xs text-muted-foreground hidden sm:block">
                               {formatDate(evaluation.createdAt)}
                             </span>
-                            <Button size="icon" variant="ghost">
-                              <Eye className="h-4 w-4" />
-                            </Button>
+                            {!selectionMode && (
+                              <>
+                                <Button size="icon" variant="ghost">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      size="icon" 
+                                      variant="ghost" 
+                                      className="text-muted-foreground hover:text-destructive"
+                                      onClick={(e) => e.stopPropagation()}
+                                      data-testid={`button-delete-${evaluation.id}`}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Remover avaliação</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Deseja remover a avaliação de {evaluation.patientName}?
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={(e) => handleDeleteSingle(evaluation.id, e)}>
+                                        Remover
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))}

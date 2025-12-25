@@ -774,6 +774,49 @@ export async function registerRoutes(
     }
   });
 
+  // Delete single evaluation
+  app.delete("/api/evaluations/:id", isAuthenticated, async (req: AuthenticatedRequest, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "ID inválido" });
+      }
+      const userId = req.userId;
+      const success = await storage.deleteEvaluation(id, userId);
+      if (!success) {
+        return res.status(404).json({ message: "Avaliação não encontrada" });
+      }
+      res.json({ message: "Avaliação removida com sucesso" });
+    } catch (error) {
+      console.error("Error deleting evaluation:", error);
+      res.status(500).json({ message: "Erro ao remover avaliação" });
+    }
+  });
+
+  // Delete multiple evaluations
+  app.delete("/api/evaluations", isAuthenticated, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { ids, deleteAll } = req.body;
+      const userId = req.userId;
+      
+      if (deleteAll === true) {
+        const count = await storage.deleteAllEvaluations(userId);
+        return res.json({ message: `${count} avaliações removidas com sucesso`, count });
+      }
+      
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "Lista de IDs inválida" });
+      }
+      
+      const numericIds = ids.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+      const count = await storage.deleteEvaluations(numericIds, userId);
+      res.json({ message: `${count} avaliações removidas com sucesso`, count });
+    } catch (error) {
+      console.error("Error deleting evaluations:", error);
+      res.status(500).json({ message: "Erro ao remover avaliações" });
+    }
+  });
+
   // Search evaluations by patient name
   app.get("/api/evaluations/search", isAuthenticated, async (req: AuthenticatedRequest, res) => {
     try {

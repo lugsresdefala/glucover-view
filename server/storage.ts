@@ -23,6 +23,9 @@ export interface IStorage {
     id: number,
     recommendation: ClinicalRecommendation
   ): Promise<StoredEvaluation | undefined>;
+  deleteEvaluation(id: number, userId?: string): Promise<boolean>;
+  deleteEvaluations(ids: number[], userId?: string): Promise<number>;
+  deleteAllEvaluations(userId?: string): Promise<number>;
   
   // Patient operations
   createPatient(email: string, password: string, name: string, phone?: string): Promise<Patient>;
@@ -206,6 +209,43 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return record ? toStoredEvaluation(record) : undefined;
+  }
+
+  async deleteEvaluation(id: number, userId?: string): Promise<boolean> {
+    if (userId) {
+      const result = await db
+        .delete(evaluations)
+        .where(and(eq(evaluations.id, id), eq(evaluations.userId, userId)))
+        .returning();
+      return result.length > 0;
+    }
+    const result = await db.delete(evaluations).where(eq(evaluations.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async deleteEvaluations(ids: number[], userId?: string): Promise<number> {
+    if (ids.length === 0) return 0;
+    if (userId) {
+      const result = await db
+        .delete(evaluations)
+        .where(and(inArray(evaluations.id, ids), eq(evaluations.userId, userId)))
+        .returning();
+      return result.length;
+    }
+    const result = await db.delete(evaluations).where(inArray(evaluations.id, ids)).returning();
+    return result.length;
+  }
+
+  async deleteAllEvaluations(userId?: string): Promise<number> {
+    if (userId) {
+      const result = await db
+        .delete(evaluations)
+        .where(eq(evaluations.userId, userId))
+        .returning();
+      return result.length;
+    }
+    const result = await db.delete(evaluations).returning();
+    return result.length;
   }
 
   // Patient operations
