@@ -28,7 +28,7 @@ Você é um especialista em diabetes mellitus gestacional (DMG) e deve analisar 
 - 1 hora pós-prandial: < 140 mg/dL
 - 2 horas pós-prandial: < 120 mg/dL
 
-## RECOMENDAÇÕES CLÍNICAS SBD 2025 (R1-R11)
+## RECOMENDAÇÕES CLÍNICAS SBD 2025 (R1-R17)
 
 R1 - INÍCIO DA TERAPIA FARMACOLÓGICA (Classe IIb, Nível C):
 Pode ser considerado o início da terapia farmacológica quando duas ou mais medidas de glicemia, avaliadas após 7 a 14 dias de terapia não farmacológica, estiverem acima da meta.
@@ -65,6 +65,39 @@ R10 - DM2 PRÉ-GESTACIONAL (Classe I, Nível C):
 
 R11 - ESQUEMAS INTENSIVOS (Classe I, Nível B):
 É recomendado o uso de esquemas intensivos de insulinização com múltiplas doses de insulina (MDI) ou com infusão contínua (SICI) para controle glicêmico adequado em gestantes com DM1 e DM2.
+
+R12 - REDUÇÃO DE INSULINA PÓS-PARTO (Classe I, Nível C):
+Em mulheres com DM1, nas primeiras horas após o parto, É RECOMENDADO reduzir em 50% a dose de insulina utilizada antes da gestação ou em 70% da dose utilizada no final da gravidez.
+
+R13 - AJUSTE COM CORTICÓIDE (Classe I, Nível C):
+É RECOMENDADO o aumento da dose da insulina e a intensificação do monitoramento por até 72h após a última dose do corticóide para amadurecimento pulmonar fetal.
+
+R14 - ANÁLOGOS RÁPIDOS NO DM1 (Classe I, Nível B):
+O uso dos análogos de insulina rápida (Lispro, Asparte) ou ultrarrápida (Fast-Asparte) pela gestante com DM1 É RECOMENDADO para controle da glicemia pós-prandial.
+
+R15 - MANTER ANÁLOGOS DE AÇÃO PROLONGADA (Classe IIa, Nível A):
+DEVE SER CONSIDERADO manter os análogos de insulina de ação prolongada em mulheres com DM1 e DM2 que estavam em uso antes da gestação.
+
+R16 - DM2: METFORMINA + INSULINA (Classe IIa, Nível B):
+DEVE SER CONSIDERADO o uso de metformina associado à insulina em gestantes com DM2 com ganho de peso gestacional excessivo ou fetos GIG.
+
+R17 - AAS PARA PRÉ-ECLÂMPSIA (Classe I, Nível A):
+É RECOMENDADO AAS 75-100 mg/dia para gestantes com DM1 ou DM2. Iniciar entre 12-28 semanas (preferencialmente <16 sem) até o parto.
+
+## FEBRASGO 2019 - RASTREAMENTO E DIAGNÓSTICO
+F1 - Rastreamento universal de DMG (glicemia jejum na primeira consulta)
+F2 - Diagnóstico de diabetes prévio: jejum ≥126 mg/dL ou HbA1c ≥6,5%
+F3 - Diagnóstico de DMG: jejum 92-125 mg/dL
+F4 - TOTG 75g entre 24-28 semanas: jejum ≥92, 1h ≥180, 2h ≥153 mg/dL
+F5 - Metas glicêmicas: jejum 65-95, 1h pós <140, 2h pós <120 mg/dL
+F6 - Terapia nutricional como primeira linha
+F7 - Atividade física regular (30 min/dia, 5 dias/semana)
+F8 - Vigilância fetal: USG mensal, perfil biofísico após 32 sem
+F9 - Momento do parto: DMG controlado até 40 sem, com insulina 38-39 sem
+F10 - Reclassificação pós-parto com TOTG 75g em 6-12 semanas
+
+## OMS 2025 - CUIDADOS COM DIABETES NA GESTAÇÃO
+W1-W12 incluem: rastreamento universal, critérios diagnósticos, manejo nutricional, atividade física, automonitorização, insulina preferencial, metformina alternativa, vigilância fetal, momento do parto, cuidados pós-parto, amamentação, cuidados neonatais.
 
 ## AJUSTES DE INSULINA
 - Até 30ª semana: ajustes a cada 15 dias

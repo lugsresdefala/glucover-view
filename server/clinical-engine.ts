@@ -2,9 +2,9 @@ import type { PatientEvaluation, GlucoseReading, InsulinRegimen, CriticalAlert }
 import { glucoseTargets, criticalGlucoseThresholds, checkCriticalGlucose } from "@shared/schema";
 
 /**
- * Clinical Engine for Gestational Diabetes Management
+ * Clinical Engine for Diabetes in Pregnancy Management
  * Based on official guidelines:
- * - SBD (Sociedade Brasileira de Diabetes) 2025
+ * - SBD (Sociedade Brasileira de Diabetes) 2025 - R1 to R17
  * - FEBRASGO (Federação Brasileira das Associações de Ginecologia e Obstetrícia) 2019
  * - WHO (World Health Organization) 2025
  */
@@ -46,92 +46,351 @@ export interface ClinicalRule {
   classification: string;
   description: string;
   source: string;
+  category: "DMG" | "DM1" | "DM2" | "ALL";
 }
 
-export const CLINICAL_RULES: Record<string, ClinicalRule> = {
+// =============================================================================
+// SBD 2025 - TODAS AS 17 RECOMENDAÇÕES
+// =============================================================================
+export const SBD_2025_RULES: Record<string, ClinicalRule> = {
   R1: {
-    id: "R1",
-    title: "Início de Terapia Farmacológica",
+    id: "SBD-R1",
+    title: "Início de Terapia Farmacológica no DMG",
     classification: "Classe IIb, Nível C",
-    description: "Pode ser considerado o início da terapia farmacológica na mulher com DMG quando duas ou mais medidas de glicemia, avaliadas após 7 a 14 dias de terapia não farmacológica, estiverem acima da meta.",
-    source: "SBD 2025"
+    description: "PODE SER CONSIDERADO o início da terapia farmacológica na mulher com DMG quando duas ou mais medidas de glicemia, avaliadas após 7 a 14 dias de terapia não farmacológica, estiverem acima da meta. Alternativa: 30% a 50% das medidas alteradas em uma semana.",
+    source: "SBD 2025",
+    category: "DMG"
   },
   R2: {
-    id: "R2",
-    title: "Insulina como Primeira Escolha",
+    id: "SBD-R2",
+    title: "Insulina como Primeira Escolha no DMG",
     classification: "Classe I, Nível A",
-    description: "É recomendada a insulina como terapia farmacológica de primeira escolha para controle glicêmico na mulher com DMG.",
-    source: "SBD 2025"
+    description: "É RECOMENDADA a insulina como terapia farmacológica de primeira escolha para controle glicêmico na mulher com DMG.",
+    source: "SBD 2025",
+    category: "DMG"
   },
   R3: {
-    id: "R3",
-    title: "Critério de Crescimento Fetal",
+    id: "SBD-R3",
+    title: "Critério de Crescimento Fetal para Insulina",
     classification: "Classe IIb, Nível B",
-    description: "O critério de crescimento fetal para início da insulinoterapia pode ser considerado quando a medida da circunferência abdominal fetal for ≥ percentil 75 em USG realizada entre a 29ª e a 33ª semana de gestação.",
-    source: "SBD 2025"
+    description: "O critério de crescimento fetal para início da insulinoterapia, independentemente dos valores da glicose, PODE SER CONSIDERADO quando a medida da circunferência abdominal fetal for ≥ percentil 75 em USG realizada entre a 29ª e a 33ª semana de gestação.",
+    source: "SBD 2025",
+    category: "DMG"
   },
   R4: {
-    id: "R4",
-    title: "Dose Inicial de Insulina",
+    id: "SBD-R4",
+    title: "Dose Inicial de Insulina no DMG",
     classification: "Classe IIb, Nível C",
-    description: "A terapia com insulina para gestantes com DMG pode ser considerada na dose total inicial de 0,5 UI/kg/dia, com ajustes individualizados baseados no monitoramento diário da glicose a cada 1-2 semanas.",
-    source: "SBD 2025"
+    description: "A terapia com insulina para gestantes com DMG PODE SER CONSIDERADA na dose total inicial de 0,5 UI/kg/dia, com ajustes individualizados baseados no monitoramento diário da glicose a cada 1-2 semanas.",
+    source: "SBD 2025",
+    category: "DMG"
   },
   R5: {
-    id: "R5",
-    title: "Tipos de Insulina",
+    id: "SBD-R5",
+    title: "Tipos de Insulina Aprovados",
     classification: "Classe IIa, Nível C",
-    description: "Deve ser considerado o uso de insulinas humanas NPH/Regular, e de análogos de insulina aprovados para uso na gestação, como opções para o tratamento farmacológico do DMG.",
-    source: "SBD 2025"
+    description: "DEVE SER CONSIDERADO o uso de insulinas humanas NPH/Regular, e de análogos de insulina aprovados para uso na gestação. Categoria A (ANVISA): Asparte, Fast-Asparte, Detemir, Degludeca. Categoria B: Regular, NPH, Lispro. Categoria C: Glargina, Glulisina (usar com cautela).",
+    source: "SBD 2025",
+    category: "ALL"
   },
   R6: {
-    id: "R6",
-    title: "Análogos de Ação Rápida",
+    id: "SBD-R6",
+    title: "Análogos de Ação Rápida para Pós-prandial",
     classification: "Classe IIa, Nível B",
-    description: "Deve ser considerada a indicação de análogos de insulina de ação rápida ou ultrarrápida, aprovados para uso na gestação, em casos de DMG que apresentem difícil controle das excursões glicêmicas pós-prandiais.",
-    source: "SBD 2025"
+    description: "DEVE SER CONSIDERADA a indicação de análogos de insulina de ação rápida ou ultrarrápida, aprovados para uso na gestação, em casos de DMG que apresentem difícil controle das excursões glicêmicas pós-prandiais.",
+    source: "SBD 2025",
+    category: "DMG"
   },
   R7: {
-    id: "R7",
-    title: "Metformina como Alternativa",
+    id: "SBD-R7",
+    title: "Metformina como Alternativa no DMG",
     classification: "Classe I, Nível B",
-    description: "É recomendado o uso da metformina em mulheres com DMG sem controle glicêmico adequado com medidas não farmacológicas, como alternativa terapêutica, na inviabilidade do uso de insulina.",
-    source: "SBD 2025"
+    description: "É RECOMENDADO o uso da metformina em mulheres com DMG sem controle glicêmico adequado com medidas não farmacológicas, como alternativa terapêutica, na inviabilidade do uso de insulina. Contraindicada em fetos abaixo do percentil 50 ou CIUR.",
+    source: "SBD 2025",
+    category: "DMG"
   },
   R8: {
-    id: "R8",
-    title: "Associação Metformina + Insulina",
+    id: "SBD-R8",
+    title: "Associação Metformina + Insulina no DMG",
     classification: "Classe IIa, Nível B",
-    description: "Deve ser considerada a associação de metformina com insulina em gestantes com DMG que necessitem altas doses de insulina (>2 UI/kg/dia) sem controle glicêmico adequado ou com ganho excessivo de peso materno ou fetal.",
-    source: "SBD 2025"
+    description: "DEVE SER CONSIDERADA a associação de metformina com insulina em gestantes com DMG que necessitem altas doses de insulina (>2 UI/kg/dia) sem controle glicêmico adequado ou com ganho excessivo de peso materno ou fetal.",
+    source: "SBD 2025",
+    category: "DMG"
   },
   R9: {
-    id: "R9",
-    title: "Glibenclamida NÃO Recomendada",
+    id: "SBD-R9",
+    title: "Glibenclamida CONTRAINDICADA",
     classification: "Classe III, Nível A",
-    description: "O uso de glibenclamida NÃO é recomendado para gestante com DMG, devido ao aumento de risco de macrossomia e hipoglicemia neonatal.",
-    source: "SBD 2025"
+    description: "O uso de glibenclamida NÃO É RECOMENDADO para gestante com DMG, devido ao aumento de risco de macrossomia e hipoglicemia neonatal. CONTRAINDICAÇÃO ABSOLUTA.",
+    source: "SBD 2025",
+    category: "DMG"
   },
   R10: {
-    id: "R10",
-    title: "DM2 Pré-gestacional",
+    id: "SBD-R10",
+    title: "DM2: Suspender Antidiabéticos Orais",
     classification: "Classe I, Nível C",
-    description: "É recomendado que gestantes com DM2 interrompam o tratamento não insulínico antes ou logo após o início da gestação, quando estiver garantida a imediata substituição pela insulinoterapia.",
-    source: "SBD 2025"
+    description: "É RECOMENDADO que gestantes com DM2 interrompam o tratamento não insulínico antes ou logo após o início da gestação, quando estiver garantida a imediata substituição pela insulinoterapia.",
+    source: "SBD 2025",
+    category: "DM2"
   },
   R11: {
-    id: "R11",
-    title: "Esquemas Intensivos de Insulinização",
+    id: "SBD-R11",
+    title: "Esquemas Intensivos em DM1/DM2",
     classification: "Classe I, Nível B",
-    description: "É recomendado o uso de esquemas intensivos de insulinização com múltiplas doses de insulina (MDI) ou com infusão contínua (SICI) para se obter um controle glicêmico adequado em gestantes com DM1 e DM2.",
-    source: "SBD 2025"
+    description: "É RECOMENDADO o uso de esquemas intensivos de insulinização com múltiplas doses de insulina (MDI) ou com infusão contínua (SICI) para controle glicêmico adequado em gestantes com DM1 e DM2.",
+    source: "SBD 2025",
+    category: "ALL"
+  },
+  R12: {
+    id: "SBD-R12",
+    title: "DM1: Redução de Insulina Pós-parto",
+    classification: "Classe I, Nível C",
+    description: "Nas primeiras horas após o parto, em mulheres com DM1, É RECOMENDADO reduzir em 50% a dose de insulina utilizada antes da gestação ou no primeiro trimestre, ou em 70% da dose utilizada no final da gravidez. Ajustes adicionais são necessários ao longo do puerpério.",
+    source: "SBD 2025",
+    category: "DM1"
+  },
+  R13: {
+    id: "SBD-R13",
+    title: "Ajuste de Insulina com Corticóide",
+    classification: "Classe I, Nível C",
+    description: "É RECOMENDADO o aumento da dose da insulina e a intensificação do monitoramento da glicose por até 72 horas após a última dose do corticóide para a gestante que tenha indicação de uso de corticosteróide para promover amadurecimento pulmonar fetal.",
+    source: "SBD 2025",
+    category: "ALL"
+  },
+  R14: {
+    id: "SBD-R14",
+    title: "DM1: Análogos Rápidos para Pós-prandial",
+    classification: "Classe I, Nível B",
+    description: "O uso dos análogos de insulina rápida (Lispro, Asparte) ou ultrarrápida (Fast-Asparte) pela gestante com DM1 É RECOMENDADO para controle da glicemia pós-prandial, por estarem associados a menor risco de hipoglicemia.",
+    source: "SBD 2025",
+    category: "DM1"
+  },
+  R15: {
+    id: "SBD-R15",
+    title: "Manter Análogos de Ação Prolongada",
+    classification: "Classe IIa, Nível A",
+    description: "DEVE SER CONSIDERADO manter os análogos de insulina de ação prolongada em mulheres com DM1 e DM2 que estavam em uso destes fármacos antes da gestação. Detemir e Degludeca são Categoria A. Glargina é Categoria C (usar com cautela).",
+    source: "SBD 2025",
+    category: "ALL"
+  },
+  R16: {
+    id: "SBD-R16",
+    title: "DM2: Metformina + Insulina",
+    classification: "Classe IIa, Nível B",
+    description: "DEVE SER CONSIDERADO o uso de metformina associado à insulina em gestantes com DM2, principalmente nas que apresentem ganho de peso gestacional excessivo ou fetos grandes para a idade gestacional.",
+    source: "SBD 2025",
+    category: "DM2"
+  },
+  R17: {
+    id: "SBD-R17",
+    title: "AAS para Prevenção de Pré-eclâmpsia",
+    classification: "Classe I, Nível A",
+    description: "É RECOMENDADO indicar o ácido acetilsalicílico (AAS) em doses de 75 a 100 mg/dia para gestantes com DM1 ou DM2 pré-gestacional. O uso deve ser iniciado entre 12 e 28 semanas de gestação, preferencialmente antes da 16ª semana, e mantido até o parto.",
+    source: "SBD 2025",
+    category: "ALL"
   }
+};
+
+// =============================================================================
+// FEBRASGO 2019 - RASTREAMENTO E DIAGNÓSTICO (Femina 47(11):786-96)
+// =============================================================================
+export const FEBRASGO_2019_RULES: Record<string, ClinicalRule> = {
+  F1: {
+    id: "FEBRASGO-F1",
+    title: "Rastreamento Universal de DMG",
+    classification: "Recomendação A",
+    description: "É RECOMENDADO o rastreamento universal de DMG em todas as gestantes. A glicemia de jejum deve ser solicitada na primeira consulta de pré-natal, preferencialmente antes de 20 semanas.",
+    source: "FEBRASGO 2019",
+    category: "DMG"
+  },
+  F2: {
+    id: "FEBRASGO-F2",
+    title: "Diagnóstico de Diabetes Prévio",
+    classification: "Recomendação A",
+    description: "Glicemia de jejum ≥126 mg/dL ou HbA1c ≥6,5% na primeira consulta indica diabetes prévio (DM1 ou DM2), não DMG. Confirmar com segunda dosagem se assintomática.",
+    source: "FEBRASGO 2019",
+    category: "ALL"
+  },
+  F3: {
+    id: "FEBRASGO-F3",
+    title: "Critério Diagnóstico de DMG - Jejum",
+    classification: "Recomendação A",
+    description: "Glicemia de jejum entre 92-125 mg/dL na primeira consulta de pré-natal é diagnóstica de DMG. Não é necessário TOTG para confirmar.",
+    source: "FEBRASGO 2019",
+    category: "DMG"
+  },
+  F4: {
+    id: "FEBRASGO-F4",
+    title: "TOTG 75g entre 24-28 semanas",
+    classification: "Recomendação A",
+    description: "Gestantes com glicemia de jejum <92 mg/dL devem realizar TOTG 75g entre 24-28 semanas. Critérios diagnósticos de DMG: jejum ≥92, 1h ≥180, 2h ≥153 mg/dL. Um valor alterado é suficiente para diagnóstico.",
+    source: "FEBRASGO 2019",
+    category: "DMG"
+  },
+  F5: {
+    id: "FEBRASGO-F5",
+    title: "Metas Glicêmicas no DMG",
+    classification: "Recomendação B",
+    description: "Metas glicêmicas no DMG: Jejum 65-95 mg/dL, 1h pós-prandial <140 mg/dL, 2h pós-prandial <120 mg/dL. Monitorização com glicemia capilar 4-7 vezes/dia.",
+    source: "FEBRASGO 2019",
+    category: "DMG"
+  },
+  F6: {
+    id: "FEBRASGO-F6",
+    title: "Terapia Nutricional Inicial",
+    classification: "Recomendação A",
+    description: "A terapia nutricional é a primeira linha de tratamento no DMG. Deve ser individualizada, com 30-35 kcal/kg de peso ideal, distribuição de carboidratos em 40-45% do VCT, priorizando baixo índice glicêmico.",
+    source: "FEBRASGO 2019",
+    category: "DMG"
+  },
+  F7: {
+    id: "FEBRASGO-F7",
+    title: "Atividade Física na Gestação",
+    classification: "Recomendação B",
+    description: "É RECOMENDADA atividade física regular (30 min/dia, 5 dias/semana) para gestantes com DMG sem contraindicações obstétricas. Caminhada e exercícios de baixo impacto são preferíveis.",
+    source: "FEBRASGO 2019",
+    category: "DMG"
+  },
+  F8: {
+    id: "FEBRASGO-F8",
+    title: "Vigilância Fetal no DMG",
+    classification: "Recomendação B",
+    description: "A vigilância fetal deve incluir: USG mensal para crescimento fetal, perfil biofísico fetal a partir de 32 semanas se DMG com insulina, e cardiotocografia semanal a partir de 36 semanas.",
+    source: "FEBRASGO 2019",
+    category: "DMG"
+  },
+  F9: {
+    id: "FEBRASGO-F9",
+    title: "Momento do Parto no DMG",
+    classification: "Recomendação B",
+    description: "DMG bem controlado sem complicações: aguardar parto espontâneo até 40 semanas. DMG com insulina ou mal controlado: indução entre 38-39 semanas. Macrossomia >4500g: discutir cesariana.",
+    source: "FEBRASGO 2019",
+    category: "DMG"
+  },
+  F10: {
+    id: "FEBRASGO-F10",
+    title: "Reclassificação Pós-parto",
+    classification: "Recomendação A",
+    description: "Todas as mulheres com DMG devem realizar TOTG 75g entre 6-12 semanas após o parto para reclassificação. Realizar rastreamento anual de DM2 posteriormente.",
+    source: "FEBRASGO 2019",
+    category: "DMG"
+  }
+};
+
+// =============================================================================
+// OMS/WHO 2025 - CUIDADOS COM DIABETES NA GESTAÇÃO (ISBN 9789240117044)
+// =============================================================================
+export const WHO_2025_RULES: Record<string, ClinicalRule> = {
+  W1: {
+    id: "WHO-W1",
+    title: "Rastreamento de Hiperglicemia",
+    classification: "Forte recomendação",
+    description: "É RECOMENDADO rastrear hiperglicemia em todas as gestantes. Em contextos de alta prevalência, rastrear na primeira consulta pré-natal e repetir entre 24-28 semanas se normal.",
+    source: "OMS 2025",
+    category: "ALL"
+  },
+  W2: {
+    id: "WHO-W2",
+    title: "Critérios Diagnósticos WHO",
+    classification: "Forte recomendação",
+    description: "Critérios diagnósticos de DMG (TOTG 75g): Jejum ≥92 mg/dL, 1h ≥180 mg/dL, 2h ≥153 mg/dL. Diabetes na gestação: Jejum ≥126 mg/dL ou 2h ≥200 mg/dL.",
+    source: "OMS 2025",
+    category: "ALL"
+  },
+  W3: {
+    id: "WHO-W3",
+    title: "Manejo Nutricional",
+    classification: "Forte recomendação",
+    description: "Aconselhamento nutricional individualizado É RECOMENDADO para todas as gestantes com hiperglicemia. Dieta deve ser culturalmente apropriada e focar em carboidratos de baixo índice glicêmico.",
+    source: "OMS 2025",
+    category: "ALL"
+  },
+  W4: {
+    id: "WHO-W4",
+    title: "Atividade Física",
+    classification: "Recomendação condicional",
+    description: "Atividade física regular DEVE SER CONSIDERADA para gestantes com hiperglicemia sem contraindicações. Exercícios de intensidade moderada por pelo menos 150 min/semana.",
+    source: "OMS 2025",
+    category: "ALL"
+  },
+  W5: {
+    id: "WHO-W5",
+    title: "Automonitorização Glicêmica",
+    classification: "Forte recomendação",
+    description: "É RECOMENDADO automonitorização da glicemia capilar para gestantes com diabetes em uso de insulina. Frequência mínima: jejum e 1-2h pós-prandial nas principais refeições.",
+    source: "OMS 2025",
+    category: "ALL"
+  },
+  W6: {
+    id: "WHO-W6",
+    title: "Insulina como Tratamento Preferencial",
+    classification: "Forte recomendação",
+    description: "É RECOMENDADA a insulina como tratamento farmacológico de primeira linha para hiperglicemia na gestação quando metas glicêmicas não são atingidas com medidas não farmacológicas.",
+    source: "OMS 2025",
+    category: "ALL"
+  },
+  W7: {
+    id: "WHO-W7",
+    title: "Metformina como Alternativa",
+    classification: "Recomendação condicional",
+    description: "Metformina PODE SER CONSIDERADA como alternativa à insulina no DMG quando insulina não estiver disponível, for recusada pela paciente, ou houver dificuldade de acesso/administração.",
+    source: "OMS 2025",
+    category: "DMG"
+  },
+  W8: {
+    id: "WHO-W8",
+    title: "Vigilância Fetal",
+    classification: "Recomendação condicional",
+    description: "Vigilância fetal intensificada DEVE SER CONSIDERADA para gestantes com diabetes mal controlado ou complicações. Inclui USG para crescimento fetal e avaliação de bem-estar fetal.",
+    source: "OMS 2025",
+    category: "ALL"
+  },
+  W9: {
+    id: "WHO-W9",
+    title: "Momento do Parto",
+    classification: "Recomendação condicional",
+    description: "Indução do parto entre 38-40 semanas DEVE SER CONSIDERADA para gestantes com diabetes em uso de insulina. Cesariana eletiva não é indicada apenas por diabetes.",
+    source: "OMS 2025",
+    category: "ALL"
+  },
+  W10: {
+    id: "WHO-W10",
+    title: "Cuidados Pós-parto",
+    classification: "Forte recomendação",
+    description: "É RECOMENDADO rastreamento pós-parto (TOTG 75g em 6-12 semanas) para mulheres que tiveram DMG. Aconselhamento sobre risco futuro de DM2 e medidas preventivas.",
+    source: "OMS 2025",
+    category: "DMG"
+  },
+  W11: {
+    id: "WHO-W11",
+    title: "Amamentação",
+    classification: "Forte recomendação",
+    description: "É RECOMENDADO amamentação exclusiva para bebês de mães com diabetes. Pode ajudar no controle glicêmico materno e reduzir risco de obesidade infantil.",
+    source: "OMS 2025",
+    category: "ALL"
+  },
+  W12: {
+    id: "WHO-W12",
+    title: "Cuidados Neonatais",
+    classification: "Forte recomendação",
+    description: "Recém-nascidos de mães com diabetes devem ser monitorados para hipoglicemia neonatal nas primeiras 24-48h de vida. Alimentação precoce é recomendada.",
+    source: "OMS 2025",
+    category: "ALL"
+  }
+};
+
+// Combine all rules for easy access
+export const CLINICAL_RULES: Record<string, ClinicalRule> = {
+  ...SBD_2025_RULES,
+  ...FEBRASGO_2019_RULES,
+  ...WHO_2025_RULES
 };
 
 export interface ClinicalAnalysis {
   patientName: string;
   gestationalAge: string;
   weight: number;
+  diabetesType: "DMG" | "DM1" | "DM2";
   totalReadings: number;
   totalDaysAnalyzed: number;
   percentInTarget: number;
@@ -202,6 +461,7 @@ function analyzeByPeriod(readings: GlucoseReading[]): GlucoseAnalysisByPeriod[] 
 }
 
 function calculateInsulinDose(weight: number, readings: GlucoseReading[], currentRegimens: InsulinRegimen[]): InsulinDoseCalculation {
+  // SBD-R4: 0.5 UI/kg/dia
   const initialTotalDose = Math.round(weight * 0.5);
   const basalDose = Math.round(initialTotalDose * 0.5);
   const bolusDose = initialTotalDose - basalDose;
@@ -295,40 +555,80 @@ function determineTriggeredRules(
   hasCAFPercentile75: boolean,
   criticalAlerts: CriticalAlert[],
   currentTotalInsulinDose: number,
-  weight: number
+  weight: number,
+  diabetesType: "DMG" | "DM1" | "DM2"
 ): ClinicalRule[] {
   const rules: ClinicalRule[] = [];
   
-  if (!usesInsulin && percentAbove >= 30) {
-    rules.push(CLINICAL_RULES.R1);
-    rules.push(CLINICAL_RULES.R2);
+  // SBD 2025 Rules
+  if (diabetesType === "DMG") {
+    if (!usesInsulin && percentAbove >= 30) {
+      rules.push(SBD_2025_RULES.R1);
+      rules.push(SBD_2025_RULES.R2);
+      rules.push(FEBRASGO_2019_RULES.F6); // Terapia nutricional
+      rules.push(WHO_2025_RULES.W6); // Insulina preferencial
+    }
+    
+    if (hasCAFPercentile75 && gestationalWeeks >= 29 && gestationalWeeks <= 33 && !usesInsulin) {
+      rules.push(SBD_2025_RULES.R3);
+    }
+    
+    if (!usesInsulin && percentAbove >= 30) {
+      rules.push(SBD_2025_RULES.R7); // Metformina alternativa
+      rules.push(WHO_2025_RULES.W7);
+    }
+    
+    const insulinDosePerKg = currentTotalInsulinDose / weight;
+    if (usesInsulin && insulinDosePerKg > 2 && percentAbove >= 30) {
+      rules.push(SBD_2025_RULES.R8);
+    }
+    
+    // Always add R9 as reminder (glibenclamida contraindicada)
+    if (!usesInsulin && percentAbove >= 30) {
+      rules.push(SBD_2025_RULES.R9);
+    }
   }
   
-  if (hasCAFPercentile75 && gestationalWeeks >= 29 && gestationalWeeks <= 33 && !usesInsulin) {
-    rules.push(CLINICAL_RULES.R3);
+  if (diabetesType === "DM2") {
+    rules.push(SBD_2025_RULES.R10);
+    rules.push(SBD_2025_RULES.R11);
+    rules.push(SBD_2025_RULES.R16);
+    rules.push(SBD_2025_RULES.R17); // AAS
   }
   
+  if (diabetesType === "DM1") {
+    rules.push(SBD_2025_RULES.R11);
+    rules.push(SBD_2025_RULES.R14);
+    rules.push(SBD_2025_RULES.R15);
+    rules.push(SBD_2025_RULES.R17); // AAS
+  }
+  
+  // Common rules
   if (usesInsulin || percentAbove >= 30) {
-    rules.push(CLINICAL_RULES.R4);
-  }
-  
-  if (usesInsulin) {
-    rules.push(CLINICAL_RULES.R5);
+    rules.push(SBD_2025_RULES.R4);
+    rules.push(SBD_2025_RULES.R5);
   }
   
   const hasHighPostprandial = percentAbove >= 50;
   if (usesInsulin && hasHighPostprandial) {
-    rules.push(CLINICAL_RULES.R6);
+    rules.push(SBD_2025_RULES.R6);
   }
   
-  if (!usesInsulin && percentAbove >= 30) {
-    rules.push(CLINICAL_RULES.R7);
+  // FEBRASGO rules
+  rules.push(FEBRASGO_2019_RULES.F5); // Metas glicêmicas
+  
+  if (gestationalWeeks >= 32) {
+    rules.push(FEBRASGO_2019_RULES.F8); // Vigilância fetal
+    rules.push(WHO_2025_RULES.W8);
   }
   
-  const insulinDosePerKg = currentTotalInsulinDose / weight;
-  if (usesInsulin && insulinDosePerKg > 2 && percentAbove >= 30) {
-    rules.push(CLINICAL_RULES.R8);
+  if (gestationalWeeks >= 36) {
+    rules.push(FEBRASGO_2019_RULES.F9); // Momento do parto
+    rules.push(WHO_2025_RULES.W9);
   }
+  
+  // WHO rules
+  rules.push(WHO_2025_RULES.W5); // Automonitorização
   
   return rules;
 }
@@ -343,6 +643,7 @@ function calculateCurrentTotalInsulinDose(regimens: InsulinRegimen[]): number {
 
 export function generateClinicalAnalysis(evaluation: PatientEvaluation): ClinicalAnalysis {
   const { glucoseReadings, weight, gestationalWeeks, gestationalDays, usesInsulin, insulinRegimens, patientName } = evaluation;
+  const diabetesType = (evaluation.diabetesType as "DMG" | "DM1" | "DM2") || "DMG";
   
   const gestationalAge = `${gestationalWeeks} semanas e ${gestationalDays} dias`;
   const totalDaysAnalyzed = glucoseReadings.length;
@@ -376,7 +677,8 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
     hasCAFPercentile75,
     criticalAlerts,
     currentTotalInsulinDose,
-    weight
+    weight,
+    diabetesType
   );
   
   let urgencyLevel: "info" | "warning" | "critical" = "info";
@@ -390,7 +692,11 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   
   const insulinCalculation = calculateInsulinDose(weight, glucoseReadings, insulinRegimens || []);
   
+  const diabetesTypeLabel = diabetesType === "DMG" ? "Diabetes Mellitus Gestacional" : 
+                            diabetesType === "DM1" ? "Diabetes Mellitus tipo 1" : "Diabetes Mellitus tipo 2";
+  
   let technicalSummary = `Paciente ${patientName}, ${gestationalAge} de idade gestacional, peso ${weight} kg. `;
+  technicalSummary += `Diagnóstico: ${diabetesTypeLabel}. `;
   technicalSummary += `Análise de ${totalDaysAnalyzed} dias com ${totalReadings} medidas glicêmicas. `;
   technicalSummary += `Percentual dentro da meta: ${percentInTarget}%. `;
   technicalSummary += `Percentual acima da meta: ${percentAboveTarget}%. `;
@@ -412,7 +718,7 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   let insulinRecommendation = "";
   
   if (criticalAlerts.some(a => a.type === "hypoglycemia")) {
-    recommendedActions.push("URGENTE: Hipoglicemia detectada - revisar doses de insulina e padrão alimentar imediatamente");
+    recommendedActions.push("URGENTE: Hipoglicemia detectada - revisar doses de insulina e padrão alimentar imediatamente (SBD-R4)");
     recommendedActions.push("Considerar redução de 10-20% na dose de insulina do período relacionado");
     recommendedActions.push("Orientar paciente sobre sintomas e tratamento de hipoglicemia");
   }
@@ -424,60 +730,68 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   }
   
   if (!usesInsulin && percentAboveTarget >= 30) {
-    insulinRecommendation = `INDICAÇÃO DE INSULINOTERAPIA (${CLINICAL_RULES.R1.id}, ${CLINICAL_RULES.R2.id} - ${CLINICAL_RULES.R1.classification}): `;
+    insulinRecommendation = `INDICAÇÃO DE INSULINOTERAPIA (SBD-R1, SBD-R2): `;
     insulinRecommendation += `${percentAboveTarget}% das medidas acima da meta após terapia não-farmacológica. `;
-    insulinRecommendation += `Dose inicial sugerida: ${insulinCalculation.initialTotalDose} UI/dia (0,5 UI/kg × ${weight} kg) conforme ${CLINICAL_RULES.R4.id}. `;
-    insulinRecommendation += `Distribuição sugerida: NPH ${insulinCalculation.distribution.nphManha} UI manhã + ${insulinCalculation.distribution.nphNoite} UI ao deitar (${CLINICAL_RULES.R5.id}). `;
+    insulinRecommendation += `Dose inicial sugerida: ${insulinCalculation.initialTotalDose} UI/dia (0,5 UI/kg × ${weight} kg) conforme SBD-R4. `;
+    insulinRecommendation += `Distribuição: NPH ${insulinCalculation.distribution.nphManha} UI manhã + ${insulinCalculation.distribution.nphNoite} UI ao deitar (SBD-R5). `;
     
     if (analysisByPeriod.some(p => p.period.includes("pós") && p.percentAbove >= 50)) {
-      insulinRecommendation += `Adicionar insulina rápida/ultrarrápida antes das refeições com excursões pós-prandiais (${CLINICAL_RULES.R6.id}): `;
+      insulinRecommendation += `Adicionar insulina rápida antes das refeições (SBD-R6): `;
       insulinRecommendation += `Café ${insulinCalculation.distribution.rapidaManha} UI, Almoço ${insulinCalculation.distribution.rapidaAlmoco} UI, Jantar ${insulinCalculation.distribution.rapidaJantar} UI. `;
     }
     
-    insulinRecommendation += `Metformina pode ser considerada como alternativa se insulina inviável (${CLINICAL_RULES.R7.id} - ${CLINICAL_RULES.R7.classification}). `;
-    insulinRecommendation += `ATENÇÃO: Glibenclamida é CONTRAINDICADA (${CLINICAL_RULES.R9.id} - ${CLINICAL_RULES.R9.classification}).`;
+    insulinRecommendation += `Metformina como alternativa se insulina inviável (SBD-R7, WHO-W7). `;
+    insulinRecommendation += `ATENÇÃO: Glibenclamida CONTRAINDICADA (SBD-R9 - Classe III, Nível A).`;
     
-    recommendedActions.push("Iniciar insulinoterapia conforme dose calculada");
-    recommendedActions.push("Orientar técnica de aplicação e automonitorização");
+    recommendedActions.push("Iniciar insulinoterapia conforme dose calculada (SBD-R2, SBD-R4)");
+    recommendedActions.push("Orientar técnica de aplicação e automonitorização (WHO-W5)");
     recommendedActions.push("Reavaliar em 7-14 dias para ajuste de dose");
   } else if (usesInsulin) {
     const insulinDosePerKg = currentTotalInsulinDose / weight;
     
     if (insulinCalculation.adjustmentNeeded) {
-      insulinRecommendation = `AJUSTE DE INSULINOTERAPIA (${CLINICAL_RULES.R4.id}): `;
+      insulinRecommendation = `AJUSTE DE INSULINOTERAPIA (SBD-R4): `;
       insulinCalculation.specificAdjustments.forEach(adj => {
         insulinRecommendation += adj + " ";
       });
       
       if (insulinDosePerKg > 2 && percentAboveTarget >= 30) {
-        insulinRecommendation += `Dose atual >2 UI/kg/dia sem controle adequado - considerar associação com metformina (${CLINICAL_RULES.R8.id} - ${CLINICAL_RULES.R8.classification}). `;
+        insulinRecommendation += `Dose atual >2 UI/kg/dia sem controle adequado - considerar associação com metformina (SBD-R8). `;
       }
       
       if (gestationalWeeks >= 30) {
-        recommendedActions.push("Reavaliar em 7 dias (ajustes semanais após 30 semanas)");
+        recommendedActions.push("Reavaliar em 7 dias (ajustes semanais após 30 semanas - SBD)");
       } else {
-        recommendedActions.push("Reavaliar em 14 dias (ajustes quinzenais até 30 semanas)");
+        recommendedActions.push("Reavaliar em 14 dias (ajustes quinzenais até 30 semanas - SBD)");
       }
     } else {
       insulinRecommendation = "Manter esquema de insulinoterapia atual. Controle glicêmico adequado.";
       recommendedActions.push("Manter monitoramento glicêmico e conduta atual");
     }
   } else {
-    insulinRecommendation = "Manter terapia não-farmacológica (dieta + atividade física). Controle glicêmico adequado.";
-    recommendedActions.push("Manter orientação nutricional e atividade física");
-    recommendedActions.push("Continuar automonitorização glicêmica");
+    insulinRecommendation = "Manter terapia não-farmacológica (dieta + atividade física). Controle glicêmico adequado (FEBRASGO-F6, FEBRASGO-F7).";
+    recommendedActions.push("Manter orientação nutricional (FEBRASGO-F6)");
+    recommendedActions.push("Manter atividade física regular (FEBRASGO-F7, WHO-W4)");
+    recommendedActions.push("Continuar automonitorização glicêmica (WHO-W5)");
   }
   
   if (gestationalWeeks >= 30) {
-    recommendedActions.push("Intensificar vigilância fetal (após 30 semanas)");
+    recommendedActions.push("Intensificar vigilância fetal (FEBRASGO-F8, WHO-W8)");
   }
   
-  const guidelineSources = ["SBD 2025", "FEBRASGO 2019", "OMS 2025"];
+  if (diabetesType === "DM1" || diabetesType === "DM2") {
+    if (gestationalWeeks >= 12 && gestationalWeeks <= 28) {
+      recommendedActions.push("Iniciar AAS 75-100 mg/dia para prevenção de pré-eclâmpsia (SBD-R17)");
+    }
+  }
+  
+  const guidelineSources = ["SBD 2025 (R1-R17)", "FEBRASGO 2019 (F1-F10)", "OMS 2025 (W1-W12)"];
   
   return {
     patientName,
     gestationalAge,
     weight,
+    diabetesType,
     totalReadings,
     totalDaysAnalyzed,
     percentInTarget,
@@ -503,6 +817,7 @@ export function formatAnalysisForAI(analysis: ClinicalAnalysis): string {
   
   prompt += `### IDENTIFICAÇÃO\n`;
   prompt += `- **Paciente:** ${analysis.patientName}\n`;
+  prompt += `- **Diagnóstico:** ${analysis.diabetesType === "DMG" ? "Diabetes Mellitus Gestacional" : analysis.diabetesType === "DM1" ? "DM tipo 1" : "DM tipo 2"}\n`;
   prompt += `- **Idade Gestacional:** ${analysis.gestationalAge}\n`;
   prompt += `- **Peso:** ${analysis.weight} kg\n`;
   prompt += `- **Usa Insulina:** ${analysis.usesInsulin ? "SIM" : "NÃO"}\n\n`;
@@ -532,7 +847,7 @@ export function formatAnalysisForAI(analysis: ClinicalAnalysis): string {
   
   if (analysis.insulinCalculation) {
     const ic = analysis.insulinCalculation;
-    prompt += `\n### CÁLCULO DE DOSE DE INSULINA (0,5 UI/kg/dia - ${CLINICAL_RULES.R4.id})\n`;
+    prompt += `\n### CÁLCULO DE DOSE DE INSULINA (0,5 UI/kg/dia - SBD-R4)\n`;
     prompt += `- **Dose total inicial:** ${ic.initialTotalDose} UI/dia\n`;
     prompt += `- **Basal (50%):** ${ic.basalDose} UI (NPH manhã ${ic.distribution.nphManha} UI + noite ${ic.distribution.nphNoite} UI)\n`;
     prompt += `- **Bolus (50%):** ${ic.bolusDose} UI (café ${ic.distribution.rapidaManha} UI + almoço ${ic.distribution.rapidaAlmoco} UI + jantar ${ic.distribution.rapidaJantar} UI)\n`;
@@ -545,11 +860,31 @@ export function formatAnalysisForAI(analysis: ClinicalAnalysis): string {
     }
   }
   
-  prompt += `\n### REGRAS CLÍNICAS ACIONADAS (${analysis.guidelineSources[0]})\n`;
+  prompt += `\n### REGRAS CLÍNICAS ACIONADAS\n`;
   if (analysis.rulesTriggered.length > 0) {
-    analysis.rulesTriggered.forEach(rule => {
-      prompt += `- **${rule.id}** (${rule.classification}): ${rule.title}\n`;
-    });
+    // Group by source
+    const sbdRules = analysis.rulesTriggered.filter(r => r.source === "SBD 2025");
+    const febrasgoRules = analysis.rulesTriggered.filter(r => r.source === "FEBRASGO 2019");
+    const whoRules = analysis.rulesTriggered.filter(r => r.source === "OMS 2025");
+    
+    if (sbdRules.length > 0) {
+      prompt += `\n**SBD 2025:**\n`;
+      sbdRules.forEach(rule => {
+        prompt += `- **${rule.id}** (${rule.classification}): ${rule.title}\n`;
+      });
+    }
+    if (febrasgoRules.length > 0) {
+      prompt += `\n**FEBRASGO 2019:**\n`;
+      febrasgoRules.forEach(rule => {
+        prompt += `- **${rule.id}** (${rule.classification}): ${rule.title}\n`;
+      });
+    }
+    if (whoRules.length > 0) {
+      prompt += `\n**OMS 2025:**\n`;
+      whoRules.forEach(rule => {
+        prompt += `- **${rule.id}** (${rule.classification}): ${rule.title}\n`;
+      });
+    }
   } else {
     prompt += `Nenhuma regra de intervenção acionada. Controle adequado.\n`;
   }

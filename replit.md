@@ -49,7 +49,58 @@ Preferred communication style: Simple, everyday language.
 - **Location**: `server/clinical-engine.ts` and `server/openai.ts`
 - **Function**: Calculates glucose metrics, identifies critical alerts, generates treatment recommendations
 - **AI Integration**: OpenAI for recommendations (optional - falls back to deterministic rules if not configured)
-- **Guidelines**: Based on Brazilian DMG treatment protocols (R1-R7 recommendations)
+
+#### Diretrizes Catalogadas e Aplicadas
+
+**SBD 2025 - Sociedade Brasileira de Diabetes (R1-R17):**
+- R1: Início de terapia farmacológica no DMG (Classe IIb, Nível C)
+- R2: Insulina como primeira escolha (Classe I, Nível A)
+- R3: Critério de crescimento fetal para insulina (Classe IIb, Nível B)
+- R4: Dose inicial de insulina 0,5 UI/kg/dia (Classe IIb, Nível C)
+- R5: Tipos de insulina aprovados - Categoria A/B/C ANVISA (Classe IIa, Nível C)
+- R6: Análogos de ação rápida para pós-prandial (Classe IIa, Nível B)
+- R7: Metformina como alternativa (Classe I, Nível B)
+- R8: Associação metformina + insulina (Classe IIa, Nível B)
+- R9: Glibenclamida CONTRAINDICADA (Classe III, Nível A)
+- R10: DM2 - Suspender antidiabéticos orais (Classe I, Nível C)
+- R11: Esquemas intensivos MDI/SICI em DM1/DM2 (Classe I, Nível B)
+- R12: Redução de insulina pós-parto no DM1 (Classe I, Nível C)
+- R13: Ajuste de insulina com corticóide (Classe I, Nível C)
+- R14: Análogos rápidos no DM1 (Classe I, Nível B)
+- R15: Manter análogos de ação prolongada (Classe IIa, Nível A)
+- R16: DM2 - Metformina + insulina (Classe IIa, Nível B)
+- R17: AAS para prevenção de pré-eclâmpsia (Classe I, Nível A)
+
+**FEBRASGO 2019 - Femina 47(11):786-96 (F1-F10):**
+- F1: Rastreamento universal de DMG
+- F2: Diagnóstico de diabetes prévio (jejum ≥126 ou HbA1c ≥6,5%)
+- F3: Diagnóstico de DMG (jejum 92-125 mg/dL)
+- F4: TOTG 75g entre 24-28 semanas
+- F5: Metas glicêmicas (jejum 65-95, 1h pós <140, 2h pós <120)
+- F6: Terapia nutricional como primeira linha
+- F7: Atividade física regular
+- F8: Vigilância fetal
+- F9: Momento do parto
+- F10: Reclassificação pós-parto
+
+**OMS 2025 - ISBN 9789240117044 (W1-W12):**
+- W1: Rastreamento de hiperglicemia
+- W2: Critérios diagnósticos WHO
+- W3: Manejo nutricional
+- W4: Atividade física
+- W5: Automonitorização glicêmica
+- W6: Insulina como tratamento preferencial
+- W7: Metformina como alternativa
+- W8: Vigilância fetal
+- W9: Momento do parto
+- W10: Cuidados pós-parto
+- W11: Amamentação
+- W12: Cuidados neonatais
+
+**Metas Glicêmicas:**
+- Jejum: 65-95 mg/dL
+- 1 hora pós-prandial: <140 mg/dL
+- 2 horas pós-prandial: <120 mg/dL
 
 ### Key Design Patterns
 - **Shared Types**: Single source of truth in `shared/schema.ts` for database schema, Zod validation, and TypeScript types

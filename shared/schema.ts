@@ -102,8 +102,12 @@ export const insulinRegimenSchema = z.object({
 export type InsulinRegimen = z.infer<typeof insulinRegimenSchema>;
 
 // Patient evaluation input
+export const diabetesTypes = ["DMG", "DM1", "DM2"] as const;
+export type DiabetesType = typeof diabetesTypes[number];
+
 export const patientEvaluationSchema = z.object({
   patientName: z.string().min(1, "Nome da paciente é obrigatório"),
+  diabetesType: z.enum(diabetesTypes).default("DMG"),
   weight: z.number().min(30).max(200, "Peso deve estar entre 30 e 200 kg"),
   gestationalWeeks: z.number().min(1).max(42, "Semanas devem estar entre 1 e 42"),
   gestationalDays: z.number().min(0).max(6, "Dias devem estar entre 0 e 6"),
