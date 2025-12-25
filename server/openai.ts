@@ -315,33 +315,59 @@ function generateDeterministicRecommendation(
     ? `Atenção especial aos períodos com piora recente: ${sevenDayWorseningPeriods.map(p => `${p.period} (${p.overall}→${p.last7Days} mg/dL)`).join(", ")}.`
     : (isRecentWorsening && s7 ? `Piora observada na média geral (${analysis.averageGlucose}→${s7.averageGlucose} mg/dL nos últimos 7 dias).` : "");
   
+  // Verificar padrão recorrente de hipoglicemia antes de recomendar redução de dose
+  const hypoPattern = hasRecurrentHypoglycemia(analysis);
+  
   if (hasHypo || hasSevereHyper) {
     if (hasHypo && hasSevereHyper) {
-      condutaImediata = `REVISÃO URGENTE do esquema insulínico. Perfil instável com hipo e hiperglicemia. Ajustar por período: reduzir nos horários com hipo, aumentar nos horários com hiper.`;
-      condutaContinuada = `Monitoramento intensificado com reavaliação em 3-5 dias. Considerar ajuste individual por período do dia para reduzir variabilidade glicêmica.`;
+      const insulinAdjust = generateInsulinAdjustmentRecommendation(analysis, evaluation);
+      condutaImediata = `REVISÃO DO ESQUEMA INSULÍNICO. Perfil instável com variabilidade glicêmica significativa. ${insulinAdjust}`;
+      condutaContinuada = `Reavaliação em 3-5 dias. Ajuste individual por período para reduzir oscilação glicêmica.`;
       nextSteps.push("Mapear horários específicos de hipo e hiperglicemia");
-      nextSteps.push("Ajustar doses de insulina por período");
+      nextSteps.push("Ajustar insulina por período conforme indicado");
       nextSteps.push("Revisar técnica de aplicação e armazenamento");
       nextSteps.push("Orientar tratamento de hipoglicemia (15g carboidrato)");
       nextSteps.push("Reavaliar em 3-5 dias");
     } else if (hasHypo) {
-      condutaImediata = evaluation.usesInsulin 
-        ? `REDUZIR insulina: -2 a -4 UI nos períodos com hipoglicemia. Verificar intervalo insulina-refeição.`
-        : `Investigar causa da hipoglicemia: jejum prolongado, atividade física ou padrão alimentar.`;
-      condutaContinuada = `Manter monitoramento intensificado. Orientar paciente sobre reconhecimento e tratamento de hipoglicemia.`;
-      nextSteps.push("Identificar período específico das hipoglicemias");
-      nextSteps.push("Ajustar dose de insulina correspondente");
-      nextSteps.push("Orientar ingestão de 15g de carboidrato em caso de hipoglicemia");
-      nextSteps.push("Reavaliar em 3-5 dias");
+      // Hipoglicemia isolada NÃO justifica alteração de dose - apenas padrão recorrente
+      if (hypoPattern.hasPattern && evaluation.usesInsulin) {
+        // Padrão recorrente: recomendar redução específica
+        const periodosAfetados = hypoPattern.periods.length > 0 
+          ? hypoPattern.periods.map(p => {
+              const mapping = INSULIN_PERIOD_MAP[p];
+              return mapping ? `REDUZIR 2 UI de ${mapping.insulinType} ${mapping.timing}` : null;
+            }).filter(Boolean).join(". ")
+          : "Reduzir 2-4 UI da insulina correspondente ao período com hipoglicemia recorrente";
+        condutaImediata = `${periodosAfetados}. Padrão recorrente identificado (${hypoPattern.count} episódios).`;
+        condutaContinuada = `Monitoramento intensificado. Verificar intervalo insulina-refeição e adequação de carboidratos.`;
+        nextSteps.push("Implementar redução de dose conforme indicado");
+        nextSteps.push("Verificar horário de aplicação da insulina");
+        nextSteps.push("Orientar tratamento de hipoglicemia (15g carboidrato)");
+        nextSteps.push("Reavaliar em 5-7 dias");
+      } else {
+        // Episódio isolado: NÃO alterar dose, apenas orientar
+        condutaImediata = evaluation.usesInsulin 
+          ? `MANTER esquema insulínico atual. Episódio isolado de hipoglicemia não justifica alteração de dose. Investigar causa: jejum prolongado, atividade física ou inadequação alimentar.`
+          : `Investigar causa da hipoglicemia: jejum prolongado, atividade física ou padrão alimentar inadequado.`;
+        condutaContinuada = `Manter monitoramento. Orientar reconhecimento precoce de sintomas e tratamento adequado (15g carboidrato).`;
+        nextSteps.push("Investigar causa do episódio isolado");
+        nextSteps.push("Orientar tratamento de hipoglicemia");
+        nextSteps.push("Continuar monitorização para identificar padrão");
+        nextSteps.push("Reavaliar em 7-14 dias");
+      }
     } else {
+      // Hiperglicemia severa apenas
       const insulinAdjust = generateInsulinAdjustmentRecommendation(analysis, evaluation);
-      condutaImediata = evaluation.usesInsulin 
-        ? `AUMENTAR insulina +20-30%. ${insulinAdjust || "Ajustar por período com hiperglicemia severa."}`
-        : `INICIAR insulinoterapia: ${evaluation.weight ? `${Math.round(evaluation.weight * 0.5)} UI/dia` : "0,5 UI/kg/dia"} (SBD-R4), esquema basal-bolus.`;
-      condutaContinuada = `Intensificar vigilância fetal. Se persistência, considerar internação para ajuste supervisionado.`;
+      if (evaluation.usesInsulin) {
+        condutaImediata = insulinAdjust || `AUMENTAR doses de insulina nos períodos com hiperglicemia severa (>200 mg/dL).`;
+      } else {
+        const doseInicial = evaluation.weight ? `${Math.round(evaluation.weight * 0.5)} UI/dia` : "0,5 UI/kg/dia";
+        condutaImediata = `INICIAR insulinoterapia: ${doseInicial}, esquema basal-bolus (SBD-R4).`;
+      }
+      condutaContinuada = `Vigilância fetal intensificada. Se persistência, considerar internação para ajuste supervisionado.`;
       nextSteps.push("Implementar ajustes de insulina conforme indicado");
-      nextSteps.push("Reforçar aderência à dieta prescrita");
-      nextSteps.push("Solicitar ultrassonografia para avaliação fetal");
+      nextSteps.push("Reforçar adesão à dieta prescrita");
+      nextSteps.push("Solicitar ultrassonografia obstétrica");
       nextSteps.push("Reavaliar em 3-5 dias");
     }
     fundamentacao = "Valores críticos de glicemia requerem intervenção imediata para prevenção de complicações materno-fetais conforme SBD 2025 e FEBRASGO 2019 (F8 - vigilância fetal).";
@@ -483,6 +509,17 @@ function generatePeriodAnalysis(analysis: ClinicalAnalysis): string {
   }
 }
 
+// Mapeamento profissional: período → tipo de insulina + horário de aplicação
+const INSULIN_PERIOD_MAP: Record<string, { insulinType: string; timing: string; component: "basal" | "bolus" }> = {
+  "Jejum": { insulinType: "NPH", timing: "às 22h (ao deitar)", component: "basal" },
+  "1h pós-café": { insulinType: "Regular ou Lispro/Asparte", timing: "antes do café da manhã", component: "bolus" },
+  "1h pós-almoço": { insulinType: "Regular ou Lispro/Asparte", timing: "antes do almoço", component: "bolus" },
+  "1h pós-jantar": { insulinType: "Regular ou Lispro/Asparte", timing: "antes do jantar", component: "bolus" },
+  "Pré-almoço": { insulinType: "NPH", timing: "pela manhã (7-8h)", component: "basal" },
+  "Pré-jantar": { insulinType: "NPH ou Regular", timing: "antes do almoço (para NPH) ou antes do jantar (para Regular)", component: "basal" },
+  "Madrugada": { insulinType: "NPH", timing: "ao jantar (reduzir se hipoglicemia recorrente)", component: "basal" },
+};
+
 function generateInsulinAdjustmentRecommendation(analysis: ClinicalAnalysis, evaluation: PatientEvaluation): string {
   if (!analysis.analysisByPeriod || analysis.analysisByPeriod.length === 0) {
     return "";
@@ -492,34 +529,20 @@ function generateInsulinAdjustmentRecommendation(analysis: ClinicalAnalysis, eva
   
   analysis.analysisByPeriod.forEach(period => {
     const avg = Math.round(period.average);
-    const excess = avg - (period.period === "Jejum" ? 95 : 140);
+    const target = period.period === "Jejum" ? 95 : 
+                   (period.period.includes("Pré-") || period.period === "Madrugada") ? 100 : 140;
+    const excess = avg - target;
     
+    // Só recomendar ajuste se padrão consistente (>40% acima ou excesso >20 mg/dL)
     if (period.percentAbove > 40 || excess > 20) {
-      // Calculate suggested adjustment based on excess (2 UI per 20 mg/dL above target)
+      // Cálculo: 2 UI por cada 20 mg/dL acima da meta, mínimo 2, máximo 6
       const suggestedIncrease = Math.max(2, Math.min(6, Math.ceil(excess / 20) * 2));
+      const mapping = INSULIN_PERIOD_MAP[period.period];
       
-      switch (period.period) {
-        case "Jejum":
-          adjustments.push(`NPH noturna: +${suggestedIncrease} UI`);
-          break;
-        case "1h pós-café":
-          adjustments.push(`Rápida manhã: +${suggestedIncrease} UI`);
-          break;
-        case "1h pós-almoço":
-          adjustments.push(`Rápida almoço: +${suggestedIncrease} UI`);
-          break;
-        case "1h pós-jantar":
-          adjustments.push(`Rápida jantar: +${suggestedIncrease} UI`);
-          break;
-        case "Pré-almoço":
-          adjustments.push(`NPH manhã: +${suggestedIncrease} UI`);
-          break;
-        case "Pré-jantar":
-          adjustments.push(`NPH/Rápida almoço: +${suggestedIncrease} UI`);
-          break;
-        case "Madrugada":
-          adjustments.push(`NPH jantar: -${Math.max(2, suggestedIncrease - 2)} UI (reduzir se hipoglicemia)`);
-          break;
+      if (mapping) {
+        adjustments.push(
+          `AUMENTAR ${suggestedIncrease} UI de ${mapping.insulinType} ${mapping.timing}`
+        );
       }
     }
   });
@@ -528,5 +551,50 @@ function generateInsulinAdjustmentRecommendation(analysis: ClinicalAnalysis, eva
     return "";
   }
   
-  return `AJUSTES: ${adjustments.join(" | ")}.`;
+  return adjustments.join(". ") + ".";
+}
+
+// Normaliza nome do período para alinhar com INSULIN_PERIOD_MAP
+function normalizePeriodName(rawPeriod: string): string {
+  const normalized = rawPeriod.toLowerCase().trim();
+  if (normalized.includes("jejum")) return "Jejum";
+  if (normalized.includes("pós-café") || normalized.includes("pos-cafe") || normalized.includes("café")) return "1h pós-café";
+  if (normalized.includes("pós-almoço") || normalized.includes("pos-almoco") || normalized.includes("almoço") && normalized.includes("pós")) return "1h pós-almoço";
+  if (normalized.includes("pós-jantar") || normalized.includes("pos-jantar") || normalized.includes("jantar") && normalized.includes("pós")) return "1h pós-jantar";
+  if (normalized.includes("pré-almoço") || normalized.includes("pre-almoco")) return "Pré-almoço";
+  if (normalized.includes("pré-jantar") || normalized.includes("pre-jantar")) return "Pré-jantar";
+  if (normalized.includes("madrugada") || normalized.includes("3h")) return "Madrugada";
+  return rawPeriod; // Fallback
+}
+
+// Verifica se há padrão recorrente de hipoglicemia (≥2 episódios no mesmo período nos últimos 7 dias)
+function hasRecurrentHypoglycemia(analysis: ClinicalAnalysis): { hasPattern: boolean; periods: string[]; count: number } {
+  if (!analysis.sevenDayAnalysis?.criticalAlerts) {
+    return { hasPattern: false, periods: [], count: 0 };
+  }
+  
+  const hypoAlerts = analysis.sevenDayAnalysis.criticalAlerts.filter(a => a.type === "hypoglycemia");
+  const count = hypoAlerts.length;
+  
+  // Agrupar por período normalizado para verificar recorrência
+  const byPeriod: Record<string, number> = {};
+  hypoAlerts.forEach(alert => {
+    // Extrair período da mensagem se disponível
+    const periodMatch = alert.message?.match(/(Jejum|pós-café|pós-almoço|pós-jantar|Pré-almoço|Pré-jantar|Madrugada|café|almoço|jantar)/i);
+    if (periodMatch) {
+      const normalizedPeriod = normalizePeriodName(periodMatch[1]);
+      byPeriod[normalizedPeriod] = (byPeriod[normalizedPeriod] || 0) + 1;
+    }
+  });
+  
+  // Só considera padrão se ≥2 episódios no mesmo período ou ≥3 total
+  const recurrentPeriods = Object.entries(byPeriod)
+    .filter(([_, cnt]) => cnt >= 2)
+    .map(([period]) => period);
+  
+  return { 
+    hasPattern: recurrentPeriods.length > 0 || count >= 3, 
+    periods: recurrentPeriods,
+    count 
+  };
 }
