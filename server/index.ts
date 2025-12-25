@@ -71,10 +71,10 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Rate limiting for AI/analysis routes - 20 per minute
+// Rate limiting for AI/analysis routes - 60 per minute (more practical for clinical use)
 const analysisLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 20,
+  max: 60,
   message: { message: "Limite de análises atingido. Aguarde um momento." },
   standardHeaders: true,
   legacyHeaders: false,

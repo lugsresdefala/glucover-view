@@ -108,7 +108,7 @@ Preferred communication style: Simple, everyday language.
 - Com insulina: 7 medidas/dia (adiciona pré-almoço, pré-jantar, madrugada 3h)
 
 ### Security & Monitoring
-- **Rate Limiting**: 3-tier rate limiting (global 100/min, auth 10/15min, analysis 20/min)
+- **Rate Limiting**: 3-tier rate limiting (global 100/min, auth 10/15min, analysis 60/min)
 - **Security Headers**: Helmet with strict CSP in production, HSTS with preload
 - **Structured Logging**: Per-request trace IDs via AsyncLocalStorage for request tracking
 - **Health Endpoints**: `/healthz` (liveness) and `/readyz` (readiness) for monitoring
