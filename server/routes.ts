@@ -128,7 +128,7 @@ const professionalRegisterSchema = z.object({
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
   firstName: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   lastName: z.string().optional(),
-  role: z.enum(["doctor", "coordinator"]).default("doctor"),
+  role: z.enum(["medico", "enfermeira", "nutricionista", "admin", "coordinator"]).default("medico"),
 });
 
 const professionalLoginSchema = z.object({
@@ -527,7 +527,7 @@ export async function registerRoutes(
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          role: user.role || "doctor",
+          role: user.role || "medico",
         },
       });
     } catch (error) {
@@ -538,7 +538,7 @@ export async function registerRoutes(
   // ========== Healthcare Professional Routes (Doctors/Coordinators) ==========
 
   // Doctor: Get their assigned patients
-  app.get("/api/doctor/patients", isAuthenticated, requireRole("doctor", "coordinator"), async (req: AuthenticatedRequest, res) => {
+  app.get("/api/doctor/patients", isAuthenticated, requireRole("medico", "enfermeira", "nutricionista", "coordinator"), async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -572,7 +572,7 @@ export async function registerRoutes(
   });
 
   // Doctor: Assign patient
-  app.post("/api/doctor/patients/:patientId/assign", isAuthenticated, requireRole("doctor", "coordinator"), async (req: AuthenticatedRequest, res) => {
+  app.post("/api/doctor/patients/:patientId/assign", isAuthenticated, requireRole("medico", "enfermeira", "nutricionista", "coordinator"), async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.userId;
       const patientId = parseInt(req.params.patientId, 10);
@@ -589,7 +589,7 @@ export async function registerRoutes(
   });
 
   // Doctor: Get evaluations for their patients
-  app.get("/api/doctor/evaluations", isAuthenticated, requireRole("doctor", "coordinator"), async (req: AuthenticatedRequest, res) => {
+  app.get("/api/doctor/evaluations", isAuthenticated, requireRole("medico", "enfermeira", "nutricionista", "coordinator"), async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -613,7 +613,7 @@ export async function registerRoutes(
   });
 
   // Doctor: Get specific patient's evaluations
-  app.get("/api/doctor/patients/:patientId/evaluations", isAuthenticated, requireRole("doctor", "coordinator"), async (req: AuthenticatedRequest, res) => {
+  app.get("/api/doctor/patients/:patientId/evaluations", isAuthenticated, requireRole("medico", "enfermeira", "nutricionista", "coordinator"), async (req: AuthenticatedRequest, res) => {
     try {
       const patientId = parseInt(req.params.patientId, 10);
       if (isNaN(patientId)) {
@@ -632,9 +632,11 @@ export async function registerRoutes(
   // Coordinator: Get all users (doctors)
   app.get("/api/admin/users", isAuthenticated, requireRole("coordinator"), async (req, res) => {
     try {
-      const allUsers = await storage.getUsersByRole("doctor");
+      const allUsers = await storage.getUsersByRole("medico");
+      const enfermeiras = await storage.getUsersByRole("enfermeira");
+      const nutricionistas = await storage.getUsersByRole("nutricionista");
       const coordinators = await storage.getUsersByRole("coordinator");
-      res.json([...allUsers, ...coordinators].map(u => ({
+      res.json([...allUsers, ...enfermeiras, ...nutricionistas, ...coordinators].map(u => ({
         id: u.id,
         email: u.email,
         firstName: u.firstName,
@@ -652,7 +654,7 @@ export async function registerRoutes(
       const { userId } = req.params;
       const { role } = req.body;
       
-      if (!["doctor", "coordinator"].includes(role)) {
+      if (!["medico", "enfermeira", "nutricionista", "admin", "coordinator"].includes(role)) {
         return res.status(400).json({ message: "Perfil inválido" });
       }
       
