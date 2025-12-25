@@ -117,6 +117,58 @@ function parseGlucoseValue(value: unknown): number | undefined {
   return Math.round(num);
 }
 
+function parseExcelDate(value: unknown): Date | null {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  
+  // Excel serial date number (days since 1900-01-01)
+  if (typeof value === "number" && value > 1000 && value < 100000) {
+    const excelEpoch = new Date(1899, 11, 30); // Excel epoch is Dec 30, 1899
+    const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+  
+  const strValue = String(value).trim();
+  
+  // Try DD/MM/YYYY format (Brazilian)
+  const brMatch = strValue.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (brMatch) {
+    const day = parseInt(brMatch[1]);
+    const month = parseInt(brMatch[2]) - 1;
+    const year = parseInt(brMatch[3]);
+    const date = new Date(year, month, day);
+    if (!isNaN(date.getTime()) && date.getFullYear() === year) {
+      return date;
+    }
+  }
+  
+  // Try YYYY-MM-DD format (ISO)
+  const isoMatch = strValue.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (isoMatch) {
+    const year = parseInt(isoMatch[1]);
+    const month = parseInt(isoMatch[2]) - 1;
+    const day = parseInt(isoMatch[3]);
+    const date = new Date(year, month, day);
+    if (!isNaN(date.getTime()) && date.getFullYear() === year) {
+      return date;
+    }
+  }
+  
+  return null;
+}
+
+function calculateGestationalAgeFromDUM(measurementDate: Date, dumDate: Date): number {
+  const diffMs = measurementDate.getTime() - dumDate.getTime();
+  const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+  if (diffDays < 0 || diffDays > 315) { // Max ~45 weeks
+    return 0;
+  }
+  return diffDays / 7; // Return weeks as decimal
+}
+
 function parseGestationalAge(value: unknown): number {
   if (value === null || value === undefined || value === "") {
     return 0;
@@ -220,6 +272,7 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         let headerRowIndex = -1;
         let columnMap: Record<number, keyof GlucoseReading> = {};
         let gestationalAgeColIndex = -1;
+        let dateColIndex = -1;
         let bestHeaderScore = 0;
         
         for (let i = 0; i < Math.min(20, rawData.length); i++) {
@@ -228,6 +281,7 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           
           const tempColumnMap: Record<number, keyof GlucoseReading> = {};
           let tempGestationalAgeCol = -1;
+          let tempDateCol = -1;
           
           for (let j = 0; j < row.length; j++) {
             const cell = row[j];
@@ -245,6 +299,12 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
               tempGestationalAgeCol = j;
             }
             
+            // Detect date column
+            if (normalized === "data" || normalized === "dia" || normalized === "date" ||
+                normalized.includes("data da") || normalized.includes("data do")) {
+              tempDateCol = j;
+            }
+            
             const mapped = mapColumn(cellStr);
             if (mapped && !Object.values(tempColumnMap).includes(mapped)) {
               tempColumnMap[j] = mapped;
@@ -258,6 +318,8 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
             headerRowIndex = i;
             columnMap = tempColumnMap;
             gestationalAgeColIndex = tempGestationalAgeCol;
+            // Date column is either explicitly found, or one column to the left of gestational age
+            dateColIndex = tempDateCol >= 0 ? tempDateCol : (tempGestationalAgeCol > 0 ? tempGestationalAgeCol - 1 : 0);
           }
         }
         
@@ -269,6 +331,11 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         const glucoseReadings: GlucoseReading[] = [];
         let lastGestationalAge = 0;
         
+        // Parse DUM date for calculating gestational age
+        let dumDate: Date | null = null;
+        if (dum) {
+          dumDate = parseExcelDate(dum);
+        }
         
         for (let i = headerRowIndex + 1; i < rawData.length; i++) {
           const row = rawData[i];
@@ -277,7 +344,20 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           const reading: GlucoseReading = {};
           let hasAnyValue = false;
           
-          if (gestationalAgeColIndex >= 0) {
+          // Try to calculate gestational age from date column + DUM
+          if (dumDate && dateColIndex >= 0) {
+            const dateValue = row[dateColIndex];
+            const measurementDate = parseExcelDate(dateValue);
+            if (measurementDate) {
+              const calculatedAge = calculateGestationalAgeFromDUM(measurementDate, dumDate);
+              if (calculatedAge > 0) {
+                lastGestationalAge = calculatedAge;
+              }
+            }
+          }
+          
+          // Fallback: read gestational age directly from column if available
+          if (lastGestationalAge === 0 && gestationalAgeColIndex >= 0) {
             const ageValue = row[gestationalAgeColIndex];
             const parsed = parseGestationalAge(ageValue);
             if (parsed > 0) {
