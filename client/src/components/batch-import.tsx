@@ -122,6 +122,23 @@ function parseExcelDate(value: unknown): Date | null {
     return null;
   }
   
+  // Handle Date objects directly (XLSX may return Date objects for date cells)
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return value;
+  }
+  
+  // Handle ISO date strings from Date.toString() or JSON
+  if (typeof value === "string") {
+    // Match ISO format: 2025-07-18T00:00:00.000Z
+    const isoDateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+    if (isoDateMatch) {
+      const parsed = new Date(value);
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+  }
+  
   // Convert string serials to number
   let numValue: number | null = null;
   if (typeof value === "number") {
@@ -290,7 +307,7 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: "array" });
+        const workbook = XLSX.read(data, { type: "array", cellDates: true });
         
         const sheetName = workbook.SheetNames.find(n => 
           n.toLowerCase().includes("controle") || n.toLowerCase().includes("glicemi")
