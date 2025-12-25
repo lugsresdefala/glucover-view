@@ -99,11 +99,13 @@ const requireRole = (...allowedRoles: string[]): RequestHandler => {
       
       const role = await getUserRole(userId);
       if (!allowedRoles.includes(role)) {
+        logger.warn("Access denied - insufficient role", { userId, role, allowedRoles });
         return res.status(403).json({ message: "Acesso não autorizado para este perfil" });
       }
       
       next();
     } catch (error) {
+      logger.error("Error checking permissions", error as Error, { userId: req.userId });
       res.status(500).json({ message: "Erro ao verificar permissões" });
     }
   };

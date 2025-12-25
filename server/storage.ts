@@ -103,21 +103,18 @@ export class DatabaseStorage implements IStorage {
   async getEvaluationByPatientName(patientName: string, userId?: string): Promise<StoredEvaluation | undefined> {
     const normalizedName = patientName.trim().toUpperCase();
     
-    let records;
-    if (userId) {
-      records = await db
-        .select()
-        .from(evaluations)
-        .where(and(eq(evaluations.userId, userId)))
-        .orderBy(desc(evaluations.createdAt));
-    } else {
-      records = await db
-        .select()
-        .from(evaluations)
-        .orderBy(desc(evaluations.createdAt));
+    // IMPORTANT: Always require userId to prevent cross-user data leaks
+    if (!userId) {
+      return undefined;
     }
     
-    // Find by normalized name match
+    const records = await db
+      .select()
+      .from(evaluations)
+      .where(eq(evaluations.userId, userId))
+      .orderBy(desc(evaluations.createdAt));
+    
+    // Find by normalized name match within the user's evaluations only
     const record = records.find(r => r.patientName.trim().toUpperCase() === normalizedName);
     return record ? toStoredEvaluation(record) : undefined;
   }

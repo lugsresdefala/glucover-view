@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import crypto from "crypto";
 import { logger } from "./logger";
 
@@ -52,6 +53,21 @@ app.use(helmet({
   },
 }));
 
+// Rate limiting for authentication routes only - prevents brute force attacks
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 attempts per 15 minutes
+  message: { message: "Muitas tentativas de login. Aguarde 15 minutos." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful logins
+});
+
+// Apply rate limiting to auth routes only
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
+app.use("/api/patient/login", authLimiter);
+app.use("/api/patient/register", authLimiter);
 
 app.use(
   express.json({

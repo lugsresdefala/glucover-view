@@ -17,17 +17,21 @@ import { FullPageLoading } from "@/components/loading-spinner";
 
 function PatientRoutes() {
   const [location] = useLocation();
+  
+  // If on patient login page, show it without checking auth
+  if (location === "/paciente/login") {
+    return <PatientAuth />;
+  }
+  
+  // Only check auth for non-login pages
   const { data: patientData, isLoading } = useQuery<{ patient: { id: number; name: string } | null }>({
     queryKey: ["/api/patient/me"],
+    retry: false,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   if (isLoading) {
     return <FullPageLoading text="Verificando autenticação..." />;
-  }
-
-  // If on patient login page, show it
-  if (location === "/paciente/login") {
-    return <PatientAuth />;
   }
 
   // If patient is logged in, show dashboard

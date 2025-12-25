@@ -212,7 +212,11 @@ export async function generateClinicalRecommendation(
   const clinicalAnalysis = generateClinicalAnalysis(evaluation);
   
   if (!openai) {
-    console.warn("OpenAI integration not configured, using deterministic recommendation");
+    const { logger } = await import("./logger");
+    logger.warn("OpenAI integration not configured, using deterministic recommendation", {
+      patientName: evaluation.patientName,
+      gestationalWeeks: evaluation.gestationalWeeks,
+    });
     return generateDeterministicRecommendation(clinicalAnalysis);
   }
 
@@ -280,7 +284,11 @@ SUA TAREFA:
       guidelineReferences: ruleIds.length > 0 ? ruleIds : [],
     };
   } catch (error) {
-    console.error("Error with AI generation, using deterministic:", error);
+    const { logger } = await import("./logger");
+    logger.error("Error with AI generation, using deterministic fallback", error as Error, {
+      patientName: evaluation.patientName,
+      gestationalWeeks: evaluation.gestationalWeeks,
+    });
     return generateDeterministicRecommendation(clinicalAnalysis);
   }
 }
