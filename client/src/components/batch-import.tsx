@@ -133,14 +133,28 @@ function parseExcelDate(value: unknown): Date | null {
   
   const strValue = String(value).trim();
   
-  // Try DD/MM/YYYY format (Brazilian)
-  const brMatch = strValue.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (brMatch) {
-    const day = parseInt(brMatch[1]);
-    const month = parseInt(brMatch[2]) - 1;
-    const year = parseInt(brMatch[3]);
+  // Try DD/MM/YYYY format (Brazilian with 4-digit year)
+  const brMatch4 = strValue.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if (brMatch4) {
+    const day = parseInt(brMatch4[1]);
+    const month = parseInt(brMatch4[2]) - 1;
+    const year = parseInt(brMatch4[3]);
     const date = new Date(year, month, day);
-    if (!isNaN(date.getTime()) && date.getFullYear() === year) {
+    if (!isNaN(date.getTime()) && date.getFullYear() === year && day >= 1 && day <= 31 && month >= 0 && month <= 11) {
+      return date;
+    }
+  }
+  
+  // Try DD/MM/YY format (Brazilian with 2-digit year)
+  const brMatch2 = strValue.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})$/);
+  if (brMatch2) {
+    const day = parseInt(brMatch2[1]);
+    const month = parseInt(brMatch2[2]) - 1;
+    let year = parseInt(brMatch2[3]);
+    // Convert 2-digit year: 00-50 = 2000-2050, 51-99 = 1951-1999
+    year = year <= 50 ? 2000 + year : 1900 + year;
+    const date = new Date(year, month, day);
+    if (!isNaN(date.getTime()) && date.getFullYear() === year && day >= 1 && day <= 31 && month >= 0 && month <= 11) {
       return date;
     }
   }
