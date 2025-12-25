@@ -107,6 +107,14 @@ Preferred communication style: Simple, everyday language.
 - Sem insulina: 4 medidas/dia (jejum, 1h pós-café, 1h pós-almoço, 1h pós-jantar)
 - Com insulina: 7 medidas/dia (adiciona pré-almoço, pré-jantar, madrugada 3h)
 
+### Security & Monitoring
+- **Rate Limiting**: 3-tier rate limiting (global 100/min, auth 10/15min, analysis 20/min)
+- **Security Headers**: Helmet with strict CSP in production, HSTS with preload
+- **Structured Logging**: Per-request trace IDs via AsyncLocalStorage for request tracking
+- **Health Endpoints**: `/healthz` (liveness) and `/readyz` (readiness) for monitoring
+- **Error Boundary**: React ErrorBoundary with user-friendly Portuguese error messages
+- **Test Coverage**: 22 unit tests for clinical engine (SBD/FEBRASGO/WHO rules)
+
 ### Key Design Patterns
 - **Shared Types**: Single source of truth in `shared/schema.ts` for database schema, Zod validation, and TypeScript types
 - **API Request Pattern**: `apiRequest()` helper handles CSRF tokens, credentials, and error handling
