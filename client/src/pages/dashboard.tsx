@@ -96,7 +96,12 @@ interface PatientItem {
   phone?: string;
 }
 
-export default function Dashboard() {
+interface DashboardProps {
+  activeSection?: string;
+  onNavigate?: (section: string) => void;
+}
+
+export default function Dashboard({ activeSection = "dashboard", onNavigate }: DashboardProps) {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [glucoseReadings, setGlucoseReadings] = useState<GlucoseReading[]>([{}]);
@@ -308,58 +313,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <img 
-              src={hapvidaLogo} 
-              alt="Hapvida" 
-              className="h-10 w-auto"
-              data-testid="img-logo"
-            />
-            <div className="hidden sm:block border-l border-border pl-4">
-              <h1 className="text-xl font-semibold tracking-tight">GlucoVer</h1>
-              <p className="text-sm text-muted-foreground">Suporte à Decisão Clínica</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {user && (
-              <div className="flex items-center gap-3">
-                <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                    {user.firstName?.[0] || user.email?.[0]?.toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden md:block">
-                  <p className="text-sm font-medium">
-                    {user.firstName || user.email}
-                  </p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    {isAdmin ? <Shield className="h-3 w-3" /> : <Stethoscope className="h-3 w-3" />}
-                    {roleDisplayNames[userRole] || userRole}
-                  </p>
-                </div>
-              </div>
-            )}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              data-testid="button-logout"
-              onClick={async () => {
-                await apiRequest("POST", "/api/user/logout");
-                await queryClient.invalidateQueries({ queryKey: ["/api/user/me"] });
-                window.location.href = "/";
-              }}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Sair</span>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-6 py-8">
+    <div className="p-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <Card className="shadow-md">
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
@@ -1084,17 +1038,6 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-      </main>
-
-      <footer className="border-t border-border mt-12">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <p className="text-xs text-muted-foreground text-center">
-            Sistema de suporte à decisão clínica para Diabetes Mellitus Gestacional.
-            <br />
-            Baseado nas Diretrizes SBD 2025, FEBRASGO 2019 e OMS 2025. Decisões finais devem ser tomadas por profissional de saúde.
-          </p>
-        </div>
-      </footer>
 
       <RecommendationModal
         recommendation={currentRecommendation?.recommendation || null}

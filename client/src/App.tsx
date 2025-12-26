@@ -4,9 +4,9 @@ import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { AppLayout } from "@/components/app-layout";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Landing from "@/pages/landing";
@@ -14,6 +14,7 @@ import PatientAuth from "@/pages/patient-auth";
 import PatientDashboard from "@/pages/patient-dashboard";
 import ProfessionalAuth from "@/pages/professional-auth";
 import { FullPageLoading } from "@/components/loading-spinner";
+import { useState } from "react";
 
 function PatientRoutes() {
   const [location] = useLocation();
@@ -68,6 +69,7 @@ function ProfessionalRoutes() {
 function AuthenticatedApp() {
   const { isLoading, isAuthenticated } = useAuth();
   const [location] = useLocation();
+  const [activeSection, setActiveSection] = useState("dashboard");
 
   // Handle patient routes separately
   if (location.startsWith("/paciente")) {
@@ -88,11 +90,16 @@ function AuthenticatedApp() {
   }
 
   return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route component={NotFound} />
-    </Switch>
+    <AppLayout 
+      activeSection={activeSection} 
+      onNavigate={setActiveSection}
+      showPatientList={true}
+    >
+      <Dashboard 
+        activeSection={activeSection}
+        onNavigate={setActiveSection}
+      />
+    </AppLayout>
   );
 }
 
@@ -103,9 +110,6 @@ function App() {
         <TooltipProvider>
           <ErrorBoundary>
             <div className="min-h-screen bg-background">
-              <div className="fixed top-3 right-4 z-50">
-                <ThemeToggle />
-              </div>
               <Switch>
                 <Route path="/paciente/:rest*" component={PatientRoutes} />
                 <Route path="/paciente" component={PatientRoutes} />
