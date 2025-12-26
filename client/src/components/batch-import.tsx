@@ -446,29 +446,32 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           let hasAnyValue = false;
           let currentRowAge = 0;
           
-          // Try to calculate gestational age from date column + DUM
-          if (dumDate && dateColIndex >= 0) {
-            const dateValue = row[dateColIndex];
-            const measurementDate = parseExcelDate(dateValue);
-            if (measurementDate) {
-              const calculatedAge = calculateGestationalAgeFromDUM(measurementDate, dumDate);
-              if (debugRowCount < 3) {
-                console.log(`[DEBUG ${patientName}] Row ${i}: dateValue="${dateValue}" (type: ${typeof dateValue}), measurementDate=${measurementDate.toISOString()}, calculatedAge=${calculatedAge.toFixed(2)} weeks`);
-              }
-              if (calculatedAge > 0) {
-                currentRowAge = calculatedAge;
-                lastGestationalAge = calculatedAge;
-              }
-            }
-          }
-          
-          // Fallback: read gestational age directly from column if available
-          if (currentRowAge === 0 && gestationalAgeColIndex >= 0) {
+          // PRIORIDADE 1: Usar IG explícita da coluna da planilha (mais confiável)
+          if (gestationalAgeColIndex >= 0) {
             const ageValue = row[gestationalAgeColIndex];
             const parsed = parseGestationalAge(ageValue);
             if (parsed > 0) {
               currentRowAge = parsed;
               lastGestationalAge = parsed;
+              if (debugRowCount < 3) {
+                console.log(`[DEBUG ${patientName}] Row ${i}: IG da planilha="${ageValue}" -> ${parsed.toFixed(2)} semanas`);
+              }
+            }
+          }
+          
+          // PRIORIDADE 2 (fallback): Calcular IG a partir da DUM + data da medição
+          if (currentRowAge === 0 && dumDate && dateColIndex >= 0) {
+            const dateValue = row[dateColIndex];
+            const measurementDate = parseExcelDate(dateValue);
+            if (measurementDate) {
+              const calculatedAge = calculateGestationalAgeFromDUM(measurementDate, dumDate);
+              if (debugRowCount < 3) {
+                console.log(`[DEBUG ${patientName}] Row ${i}: IG calculada da DUM: dateValue="${dateValue}", calculatedAge=${calculatedAge.toFixed(2)} semanas`);
+              }
+              if (calculatedAge > 0) {
+                currentRowAge = calculatedAge;
+                lastGestationalAge = calculatedAge;
+              }
             }
           }
           
