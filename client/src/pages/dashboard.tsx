@@ -313,81 +313,82 @@ export default function Dashboard({ activeSection = "dashboard", onNavigate }: D
   };
 
   return (
-    <div className="p-6">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card className="shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total de Pacientes
-              </CardTitle>
-              <div className="p-2 bg-status-info-bg rounded-lg">
+    <div className="space-y-8">
+        <div className="space-y-2">
+          <h1 className="text-h2">Painel de Controle</h1>
+          <p className="text-body-sm text-muted-foreground">
+            Visão geral do acompanhamento de pacientes com diabetes na gestação
+          </p>
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="relative">
+            <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
+              <div className="space-y-1">
+                <p className="text-caption">Pacientes</p>
+              </div>
+              <div className="p-2.5 rounded-lg bg-status-info-bg">
                 <Users className="h-4 w-4 text-status-info" />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold" data-testid="text-total-patients">
+            <CardContent className="space-y-2">
+              <p className="text-metric" data-testid="text-total-patients">
                 {isLoadingPatients ? "..." : dashboardMetrics.totalPatients}
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                {isAdmin ? "em todo o sistema" : "vinculados a você"}
+              </p>
+              <p className="text-label">
+                {isAdmin ? "Em todo o sistema" : "Vinculados a você"}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Avaliações Realizadas
-              </CardTitle>
-              <div className="p-2 bg-status-success-bg rounded-lg">
+          <Card className="relative">
+            <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
+              <div className="space-y-1">
+                <p className="text-caption">Avaliações</p>
+              </div>
+              <div className="p-2.5 rounded-lg bg-status-success-bg">
                 <ClipboardList className="h-4 w-4 text-status-success" />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold" data-testid="text-total-evaluations">
+            <CardContent className="space-y-2">
+              <p className="text-metric" data-testid="text-total-evaluations">
                 {isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                total de análises
               </p>
+              <p className="text-label">Total de análises</p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Últimos 7 Dias
-              </CardTitle>
-              <div className="p-2 bg-primary/10 rounded-lg">
+          <Card className="relative">
+            <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
+              <div className="space-y-1">
+                <p className="text-caption">Últimos 7 Dias</p>
+              </div>
+              <div className="p-2.5 rounded-lg bg-primary/10">
                 <TrendingUp className="h-4 w-4 text-primary" />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold" data-testid="text-recent-evaluations">
+            <CardContent className="space-y-2">
+              <p className="text-metric" data-testid="text-recent-evaluations">
                 {isLoadingHistory ? "..." : dashboardMetrics.recentEvaluations}
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                novas avaliações
               </p>
+              <p className="text-label">Novas avaliações</p>
             </CardContent>
           </Card>
 
-          <Card className="shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Alertas Críticos
-              </CardTitle>
-              <div className="p-2 bg-status-critical-bg rounded-lg">
+          <Card className={`relative ${dashboardMetrics.criticalAlerts > 0 ? "ring-2 ring-status-critical/30" : ""}`}>
+            <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
+              <div className="space-y-1">
+                <p className="text-caption">Alertas Críticos</p>
+              </div>
+              <div className="p-2.5 rounded-lg bg-status-critical-bg">
                 <AlertTriangle className="h-4 w-4 text-status-critical" />
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold" data-testid="text-critical-alerts">
+            <CardContent className="space-y-2">
+              <p className={`text-metric ${dashboardMetrics.criticalAlerts > 0 ? "text-status-critical" : ""}`} data-testid="text-critical-alerts">
                 {isLoadingHistory ? "..." : dashboardMetrics.criticalAlerts}
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">
-                pacientes com valores extremos
               </p>
+              <p className="text-label">Valores extremos</p>
             </CardContent>
           </Card>
         </div>
