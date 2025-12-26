@@ -357,74 +357,36 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total de Pacientes
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-total-patients">
-                {isLoadingPatients ? "..." : dashboardMetrics.totalPatients}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {isAdmin ? "em todo o sistema" : "vinculados a você"}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Avaliações Realizadas
-              </CardTitle>
-              <ClipboardList className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-total-evaluations">
-                {isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                total de análises
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Últimos 7 Dias
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-recent-evaluations">
-                {isLoadingHistory ? "..." : dashboardMetrics.recentEvaluations}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                novas avaliações
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Alertas Críticos
-              </CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-critical-alerts">
-                {isLoadingHistory ? "..." : dashboardMetrics.criticalAlerts}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                pacientes com valores extremos
-              </p>
-            </CardContent>
-          </Card>
+        <div className="flex flex-wrap items-center gap-6 py-3 px-4 mb-6 bg-muted/30 rounded-lg border">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Pacientes:</span>
+            <span className="font-semibold" data-testid="text-total-patients">
+              {isLoadingPatients ? "..." : dashboardMetrics.totalPatients}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Avaliações:</span>
+            <span className="font-semibold" data-testid="text-total-evaluations">
+              {isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">7 dias:</span>
+            <span className="font-semibold" data-testid="text-recent-evaluations">
+              {isLoadingHistory ? "..." : dashboardMetrics.recentEvaluations}
+            </span>
+          </div>
+          {dashboardMetrics.criticalAlerts > 0 && (
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              <span className="font-semibold text-destructive" data-testid="text-critical-alerts">
+                {dashboardMetrics.criticalAlerts} alertas críticos
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-3 mb-6">
