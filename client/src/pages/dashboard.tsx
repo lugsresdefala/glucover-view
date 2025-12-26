@@ -87,7 +87,6 @@ import {
   roleDisplayNames,
   type UserRole,
 } from "@shared/schema";
-import hapvidaLogo from "@assets/layout_set_logo_1766044185087.png";
 
 interface PatientItem {
   id: number;
@@ -342,86 +341,55 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <img 
-              src={hapvidaLogo} 
-              alt="Hapvida" 
-              className="h-10 w-auto"
-              data-testid="img-logo"
-            />
-            <div className="border-l border-border pl-3">
-              <h1 className="text-lg font-semibold">GlucoVer</h1>
-              <p className="text-xs text-muted-foreground">Suporte à Decisão Clínica</p>
+      {/* Census Header - Patient Context Bar */}
+      <div className="census-header mx-4 mt-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <div className="metric-item">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="metric-label">Pacientes:</span>
+              <span className="metric-value" data-testid="text-total-patients">
+                {isLoadingPatients ? "..." : dashboardMetrics.totalPatients}
+              </span>
+            </div>
+            <div className="metric-item">
+              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+              <span className="metric-label">Avaliações:</span>
+              <span className="metric-value" data-testid="text-total-evaluations">
+                {isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}
+              </span>
+            </div>
+            <div className="metric-item">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <span className="metric-label">7 dias:</span>
+              <span className="metric-value" data-testid="text-recent-evaluations">
+                {isLoadingHistory ? "..." : dashboardMetrics.recentEvaluations}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {dashboardMetrics.criticalAlerts > 0 && (
+              <span className="clinical-badge-critical" data-testid="text-critical-alerts">
+                <AlertTriangle className="h-3 w-3 inline mr-1" />
+                {dashboardMetrics.criticalAlerts} alertas críticos
+              </span>
+            )}
             {user && (
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="hidden sm:flex gap-1">
                   {isAdmin ? <Shield className="h-3 w-3" /> : <Stethoscope className="h-3 w-3" />}
                   {roleDisplayNames[userRole] || userRole}
                 </Badge>
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>
-                    {user.firstName?.[0] || user.email?.[0]?.toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
                 <span className="text-sm text-muted-foreground hidden sm:inline">
                   {user.firstName || user.email}
                 </span>
               </div>
             )}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              data-testid="button-logout"
-              onClick={async () => {
-                await apiRequest("POST", "/api/user/logout");
-                await queryClient.invalidateQueries({ queryKey: ["/api/user/me"] });
-                window.location.href = "/";
-              }}
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="metrics-bar mb-6">
-          <div className="metric-item">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="metric-label">Pacientes:</span>
-            <span className="metric-value" data-testid="text-total-patients">
-              {isLoadingPatients ? "..." : dashboardMetrics.totalPatients}
-            </span>
-          </div>
-          <div className="metric-item">
-            <ClipboardList className="h-4 w-4 text-muted-foreground" />
-            <span className="metric-label">Avaliações:</span>
-            <span className="metric-value" data-testid="text-total-evaluations">
-              {isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}
-            </span>
-          </div>
-          <div className="metric-item">
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            <span className="metric-label">7 dias:</span>
-            <span className="metric-value" data-testid="text-recent-evaluations">
-              {isLoadingHistory ? "..." : dashboardMetrics.recentEvaluations}
-            </span>
-          </div>
-          {dashboardMetrics.criticalAlerts > 0 && (
-            <div className="metric-item">
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-              <span className="metric-value-critical" data-testid="text-critical-alerts">
-                {dashboardMetrics.criticalAlerts} alertas
-              </span>
-            </div>
-          )}
-        </div>
-
+      <main className="p-4">
         <div className="flex flex-wrap gap-3 mb-6">
           <Dialog open={showEvaluationForm} onOpenChange={setShowEvaluationForm}>
             <DialogTrigger asChild>

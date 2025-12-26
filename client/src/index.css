@@ -203,40 +203,91 @@
 }
 
 @layer components {
+  /* Clinical Workspace Layout */
+  .clinical-workspace {
+    @apply grid gap-4 h-full;
+    grid-template-columns: 320px 1fr 360px;
+    grid-template-rows: auto 1fr;
+  }
+
+  @media (max-width: 1280px) {
+    .clinical-workspace {
+      grid-template-columns: 280px 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .clinical-workspace {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Census Header - Top bar with patient context */
+  .census-header {
+    @apply col-span-full py-3 px-4 rounded-lg border border-border;
+    background: linear-gradient(135deg, hsl(var(--muted)) 0%, hsl(var(--muted)/0.6) 100%);
+    box-shadow: inset 0 1px 0 hsl(var(--background)/0.5), 0 1px 3px hsl(var(--foreground)/0.05);
+  }
+
+  /* Clinical Panels with depth */
   .clinical-panel {
-    @apply bg-card border border-card-border rounded-md p-4;
+    @apply bg-card border border-card-border rounded-lg p-4;
+    box-shadow: 0 1px 3px hsl(var(--foreground)/0.04), inset 0 1px 0 hsl(var(--background)/0.5);
+  }
+
+  .clinical-panel-elevated {
+    @apply bg-card border border-card-border rounded-lg p-4;
+    box-shadow: 0 4px 12px hsl(var(--foreground)/0.08), 0 1px 3px hsl(var(--foreground)/0.04);
   }
 
   .clinical-header {
     @apply flex items-center justify-between gap-4 pb-3 mb-3 border-b border-border;
   }
 
+  /* Acuity Badges */
   .clinical-badge-critical {
-    @apply bg-destructive/10 text-destructive border border-destructive/30 font-medium;
+    @apply bg-destructive/15 text-destructive border border-destructive/30 font-semibold px-2.5 py-0.5 rounded-md text-xs;
+    box-shadow: 0 1px 2px hsl(var(--destructive)/0.15);
   }
 
   .clinical-badge-warning {
-    @apply bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-medium;
+    @apply bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-semibold px-2.5 py-0.5 rounded-md text-xs;
+    box-shadow: 0 1px 2px hsl(38 92% 50% / 0.15);
   }
 
   .clinical-badge-info {
-    @apply bg-primary/10 text-primary border border-primary/30 font-medium;
+    @apply bg-primary/10 text-primary border border-primary/30 font-medium px-2.5 py-0.5 rounded-md text-xs;
   }
 
+  .clinical-badge-success {
+    @apply bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-medium px-2.5 py-0.5 rounded-md text-xs;
+  }
+
+  /* Status Banners */
   .status-banner-critical {
     @apply bg-destructive/10 border-l-4 border-l-destructive p-3 rounded-r-md;
+    box-shadow: inset 2px 0 8px hsl(var(--destructive)/0.1);
   }
 
   .status-banner-warning {
     @apply bg-amber-500/10 border-l-4 border-l-amber-500 p-3 rounded-r-md;
+    box-shadow: inset 2px 0 8px hsl(38 92% 50% / 0.1);
   }
 
   .status-banner-info {
     @apply bg-primary/10 border-l-4 border-l-primary p-3 rounded-r-md;
   }
 
+  /* Triage Queue Items */
   .triage-item {
-    @apply flex items-center gap-3 p-3 rounded-md border border-border hover-elevate cursor-pointer transition-colors;
+    @apply flex items-center gap-3 p-3 rounded-lg border border-border cursor-pointer transition-all;
+    box-shadow: 0 1px 2px hsl(var(--foreground)/0.03);
+  }
+
+  .triage-item:hover {
+    @apply bg-muted/50;
+    box-shadow: 0 2px 6px hsl(var(--foreground)/0.06);
+    transform: translateY(-1px);
   }
 
   .triage-item-critical {
@@ -248,11 +299,17 @@
   }
 
   .triage-item-info {
-    @apply border-l-4 border-l-primary/50;
+    @apply border-l-4 border-l-primary/40;
   }
 
+  .triage-item-selected {
+    @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  /* Metrics Bar */
   .metrics-bar {
-    @apply flex flex-wrap items-center gap-6 py-3 px-4 bg-muted/40 rounded-lg border border-border;
+    @apply flex flex-wrap items-center gap-6 py-3 px-4 rounded-lg border border-border;
+    background: linear-gradient(135deg, hsl(var(--muted)/0.5) 0%, hsl(var(--muted)/0.3) 100%);
   }
 
   .metric-item {
@@ -268,7 +325,22 @@
   }
 
   .metric-value-critical {
-    @apply font-semibold text-destructive tabular-nums;
+    @apply font-bold text-destructive tabular-nums;
+  }
+
+  /* Recommendation Rail */
+  .recommendation-rail {
+    @apply space-y-4 overflow-y-auto;
+  }
+
+  .recommendation-card {
+    @apply bg-card border border-card-border rounded-lg overflow-hidden;
+    box-shadow: 0 2px 8px hsl(var(--foreground)/0.06);
+  }
+
+  .recommendation-card-header {
+    @apply px-4 py-3 border-b border-border;
+    background: linear-gradient(135deg, hsl(var(--primary)/0.08) 0%, hsl(var(--primary)/0.03) 100%);
   }
 }
 
