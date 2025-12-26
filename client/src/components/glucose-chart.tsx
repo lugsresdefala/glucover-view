@@ -21,9 +21,9 @@ const glucoseFieldLabels: Record<string, string> = {
   jejum: "Jejum",
   posCafe1h: "1h pós-café",
   preAlmoco: "Pré-almoço",
-  posAlmoco2h: "2h pós-almoço",
+  posAlmoco1h: "1h pós-almoço",
   preJantar: "Pré-jantar",
-  posJantar2h: "2h pós-jantar",
+  posJantar1h: "1h pós-jantar",
   madrugada: "Madrugada",
 };
 
@@ -31,9 +31,9 @@ const colors = {
   jejum: "hsl(210, 85%, 50%)",
   posCafe1h: "hsl(25, 80%, 50%)",
   preAlmoco: "hsl(170, 65%, 45%)",
-  posAlmoco2h: "hsl(280, 70%, 50%)",
+  posAlmoco1h: "hsl(280, 70%, 50%)",
   preJantar: "hsl(195, 75%, 50%)",
-  posJantar2h: "hsl(358, 75%, 50%)",
+  posJantar1h: "hsl(358, 75%, 50%)",
   madrugada: "hsl(45, 80%, 50%)",
 };
 
