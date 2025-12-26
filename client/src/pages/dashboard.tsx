@@ -308,41 +308,43 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-muted/30">
+      <header className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <img 
               src={hapvidaLogo} 
               alt="Hapvida" 
               className="h-10 w-auto"
               data-testid="img-logo"
             />
-            <div className="border-l border-border pl-3">
-              <h1 className="text-lg font-semibold">GlucoVer</h1>
-              <p className="text-xs text-muted-foreground">Suporte à Decisão Clínica</p>
+            <div className="hidden sm:block border-l border-border pl-4">
+              <h1 className="text-xl font-semibold tracking-tight">GlucoVer</h1>
+              <p className="text-sm text-muted-foreground">Suporte à Decisão Clínica</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {user && (
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="hidden sm:flex gap-1">
-                  {isAdmin ? <Shield className="h-3 w-3" /> : <Stethoscope className="h-3 w-3" />}
-                  {roleDisplayNames[userRole] || userRole}
-                </Badge>
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>
+              <div className="flex items-center gap-3">
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback className="bg-primary/10 text-primary font-medium">
                     {user.firstName?.[0] || user.email?.[0]?.toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm text-muted-foreground hidden sm:inline">
-                  {user.firstName || user.email}
-                </span>
+                <div className="hidden md:block">
+                  <p className="text-sm font-medium">
+                    {user.firstName || user.email}
+                  </p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    {isAdmin ? <Shield className="h-3 w-3" /> : <Stethoscope className="h-3 w-3" />}
+                    {roleDisplayNames[userRole] || userRole}
+                  </p>
+                </div>
               </div>
             )}
             <Button 
-              variant="ghost" 
-              size="icon" 
+              variant="outline" 
+              size="sm" 
               data-testid="button-logout"
               onClick={async () => {
                 await apiRequest("POST", "/api/user/logout");
@@ -350,77 +352,86 @@ export default function Dashboard() {
                 window.location.href = "/";
               }}
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Sair</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-          <Card>
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <Card className="shadow-md">
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total de Pacientes
               </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-status-info-bg rounded-lg">
+                <Users className="h-4 w-4 text-status-info" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-total-patients">
+              <div className="text-3xl font-bold" data-testid="text-total-patients">
                 {isLoadingPatients ? "..." : dashboardMetrics.totalPatients}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground mt-1">
                 {isAdmin ? "em todo o sistema" : "vinculados a você"}
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-md">
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Avaliações Realizadas
               </CardTitle>
-              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-status-success-bg rounded-lg">
+                <ClipboardList className="h-4 w-4 text-status-success" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-total-evaluations">
+              <div className="text-3xl font-bold" data-testid="text-total-evaluations">
                 {isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground mt-1">
                 total de análises
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-md">
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Últimos 7 Dias
               </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <TrendingUp className="h-4 w-4 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-recent-evaluations">
+              <div className="text-3xl font-bold" data-testid="text-recent-evaluations">
                 {isLoadingHistory ? "..." : dashboardMetrics.recentEvaluations}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground mt-1">
                 novas avaliações
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-md">
             <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Alertas Críticos
               </CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-status-critical-bg rounded-lg">
+                <AlertTriangle className="h-4 w-4 text-status-critical" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="text-critical-alerts">
+              <div className="text-3xl font-bold" data-testid="text-critical-alerts">
                 {isLoadingHistory ? "..." : dashboardMetrics.criticalAlerts}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground mt-1">
                 pacientes com valores extremos
               </p>
             </CardContent>
@@ -761,17 +772,17 @@ export default function Dashboard() {
           </Card>
         )}
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            <Card>
+            <Card className="shadow-md">
               <CardHeader>
-                <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-5 w-5" />
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Clock className="h-5 w-5 text-primary" />
                       Avaliações Recentes
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="mt-1">
                       Últimas análises realizadas
                     </CardDescription>
                   </div>
@@ -1016,17 +1027,16 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-6">
-            <Card>
+            <Card className="shadow-md">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Calendar className="h-5 w-5 text-primary" />
                   Ações Rápidas
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button 
                   className="w-full justify-start" 
-                  variant="outline"
                   onClick={() => setShowEvaluationForm(true)}
                   data-testid="button-quick-evaluation"
                 >
@@ -1057,17 +1067,17 @@ export default function Dashboard() {
             </Card>
 
             {dashboardMetrics.criticalAlerts > 0 && (
-              <Card className="border-destructive/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-destructive">
+              <Card className="shadow-md bg-status-critical-bg border-status-critical/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-status-critical">
                     <AlertTriangle className="h-5 w-5" />
-                    Atenção
+                    Atenção Necessária
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Existem <strong>{dashboardMetrics.criticalAlerts}</strong> avaliações 
-                    com valores glicêmicos críticos que podem necessitar de atenção.
+                  <p className="text-sm text-status-critical-foreground/80">
+                    Existem <strong className="text-status-critical">{dashboardMetrics.criticalAlerts}</strong> avaliações 
+                    com valores glicêmicos críticos que podem necessitar de atenção imediata.
                   </p>
                 </CardContent>
               </Card>
