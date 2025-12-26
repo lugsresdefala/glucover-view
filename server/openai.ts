@@ -16,35 +16,38 @@ const openai = openaiApiKey
   : null;
 
 const CLINICAL_PROMPT = `Você é um endocrinologista especialista em diabetes na gestação. 
-Escreva recomendações clínicas em linguagem NATURAL e PROFISSIONAL, como um parecer médico real para apresentação acadêmica.
+Escreva recomendações clínicas em linguagem TÉCNICA e OBJETIVA, como um parecer médico formal.
 
-REGRAS DE ESCRITA:
-- Use linguagem médica fluida e profissional
-- Evite repetições e termos genéricos
+REGRAS DE ESCRITA OBRIGATÓRIAS:
+- Tom NEUTRO e DESCRITIVO - apenas fatos e dados
+- PROIBIDO: adjetivos avaliativos (excelente, ótimo, preocupante, alarmante, impressionante)
+- PROIBIDO: juízos de valor (parabéns, muito bem, cuidado, atenção)
+- PROIBIDO: linguagem sensacionalista ou superlativa
+- Use apenas: "adequado/inadequado", "dentro/fora da meta", "estável/variável"
 - Seja ESPECÍFICO com números e dados concretos
 - Analise TANTO o panorama geral QUANTO os últimos 7 dias separadamente
-- Identifique TENDÊNCIAS (melhora/piora/estabilidade)
+- Identifique TENDÊNCIAS de forma objetiva (melhora/piora/estabilidade)
 - NUNCA contradiga a si mesmo
 
 FORMATO OBRIGATÓRIO (JSON):
 {
   "panoramaGeral": {
-    "resumo": "Síntese do controle glicêmico geral em todo período analisado (máximo 3 frases).",
-    "analise": "Análise detalhada dos padrões glicêmicos, períodos problemáticos, e resposta ao tratamento atual."
+    "resumo": "Descrição objetiva do controle glicêmico no período total (máximo 3 frases, sem adjetivos avaliativos).",
+    "analise": "Dados numéricos: % na meta, médias por período, número de episódios fora da meta."
   },
   "ultimosSeteDias": {
-    "resumo": "Síntese focada nos últimos 7 dias - o que está acontecendo AGORA com a paciente.",
-    "tendencia": "MELHORA | PIORA | ESTÁVEL - com justificativa específica baseada nos dados.",
-    "comparativo": "Compare explicitamente: médias, percentuais na meta, e alertas críticos dos 7 dias vs período total.",
-    "analise": "Análise dia-a-dia identificando padrões recentes, picos, e variações significativas."
+    "resumo": "Descrição objetiva dos últimos 7 dias com dados numéricos.",
+    "tendencia": "MELHORA | PIORA | ESTÁVEL - justificativa baseada em números (ex: média passou de X para Y).",
+    "comparativo": "Comparação numérica: médias e % na meta dos 7 dias vs período total.",
+    "analise": "Dados dia-a-dia: valores específicos, períodos com maior variação."
   },
   "condutaTerapeutica": {
-    "imediata": "O que fazer AGORA baseado nos últimos 7 dias. Seja específico com doses e ajustes.",
-    "continuada": "Estratégia de médio prazo considerando o panorama geral."
+    "imediata": "Conduta específica com doses em UI e horários. Sem linguagem alarmista.",
+    "continuada": "Estratégia de médio prazo em tom descritivo."
   },
-  "fundamentacao": "Justificativa citando diretrizes SBD 2025, FEBRASGO 2019 e/ou OMS 2025 com códigos (ex: SBD-R4).",
+  "fundamentacao": "Citação das diretrizes SBD 2025, FEBRASGO 2019 e/ou OMS 2025 com códigos (ex: SBD-R4).",
   "urgencyLevel": "info | warning | critical",
-  "proximosPassos": ["Lista de 3-5 ações ESPECÍFICAS e MENSURÁVEIS"]
+  "proximosPassos": ["Lista de 3-5 ações específicas com parâmetros mensuráveis"]
 }
 
 METAS GLICÊMICAS (SBD 2025):
@@ -63,12 +66,12 @@ AJUSTES DE INSULINA:
 - Pós-jantar alto → Rápida jantar (+10-20%)
 
 COERÊNCIA OBRIGATÓRIA:
-- Se urgencyLevel="critical" → conduta deve refletir URGÊNCIA real
-- Se urgencyLevel="info" → não alarmar desnecessariamente
-- Se tendência de PIORA → condutas devem ser mais agressivas
-- Se tendência de MELHORA → reforçar conduta atual, monitorar
+- Se urgencyLevel="critical" → conduta objetiva com ajustes de dose
+- Se urgencyLevel="info" → manter conduta atual
+- Se tendência de PIORA → indicar ajuste de dose específico
+- Se tendência de MELHORA → manter esquema, continuar monitorização
 
-FOCO ESPECIAL: Analise os ÚLTIMOS 7 DIAS com detalhamento maior. É o período mais relevante clinicamente.`;
+DETALHAMENTO: Analise os últimos 7 dias com dados numéricos específicos.`;
 
 export async function generateClinicalRecommendation(
   evaluation: PatientEvaluation
@@ -204,29 +207,29 @@ function generateDeterministicRecommendation(
     const hypoCount = criticalAlerts.filter(a => a.type === "hypoglycemia").length;
     const hyperCount = criticalAlerts.filter(a => a.type === "severe_hyperglycemia").length;
     
-    panoramaResumo = `Gestante com ${igText}, diagnóstico de ${analysis.diabetesType}, apresentando controle glicêmico instável no período de ${diasAnalise} dias analisados.`;
+    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}. Período analisado: ${diasAnalise} dias.`;
     
     if (hasHypo && hasSevereHyper) {
-      panoramaAnalise = `O perfil glicêmico revela grande variabilidade, com ${hypoCount} episódio(s) de hipoglicemia (<65 mg/dL) e ${hyperCount} episódio(s) de hiperglicemia severa (>200 mg/dL). Esta oscilação representa risco significativo para mãe e feto. A média glicêmica de ${analysis.averageGlucose} mg/dL mascara a real instabilidade do controle, com apenas ${analysis.percentInTarget}% das medidas dentro da meta terapêutica.`;
+      panoramaAnalise = `Perfil glicêmico com variabilidade: ${hypoCount} episódio(s) de hipoglicemia (<65 mg/dL) e ${hyperCount} episódio(s) de hiperglicemia (>200 mg/dL). Média glicêmica: ${analysis.averageGlucose} mg/dL. Percentual na meta: ${analysis.percentInTarget}%.`;
     } else if (hasHypo) {
-      panoramaAnalise = `Identificados ${hypoCount} episódio(s) de hipoglicemia (<65 mg/dL) ao longo do período. ${evaluation.usesInsulin ? "A ocorrência de hipoglicemia em paciente insulinizada sugere possível excesso de dose ou inadequação do esquema alimentar." : "Investigar causa da hipoglicemia (jejum prolongado, atividade física excessiva, alimentação inadequada)."} Média glicêmica: ${analysis.averageGlucose} mg/dL, com ${analysis.percentInTarget}% na meta.`;
+      panoramaAnalise = `Registrados ${hypoCount} episódio(s) de hipoglicemia (<65 mg/dL). ${evaluation.usesInsulin ? "Avaliar dose de insulina e esquema alimentar." : "Avaliar padrão alimentar e atividade física."} Média glicêmica: ${analysis.averageGlucose} mg/dL. Percentual na meta: ${analysis.percentInTarget}%.`;
     } else {
-      panoramaAnalise = `Detectados ${hyperCount} episódio(s) de hiperglicemia severa (>200 mg/dL), indicando falha significativa no controle glicêmico. A média de ${analysis.averageGlucose} mg/dL e apenas ${analysis.percentInTarget}% das medidas na meta refletem a gravidade do descontrole, com risco aumentado de complicações fetais.`;
+      panoramaAnalise = `Registrados ${hyperCount} episódio(s) de hiperglicemia (>200 mg/dL). Média glicêmica: ${analysis.averageGlucose} mg/dL. Percentual na meta: ${analysis.percentInTarget}%.`;
     }
   } else if (analysis.percentInTarget >= 70) {
     urgency = "info";
-    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}, demonstrando bom controle glicêmico ao longo de ${diasAnalise} dias de monitoramento.`;
-    panoramaAnalise = `O perfil glicêmico é satisfatório, com ${analysis.percentInTarget}% das medidas dentro das metas estabelecidas (jejum 65-95, 1h pós-prandial <140 mg/dL). A média glicêmica de ${analysis.averageGlucose} mg/dL encontra-se em faixa adequada. ${evaluation.usesInsulin ? "A insulinoterapia atual está eficaz e deve ser mantida." : "O manejo não-farmacológico está sendo bem-sucedido."}`;
+    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}. Período analisado: ${diasAnalise} dias.`;
+    panoramaAnalise = `Percentual na meta: ${analysis.percentInTarget}% (metas: jejum 65-95, 1h pós-prandial <140 mg/dL). Média glicêmica: ${analysis.averageGlucose} mg/dL. ${evaluation.usesInsulin ? "Manter esquema de insulinoterapia atual." : "Manter manejo nutricional atual."}`;
   } else if (analysis.percentInTarget >= 50) {
     urgency = "warning";
     const periodInfo = generatePeriodAnalysis(analysis);
-    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}, apresentando controle glicêmico parcialmente adequado nos ${diasAnalise} dias analisados.`;
-    panoramaAnalise = `O monitoramento revela ${analysis.percentAboveTarget}% das medidas acima da meta, com média glicêmica de ${analysis.averageGlucose} mg/dL. ${periodInfo} Este padrão indica necessidade de otimização terapêutica para atingir as metas preconizadas pelas diretrizes.`;
+    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}. Período analisado: ${diasAnalise} dias.`;
+    panoramaAnalise = `Percentual na meta: ${analysis.percentInTarget}%. Percentual acima da meta: ${analysis.percentAboveTarget}%. Média glicêmica: ${analysis.averageGlucose} mg/dL. ${periodInfo}`;
   } else {
     urgency = "critical";
     const periodInfo2 = generatePeriodAnalysis(analysis);
-    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}, com controle glicêmico inadequado requerendo intervenção prioritária.`;
-    panoramaAnalise = `A análise de ${diasAnalise} dias evidencia descontrole significativo: apenas ${analysis.percentInTarget}% das medidas na meta, com ${analysis.percentAboveTarget}% acima do alvo e média de ${analysis.averageGlucose} mg/dL. ${periodInfo2} Este padrão está associado a risco elevado de macrossomia, hipoglicemia neonatal e outras complicações perinatais.`;
+    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}. Período analisado: ${diasAnalise} dias.`;
+    panoramaAnalise = `Percentual na meta: ${analysis.percentInTarget}%. Percentual acima da meta: ${analysis.percentAboveTarget}%. Média glicêmica: ${analysis.averageGlucose} mg/dL. ${periodInfo2}`;
   }
   
   // ============== ÚLTIMOS 7 DIAS ==============
@@ -265,10 +268,10 @@ function generateDeterministicRecommendation(
       const betterPeriods = s7.periodComparison.filter(p => p.change === "better");
       
       if (worsePeriods.length > 0) {
-        ultimos7Analise += ` Atenção aos períodos com piora recente: ${worsePeriods.map(p => `${p.period} (${p.overall}→${p.last7Days} mg/dL)`).join(", ")}.`;
+        ultimos7Analise += ` Períodos com aumento recente: ${worsePeriods.map(p => `${p.period} (${p.overall}→${p.last7Days} mg/dL)`).join(", ")}.`;
       }
       if (betterPeriods.length > 0) {
-        ultimos7Analise += ` Melhora observada em: ${betterPeriods.map(p => `${p.period} (${p.overall}→${p.last7Days} mg/dL)`).join(", ")}.`;
+        ultimos7Analise += ` Períodos com redução recente: ${betterPeriods.map(p => `${p.period} (${p.overall}→${p.last7Days} mg/dL)`).join(", ")}.`;
       }
     }
     
@@ -276,8 +279,8 @@ function generateDeterministicRecommendation(
     if (s7.criticalAlerts.length > 0) {
       const hypoRecent = s7.criticalAlerts.filter(a => a.type === "hypoglycemia").length;
       const hyperRecent = s7.criticalAlerts.filter(a => a.type === "severe_hyperglycemia").length;
-      if (hypoRecent > 0) ultimos7Analise += ` ALERTA: ${hypoRecent} episódio(s) de hipoglicemia nos últimos 7 dias.`;
-      if (hyperRecent > 0) ultimos7Analise += ` ALERTA: ${hyperRecent} episódio(s) de hiperglicemia severa nos últimos 7 dias.`;
+      if (hypoRecent > 0) ultimos7Analise += ` Hipoglicemia: ${hypoRecent} episódio(s) nos últimos 7 dias.`;
+      if (hyperRecent > 0) ultimos7Analise += ` Hiperglicemia >200: ${hyperRecent} episódio(s) nos últimos 7 dias.`;
     }
   } else {
     ultimos7Resumo = `Período de análise inferior a 7 dias (${diasAnalise} dias disponíveis).`;
@@ -579,10 +582,9 @@ function hasRecurrentHypoglycemia(analysis: ClinicalAnalysis): { hasPattern: boo
   // Agrupar por período normalizado para verificar recorrência
   const byPeriod: Record<string, number> = {};
   hypoAlerts.forEach(alert => {
-    // Extrair período da mensagem se disponível
-    const periodMatch = alert.message?.match(/(Jejum|pós-café|pós-almoço|pós-jantar|Pré-almoço|Pré-jantar|Madrugada|café|almoço|jantar)/i);
-    if (periodMatch) {
-      const normalizedPeriod = normalizePeriodName(periodMatch[1]);
+    // Usar timepoint que é o período do alerta
+    if (alert.timepoint) {
+      const normalizedPeriod = normalizePeriodName(alert.timepoint);
       byPeriod[normalizedPeriod] = (byPeriod[normalizedPeriod] || 0) + 1;
     }
   });
