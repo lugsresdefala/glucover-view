@@ -212,15 +212,63 @@
   }
 
   .clinical-badge-critical {
-    @apply bg-destructive/10 text-destructive border-destructive/20;
+    @apply bg-destructive/10 text-destructive border border-destructive/30 font-medium;
   }
 
   .clinical-badge-warning {
-    @apply bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20;
+    @apply bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30 font-medium;
   }
 
   .clinical-badge-info {
-    @apply bg-primary/10 text-primary border-primary/20;
+    @apply bg-primary/10 text-primary border border-primary/30 font-medium;
+  }
+
+  .status-banner-critical {
+    @apply bg-destructive/10 border-l-4 border-l-destructive p-3 rounded-r-md;
+  }
+
+  .status-banner-warning {
+    @apply bg-amber-500/10 border-l-4 border-l-amber-500 p-3 rounded-r-md;
+  }
+
+  .status-banner-info {
+    @apply bg-primary/10 border-l-4 border-l-primary p-3 rounded-r-md;
+  }
+
+  .triage-item {
+    @apply flex items-center gap-3 p-3 rounded-md border border-border hover-elevate cursor-pointer transition-colors;
+  }
+
+  .triage-item-critical {
+    @apply border-l-4 border-l-destructive bg-destructive/5;
+  }
+
+  .triage-item-warning {
+    @apply border-l-4 border-l-amber-500 bg-amber-500/5;
+  }
+
+  .triage-item-info {
+    @apply border-l-4 border-l-primary/50;
+  }
+
+  .metrics-bar {
+    @apply flex flex-wrap items-center gap-6 py-3 px-4 bg-muted/40 rounded-lg border border-border;
+  }
+
+  .metric-item {
+    @apply flex items-center gap-2;
+  }
+
+  .metric-label {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .metric-value {
+    @apply font-semibold tabular-nums;
+  }
+
+  .metric-value-critical {
+    @apply font-semibold text-destructive tabular-nums;
   }
 }
 

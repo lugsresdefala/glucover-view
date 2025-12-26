@@ -390,33 +390,33 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex flex-wrap items-center gap-6 py-3 px-4 mb-6 bg-muted/30 rounded-lg border">
-          <div className="flex items-center gap-2">
+        <div className="metrics-bar mb-6">
+          <div className="metric-item">
             <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Pacientes:</span>
-            <span className="font-semibold" data-testid="text-total-patients">
+            <span className="metric-label">Pacientes:</span>
+            <span className="metric-value" data-testid="text-total-patients">
               {isLoadingPatients ? "..." : dashboardMetrics.totalPatients}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="metric-item">
             <ClipboardList className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Avaliações:</span>
-            <span className="font-semibold" data-testid="text-total-evaluations">
+            <span className="metric-label">Avaliações:</span>
+            <span className="metric-value" data-testid="text-total-evaluations">
               {isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="metric-item">
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">7 dias:</span>
-            <span className="font-semibold" data-testid="text-recent-evaluations">
+            <span className="metric-label">7 dias:</span>
+            <span className="metric-value" data-testid="text-recent-evaluations">
               {isLoadingHistory ? "..." : dashboardMetrics.recentEvaluations}
             </span>
           </div>
           {dashboardMetrics.criticalAlerts > 0 && (
-            <div className="flex items-center gap-2">
+            <div className="metric-item">
               <AlertTriangle className="h-4 w-4 text-destructive" />
-              <span className="font-semibold text-destructive" data-testid="text-critical-alerts">
-                {dashboardMetrics.criticalAlerts} alertas críticos
+              <span className="metric-value-critical" data-testid="text-critical-alerts">
+                {dashboardMetrics.criticalAlerts} alertas
               </span>
             </div>
           )}
@@ -885,10 +885,17 @@ export default function Dashboard() {
                     <div className="space-y-3">
                       {[...evaluations].sort((a, b) => 
                         new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-                      ).map((evaluation) => (
+                      ).map((evaluation) => {
+                        const urgency = evaluation.recommendation?.urgencyLevel || "info";
+                        const triageClass = urgency === "critical" 
+                          ? "triage-item-critical" 
+                          : urgency === "warning" 
+                            ? "triage-item-warning" 
+                            : "triage-item-info";
+                        return (
                         <div
                           key={evaluation.id}
-                          className={`flex items-center justify-between gap-3 p-3 rounded-md border hover-elevate cursor-pointer ${
+                          className={`triage-item ${triageClass} ${
                             selectedIds.has(evaluation.id) ? "bg-muted/50 border-primary" : ""
                           }`}
                           onClick={() => selectionMode ? toggleSelection(evaluation.id, { stopPropagation: () => {} } as React.MouseEvent) : handleViewEvaluation(evaluation)}
@@ -962,7 +969,7 @@ export default function Dashboard() {
                             )}
                           </div>
                         </div>
-                      ))}
+                      );})}
                     </div>
                   </ScrollArea>
                 )}
