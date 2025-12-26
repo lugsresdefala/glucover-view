@@ -519,22 +519,77 @@ export default function Dashboard() {
 
         {/* Center Column - Main Workspace */}
         <main className="flex-1 overflow-y-auto bg-gradient-to-b from-muted/30 to-background p-4">
-        <div className="flex flex-wrap gap-3 mb-6">
-          <Dialog open={showEvaluationForm} onOpenChange={setShowEvaluationForm}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-new-evaluation">
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Avaliação
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Nova Avaliação de Paciente
-                </DialogTitle>
-              </DialogHeader>
-              <Form {...form}>
+          {/* Patient Workspace Content */}
+          {currentRecommendation ? (
+            <div className="space-y-4">
+              {/* Patient Header */}
+              <div className="p-4 rounded-lg border bg-card">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12">
+                      <AvatarFallback className="text-lg bg-gradient-to-br from-primary/20 to-primary/10">
+                        {currentRecommendation.patientName[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h2 className="text-lg font-semibold">{currentRecommendation.patientName}</h2>
+                      <p className="text-sm text-muted-foreground">
+                        {currentRecommendation.gestationalWeeks}sem {currentRecommendation.gestationalDays}d
+                        {currentRecommendation.usesInsulin && " • Em uso de insulina"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <PDFExportButton evaluation={currentRecommendation} />
+                    <Button onClick={() => setShowRecommendationModal(true)} data-testid="button-view-recommendation">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Ver Análise
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Charts and Stats */}
+              {glucoseReadings.some((r) => Object.values(r).some((v) => v !== undefined)) && (
+                <>
+                  <PatientStats
+                    readings={glucoseReadings}
+                    gestationalWeeks={gestationalWeeks}
+                    gestationalDays={gestationalDays}
+                    weight={weight ?? currentRecommendation.weight}
+                  />
+                  <GlucoseChart readings={glucoseReadings} />
+                </>
+              )}
+
+              {/* Recommendation Preview */}
+              {currentRecommendation.recommendation && (
+                <RecommendationPanel 
+                  recommendation={currentRecommendation.recommendation}
+                  glucoseReadings={glucoseReadings}
+                />
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+              <ClipboardList className="h-16 w-16 mb-4 opacity-30" />
+              <h3 className="text-lg font-medium mb-1">Selecione uma avaliação</h3>
+              <p className="text-sm">Escolha um paciente na lista à esquerda ou crie uma nova avaliação</p>
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Evaluation Form Dialog */}
+      <Dialog open={showEvaluationForm} onOpenChange={setShowEvaluationForm}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Nova Avaliação de Paciente
+            </DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
