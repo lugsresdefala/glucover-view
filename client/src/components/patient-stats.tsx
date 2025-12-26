@@ -7,7 +7,7 @@ interface PatientStatsProps {
   readings: GlucoseReading[];
   gestationalWeeks: number;
   gestationalDays: number;
-  weight: number;
+  weight?: number | null;
 }
 
 export function PatientStats({ readings, gestationalWeeks, gestationalDays, weight }: PatientStatsProps) {
@@ -86,7 +86,7 @@ export function PatientStats({ readings, gestationalWeeks, gestationalDays, weig
                 Peso Atual
               </p>
               <p className="text-2xl font-mono font-semibold" data-testid="text-weight">
-                {weight} <span className="text-sm font-normal">kg</span>
+                {weight ? `${weight}` : "—"} <span className="text-sm font-normal">kg</span>
               </p>
             </div>
           </div>

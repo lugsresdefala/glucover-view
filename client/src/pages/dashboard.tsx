@@ -127,7 +127,7 @@ export default function Dashboard() {
     resolver: zodResolver(patientEvaluationSchema),
     defaultValues: {
       patientName: "",
-      weight: 70,
+      weight: undefined, // Peso DEVE ser informado pela paciente - nunca usar valor padrão
       gestationalWeeks: 28,
       gestationalDays: 0,
       usesInsulin: false,
@@ -264,7 +264,7 @@ export default function Dashboard() {
   };
 
   const usesInsulin = form.watch("usesInsulin");
-  const weight = form.watch("weight") || 70;
+  const weight = form.watch("weight"); // Peso real da paciente - sem fallback
   const gestationalWeeks = form.watch("gestationalWeeks") || 28;
   const gestationalDays = form.watch("gestationalDays") || 0;
 
@@ -468,16 +468,20 @@ export default function Dashboard() {
                       name="weight"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Peso Atual (kg)</FormLabel>
+                          <FormLabel>Peso Atual (kg) *</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
                               step="0.1"
                               min="30"
                               max="200"
+                              placeholder="Ex: 65.5"
                               className="font-mono"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                              value={field.value ?? ""}
+                              onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                              onBlur={field.onBlur}
+                              name={field.name}
+                              ref={field.ref}
                               data-testid="input-weight"
                             />
                           </FormControl>
@@ -1004,7 +1008,7 @@ export default function Dashboard() {
                   readings={glucoseReadings}
                   gestationalWeeks={gestationalWeeks}
                   gestationalDays={gestationalDays}
-                  weight={weight}
+                  weight={weight ?? currentRecommendation.weight}
                 />
                 <GlucoseChart readings={glucoseReadings} />
               </>

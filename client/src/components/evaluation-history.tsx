@@ -111,7 +111,7 @@ export function EvaluationHistory({ evaluations, onViewEvaluation }: EvaluationH
                       </div>
                       <div>
                         <span className="text-muted-foreground">Peso:</span>
-                        <p className="font-mono font-medium">{evaluation.weight} kg</p>
+                        <p className="font-mono font-medium">{evaluation.weight ? `${evaluation.weight} kg` : "—"}</p>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Usa Insulina:</span>

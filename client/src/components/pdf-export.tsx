@@ -70,7 +70,7 @@ function PrintableReport({ evaluation }: { evaluation: StoredEvaluation }) {
           </div>
           <div>
             <span className="font-medium text-gray-600">Peso:</span>
-            <span className="ml-2 text-gray-900">{evaluation.weight} kg</span>
+            <span className="ml-2 text-gray-900">{evaluation.weight ? `${evaluation.weight} kg` : "Não informado"}</span>
           </div>
           <div>
             <span className="font-medium text-gray-600">Idade Gestacional:</span>

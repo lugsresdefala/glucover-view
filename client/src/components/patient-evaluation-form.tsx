@@ -23,7 +23,7 @@ interface PatientEvaluationFormProps {
 
 export function PatientEvaluationForm({ patientName, onCancel, onSuccess }: PatientEvaluationFormProps) {
   const { toast } = useToast();
-  const [weight, setWeight] = useState<number>(70);
+  const [weight, setWeight] = useState<number | undefined>(undefined); // Peso DEVE ser informado
   const [gestationalWeeks, setGestationalWeeks] = useState<number>(28);
   const [gestationalDays, setGestationalDays] = useState<number>(0);
   const [usesInsulin, setUsesInsulin] = useState(false);
