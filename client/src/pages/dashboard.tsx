@@ -54,9 +54,7 @@ import {
   CheckSquare,
   Square,
   X,
-  FileText,
-  Activity,
-  LayoutDashboard
+  FileText
 } from "lucide-react";
 import {
   AlertDialog,
@@ -342,254 +340,72 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Clinical Header Bar */}
-      <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-        <div className="flex items-center justify-between gap-4 px-4 py-3">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 pr-4 border-r border-border">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-                <Activity className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-sm font-bold tracking-tight">GlucoVer</h1>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Decisão Clínica</p>
-              </div>
+    <div className="min-h-screen bg-background">
+      {/* Census Header - Patient Context Bar */}
+      <div className="census-header mx-4 mt-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <div className="metric-item">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="metric-label">Pacientes:</span>
+              <span className="metric-value" data-testid="text-total-patients">
+                {isLoadingPatients ? "..." : dashboardMetrics.totalPatients}
+              </span>
             </div>
-            <nav className="flex items-center gap-1">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-xs font-medium">
-                <LayoutDashboard className="h-3.5 w-3.5" />
-                Painel
-              </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-muted-foreground text-xs hover-elevate">
-                <ClipboardList className="h-3.5 w-3.5" />
-                Histórico
-              </div>
-            </nav>
+            <div className="metric-item">
+              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+              <span className="metric-label">Avaliações:</span>
+              <span className="metric-value" data-testid="text-total-evaluations">
+                {isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}
+              </span>
+            </div>
+            <div className="metric-item">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <span className="metric-label">7 dias:</span>
+              <span className="metric-value" data-testid="text-recent-evaluations">
+                {isLoadingHistory ? "..." : dashboardMetrics.recentEvaluations}
+              </span>
+            </div>
           </div>
-          
           <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-4 px-3 py-1.5 rounded-lg bg-muted/50 text-xs">
-              <span className="flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5 text-primary" />
-                <span className="text-muted-foreground">Pacientes:</span>
-                <span className="font-semibold" data-testid="text-total-patients">{isLoadingPatients ? "..." : dashboardMetrics.totalPatients}</span>
+            {dashboardMetrics.criticalAlerts > 0 && (
+              <span className="clinical-badge-critical" data-testid="text-critical-alerts">
+                <AlertTriangle className="h-3 w-3 inline mr-1" />
+                {dashboardMetrics.criticalAlerts} alertas críticos
               </span>
-              <span className="flex items-center gap-1.5">
-                <ClipboardList className="h-3.5 w-3.5 text-primary" />
-                <span className="text-muted-foreground">Avaliações:</span>
-                <span className="font-semibold" data-testid="text-total-evaluations">{isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}</span>
-              </span>
-              {dashboardMetrics.criticalAlerts > 0 && (
-                <span className="flex items-center gap-1.5 text-destructive font-semibold" data-testid="text-critical-alerts">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  {dashboardMetrics.criticalAlerts} alertas
-                </span>
-              )}
-            </div>
+            )}
             {user && (
-              <div className="flex items-center gap-2 pl-3 border-l border-border">
-                <Avatar className="h-7 w-7 ring-2 ring-primary/20">
-                  <AvatarFallback className="text-xs bg-gradient-to-br from-primary/20 to-primary/10">
-                    {user.firstName?.[0] || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden sm:block">
-                  <p className="text-xs font-medium leading-none">{user.firstName || user.email}</p>
-                  <p className="text-[10px] text-muted-foreground">{roleDisplayNames[userRole]}</p>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-7 w-7"
-                  data-testid="button-logout"
-                  onClick={async () => {
-                    await apiRequest("POST", "/api/user/logout");
-                    await queryClient.invalidateQueries({ queryKey: ["/api/user/me"] });
-                    window.location.href = "/";
-                  }}
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                </Button>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="hidden sm:flex gap-1">
+                  {isAdmin ? <Shield className="h-3 w-3" /> : <Stethoscope className="h-3 w-3" />}
+                  {roleDisplayNames[userRole] || userRole}
+                </Badge>
+                <span className="text-sm text-muted-foreground hidden sm:inline">
+                  {user.firstName || user.email}
+                </span>
               </div>
             )}
           </div>
         </div>
-      </header>
-
-      {/* Tri-Pane Clinical Workspace */}
-      <div className="flex h-[calc(100vh-57px)]">
-        {/* Left Column - Triage Queue */}
-        <aside className="w-80 border-r bg-card/50 flex flex-col">
-          <div className="p-3 border-b bg-gradient-to-r from-primary/5 to-transparent">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fila de Triagem</h2>
-              <Badge variant="secondary" className="text-[10px]">{evaluations.length}</Badge>
-            </div>
-            <div className="flex gap-1.5">
-              <Dialog open={showEvaluationForm} onOpenChange={setShowEvaluationForm}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="flex-1 h-8 text-xs" data-testid="button-new-evaluation">
-                    <Plus className="h-3.5 w-3.5 mr-1" />
-                    Nova Avaliação
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <User className="h-5 w-5" />
-                      Nova Avaliação de Paciente
-                    </DialogTitle>
-                  </DialogHeader>
-                  {/* Form content will be here */}
-                </DialogContent>
-              </Dialog>
-              <Button size="sm" variant="outline" className="h-8" onClick={() => setShowBatchImport(true)} data-testid="button-import">
-                <FileStack className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
-          
-          <ScrollArea className="flex-1">
-            <div className="p-2 space-y-1.5">
-              {isLoadingHistory ? (
-                <div className="text-center py-8 text-muted-foreground text-sm">Carregando...</div>
-              ) : evaluations.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <ClipboardList className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">Nenhuma avaliação</p>
-                </div>
-              ) : (
-                [...evaluations].sort((a, b) => 
-                  new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-                ).map((evaluation) => {
-                  const urgency = evaluation.recommendation?.urgencyLevel || "info";
-                  const isSelected = currentRecommendation?.id === evaluation.id;
-                  return (
-                    <div
-                      key={evaluation.id}
-                      className={`group relative p-2.5 rounded-lg border cursor-pointer transition-all ${
-                        isSelected 
-                          ? "bg-primary/10 border-primary/30 shadow-sm" 
-                          : "bg-card border-border hover:bg-muted/50 hover:border-muted-foreground/20"
-                      } ${urgency === "critical" ? "border-l-4 border-l-destructive" : urgency === "warning" ? "border-l-4 border-l-amber-500" : ""}`}
-                      onClick={() => handleViewEvaluation(evaluation)}
-                      data-testid={`card-evaluation-${evaluation.id}`}
-                    >
-                      <div className="flex items-start gap-2.5">
-                        <Avatar className="h-8 w-8 shrink-0">
-                          <AvatarFallback className={`text-xs ${urgency === "critical" ? "bg-destructive/20 text-destructive" : urgency === "warning" ? "bg-amber-500/20 text-amber-700" : "bg-primary/10 text-primary"}`}>
-                            {evaluation.patientName[0]?.toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate leading-tight">{evaluation.patientName}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] text-muted-foreground">{evaluation.gestationalWeeks}s {evaluation.gestationalDays}d</span>
-                            {evaluation.usesInsulin && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">Insulina</span>
-                            )}
-                          </div>
-                        </div>
-                        {urgency === "critical" && (
-                          <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {formatDate(evaluation.createdAt)}
-                        </span>
-                        <Button 
-                          size="icon" 
-                          variant="ghost" 
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => { e.stopPropagation(); handleDeleteSingle(evaluation.id, e); }}
-                        >
-                          <Trash2 className="h-3 w-3 text-muted-foreground" />
-                        </Button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </ScrollArea>
-        </aside>
-
-        {/* Center Column - Main Workspace */}
-        <main className="flex-1 overflow-y-auto bg-gradient-to-b from-muted/30 to-background p-4">
-          {/* Patient Workspace Content */}
-          {currentRecommendation ? (
-            <div className="space-y-4">
-              {/* Patient Header */}
-              <div className="p-4 rounded-lg border bg-card">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="text-lg bg-gradient-to-br from-primary/20 to-primary/10">
-                        {currentRecommendation.patientName[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h2 className="text-lg font-semibold">{currentRecommendation.patientName}</h2>
-                      <p className="text-sm text-muted-foreground">
-                        {currentRecommendation.gestationalWeeks}sem {currentRecommendation.gestationalDays}d
-                        {currentRecommendation.usesInsulin && " • Em uso de insulina"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <PDFExportButton evaluation={currentRecommendation} />
-                    <Button onClick={() => setShowRecommendationModal(true)} data-testid="button-view-recommendation">
-                      <Eye className="h-4 w-4 mr-2" />
-                      Ver Análise
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Charts and Stats */}
-              {glucoseReadings.some((r) => Object.values(r).some((v) => v !== undefined)) && (
-                <>
-                  <PatientStats
-                    readings={glucoseReadings}
-                    gestationalWeeks={gestationalWeeks}
-                    gestationalDays={gestationalDays}
-                    weight={weight ?? currentRecommendation.weight}
-                  />
-                  <GlucoseChart readings={glucoseReadings} />
-                </>
-              )}
-
-              {/* Recommendation Preview */}
-              {currentRecommendation.recommendation && (
-                <RecommendationPanel 
-                  recommendation={currentRecommendation.recommendation}
-                  glucoseReadings={glucoseReadings}
-                />
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-              <ClipboardList className="h-16 w-16 mb-4 opacity-30" />
-              <h3 className="text-lg font-medium mb-1">Selecione uma avaliação</h3>
-              <p className="text-sm">Escolha um paciente na lista à esquerda ou crie uma nova avaliação</p>
-            </div>
-          )}
-        </main>
       </div>
 
-      {/* Evaluation Form Dialog */}
-      <Dialog open={showEvaluationForm} onOpenChange={setShowEvaluationForm}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Nova Avaliação de Paciente
-            </DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
+      <main className="p-4">
+        <div className="flex flex-wrap gap-3 mb-6">
+          <Dialog open={showEvaluationForm} onOpenChange={setShowEvaluationForm}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-new-evaluation">
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Avaliação
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Nova Avaliação de Paciente
+                </DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
