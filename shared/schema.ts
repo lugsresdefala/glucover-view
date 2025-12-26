@@ -9,6 +9,10 @@ export * from "./models/auth";
 // Import tables from auth for relations
 import { users, patients } from "./models/auth";
 
+// Gestational age source types
+export const gestationalAgeSources = ["explicit", "calculated", "propagated"] as const;
+export type GestationalAgeSource = typeof gestationalAgeSources[number];
+
 // Evaluations table - now links to patients
 export const evaluations = pgTable("evaluations", {
   id: serial("id").primaryKey(),
@@ -19,6 +23,7 @@ export const evaluations = pgTable("evaluations", {
   weight: real("weight"),
   gestationalWeeks: integer("gestational_weeks").notNull(),
   gestationalDays: integer("gestational_days").notNull(),
+  gestationalAgeSource: text("gestational_age_source").default("explicit"),
   usesInsulin: boolean("uses_insulin").notNull(),
   insulinRegimens: jsonb("insulin_regimens"),
   dietAdherence: text("diet_adherence").notNull(),
@@ -112,6 +117,7 @@ export const patientEvaluationSchema = z.object({
   weight: z.number().min(30).max(200, "Peso deve estar entre 30 e 200 kg").nullable().optional(),
   gestationalWeeks: z.number().min(0).max(42, "Semanas devem estar entre 0 e 42"),
   gestationalDays: z.number().min(0).max(6, "Dias devem estar entre 0 e 6"),
+  gestationalAgeSource: z.enum(gestationalAgeSources).default("explicit").optional(),
   usesInsulin: z.boolean(),
   insulinRegimens: z.array(insulinRegimenSchema).optional(),
   dietAdherence: z.enum(["boa", "regular", "ruim"]),

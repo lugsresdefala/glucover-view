@@ -34,6 +34,7 @@ interface ParsedPatientData {
   patientName: string;
   gestationalWeeks: number;
   gestationalDays: number;
+  gestationalAgeSource: "explicit" | "calculated" | "propagated";
   glucoseReadings: GlucoseReading[];
   usesInsulin: boolean;
   birthDate?: string;
@@ -427,6 +428,8 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         const glucoseReadings: GlucoseReading[] = [];
         let lastGestationalAge = 0;
         let lastGestationalAgeWithGlucose = 0; // IG da última linha com medidas de glicemia
+        let gestationalAgeSource: "explicit" | "calculated" | "propagated" = "explicit";
+        let lastSourceWithGlucose: "explicit" | "calculated" | "propagated" = "explicit";
         
         // Parse DUM date for calculating gestational age
         let dumDate: Date | null = null;
@@ -445,6 +448,7 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           const reading: GlucoseReading = {};
           let hasAnyValue = false;
           let currentRowAge = 0;
+          let currentSource: "explicit" | "calculated" | "propagated" = "propagated";
           
           // PRIORIDADE 1: Usar IG explícita da coluna da planilha (mais confiável)
           if (gestationalAgeColIndex >= 0) {
@@ -453,6 +457,8 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
             if (parsed > 0) {
               currentRowAge = parsed;
               lastGestationalAge = parsed;
+              currentSource = "explicit";
+              gestationalAgeSource = "explicit";
               if (debugRowCount < 3) {
                 console.log(`[DEBUG ${patientName}] Row ${i}: IG da planilha="${ageValue}" -> ${parsed.toFixed(2)} semanas`);
               }
@@ -471,6 +477,8 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
               if (calculatedAge > 0) {
                 currentRowAge = calculatedAge;
                 lastGestationalAge = calculatedAge;
+                currentSource = "calculated";
+                gestationalAgeSource = "calculated";
               }
             }
           }
@@ -491,6 +499,7 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
             // Track the gestational age of the last row with actual glucose data
             if (currentRowAge > 0) {
               lastGestationalAgeWithGlucose = currentRowAge;
+              lastSourceWithGlucose = currentSource;
             }
           }
         }
@@ -502,6 +511,16 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         let finalGestationalAge = lastGestationalAgeWithGlucose > 0 
           ? lastGestationalAgeWithGlucose 
           : lastGestationalAge;
+        
+        // Track the source of final gestational age
+        let finalAgeSource = lastGestationalAgeWithGlucose > 0 
+          ? lastSourceWithGlucose 
+          : gestationalAgeSource;
+        
+        // If we're using a propagated value (last known IG, not from this row's data), mark it
+        if (finalGestationalAge > 0 && lastGestationalAgeWithGlucose === 0) {
+          finalAgeSource = "propagated";
+        }
         
         // Cap at 42 weeks maximum (as per schema validation)
         if (finalGestationalAge > 42) {
@@ -540,6 +559,7 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           patientName,
           gestationalWeeks,
           gestationalDays,
+          gestationalAgeSource: finalAgeSource,
           glucoseReadings,
           usesInsulin,
           birthDate,
@@ -655,6 +675,7 @@ export function BatchImport() {
           weight: null, // Peso não disponível na planilha
           gestationalWeeks: patient.gestationalWeeks || 0,
           gestationalDays: patient.gestationalDays || 0,
+          gestationalAgeSource: patient.gestationalAgeSource || "explicit",
           usesInsulin: patient.usesInsulin,
           insulinRegimens: [],
           dietAdherence: "regular" as const,

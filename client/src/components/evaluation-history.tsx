@@ -7,11 +7,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Calendar, ChevronRight, FileText, Eye, AlertTriangle, TrendingDown, Syringe } from "lucide-react";
+import { Calendar, ChevronRight, FileText, Eye, AlertTriangle, TrendingDown, Syringe, CheckCircle, Download } from "lucide-react";
 import { PDFExportButton } from "@/components/pdf-export";
 import type { StoredEvaluation, GlucoseReading } from "@shared/schema";
 import { criticalGlucoseThresholds } from "@shared/schema";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import * as XLSX from "xlsx";
 
 interface EvaluationHistoryProps {
   evaluations: StoredEvaluation[];
@@ -91,13 +92,65 @@ export function EvaluationHistory({ evaluations, onViewEvaluation }: EvaluationH
     }).format(date);
   };
 
+  const exportActivePatients = () => {
+    const activePatients = evaluations
+      .filter(e => e.gestationalWeeks < 40 && e.gestationalAgeSource !== "propagated")
+      .sort((a, b) => a.patientName.localeCompare(b.patientName, "pt-BR"));
+
+    if (activePatients.length === 0) {
+      return;
+    }
+
+    const exportData = activePatients.map(e => ({
+      "Nome": e.patientName,
+      "IG (semanas)": e.gestationalWeeks,
+      "IG (dias)": e.gestationalDays,
+      "Tipo DM": e.diabetesType || "DMG",
+      "Usa Insulina": e.usesInsulin ? "Sim" : "Não",
+      "Dieta": e.dietAdherence,
+      "Dias Registrados": e.glucoseReadings.length,
+      "Urgência": e.recommendation?.urgencyLevel === "critical" ? "Urgente" : 
+                  e.recommendation?.urgencyLevel === "warning" ? "Atenção" : "Ok",
+      "Data Avaliação": formatDate(e.createdAt),
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pacientes Ativas");
+
+    const today = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `pacientes_ativas_${today}.xlsx`);
+  };
+
+  const activeCount = evaluations.filter(
+    e => e.gestationalWeeks < 40 && e.gestationalAgeSource !== "propagated"
+  ).length;
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <FileText className="h-5 w-5" />
           Histórico de Avaliações
         </CardTitle>
+        {activeCount > 0 && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={exportActivePatients}
+                data-testid="button-export-active-patients"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Exportar ({activeCount})
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Exportar lista alfabética de pacientes ativas (IG &lt; 40s)</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
       </CardHeader>
       <CardContent>
         <Accordion type="single" collapsible className="w-full">
@@ -114,9 +167,15 @@ export function EvaluationHistory({ evaluations, onViewEvaluation }: EvaluationH
               const daysRecorded = evaluation.glucoseReadings.length;
               const hasAlerts = alerts.hypoCount > 0 || alerts.severeHyperCount > 0;
               const isCritical = evaluation.recommendation?.urgencyLevel === "critical";
+              const isCompleted = evaluation.gestationalWeeks >= 40 || evaluation.gestationalAgeSource === "propagated";
               
               return (
-              <AccordionItem key={evaluation.id} value={String(evaluation.id)} data-testid={`accordion-evaluation-${evaluation.id}`}>
+              <AccordionItem 
+                key={evaluation.id} 
+                value={String(evaluation.id)} 
+                data-testid={`accordion-evaluation-${evaluation.id}`}
+                className={isCompleted ? "opacity-50" : ""}
+              >
                 <AccordionTrigger className="hover:no-underline">
                   <div className="flex items-center gap-3 text-left w-full">
                     {/* Alert indicator - discrete marker */}
@@ -144,9 +203,33 @@ export function EvaluationHistory({ evaluations, onViewEvaluation }: EvaluationH
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium truncate">{evaluation.patientName}</span>
                         {/* Gestational age badge */}
-                        <Badge variant="secondary" className="text-xs font-normal">
-                          {evaluation.gestationalWeeks}s{evaluation.gestationalDays}d
-                        </Badge>
+                        {evaluation.gestationalAgeSource === "propagated" ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="text-xs font-normal border-amber-500 text-amber-600 dark:text-amber-400">
+                                {evaluation.gestationalWeeks}s{evaluation.gestationalDays}d*
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>IG adaptada do último registro</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs font-normal">
+                            {evaluation.gestationalWeeks}s{evaluation.gestationalDays}d
+                          </Badge>
+                        )}
+                        {/* Completed indicator */}
+                        {isCompleted && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <CheckCircle className="h-3 w-3 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{evaluation.gestationalWeeks >= 40 ? "Gestação a termo" : "Acompanhamento encerrado"}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                         {/* Days recorded */}
                         <span className="text-xs text-muted-foreground">
                           {daysRecorded}d
