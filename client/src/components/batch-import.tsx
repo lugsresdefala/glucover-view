@@ -492,7 +492,7 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           }
         }
         
-        console.log(`[DEBUG ${patientName}] Final: lastGestationalAge=${lastGestationalAge.toFixed(2)}, lastGestationalAgeWithGlucose=${lastGestationalAgeWithGlucose.toFixed(2)}, dateColIndex=${dateColIndex}, gestationalAgeColIndex=${gestationalAgeColIndex}`);
+        console.log(`[DEBUG ${patientName}] Final: lastGestationalAge=${lastGestationalAge.toFixed(2)}, lastGestationalAgeWithGlucose=${lastGestationalAgeWithGlucose.toFixed(2)}, dateColIndex=${dateColIndex}, gestationalAgeColIndex=${gestationalAgeColIndex}, dumDate=${dumDate?.toISOString() || 'null'}`);
         
         // Use the gestational age from the last row that had glucose readings
         // This avoids issues with empty rows at the end of spreadsheets
@@ -502,7 +502,15 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         
         // Cap at 42 weeks maximum (as per schema validation)
         if (finalGestationalAge > 42) {
+          console.warn(`[WARN ${patientName}] Idade gestacional acima de 42 semanas (${finalGestationalAge.toFixed(2)}), resetando para 0`);
           finalGestationalAge = 0; // Invalid - will be flagged as error
+        }
+        
+        // VALIDAÇÃO: Idade gestacional muito baixa é clinicamente implausível para DMG
+        // DMG é tipicamente diagnosticado após 24 semanas. Se a IG < 12 semanas, provavelmente há erro na DUM
+        if (finalGestationalAge > 0 && finalGestationalAge < 12) {
+          console.warn(`[WARN ${patientName}] IDADE GESTACIONAL SUSPEITA: ${finalGestationalAge.toFixed(2)} semanas. Verifique se a DUM está correta na planilha.`);
+          // Não zera automaticamente, mas registra o alerta
         }
         
         if (finalGestationalAge > 0) {
@@ -852,7 +860,20 @@ export function BatchImport() {
                       </div>
                     </TableCell>
                     <TableCell className="text-center font-mono">
-                      {patient.gestationalWeeks > 0 ? `${patient.gestationalWeeks}s${patient.gestationalDays > 0 ? `+${patient.gestationalDays}d` : ''}` : "-"}
+                      <div className="flex items-center justify-center gap-1">
+                        {patient.gestationalWeeks > 0 ? (
+                          <>
+                            {patient.gestationalWeeks < 12 && (
+                              <span title="IG suspeita - verifique DUM">
+                                <AlertCircle className="h-4 w-4 text-amber-500" />
+                              </span>
+                            )}
+                            <span className={patient.gestationalWeeks < 12 ? "text-amber-600 dark:text-amber-400" : ""}>
+                              {`${patient.gestationalWeeks}s${patient.gestationalDays > 0 ? `+${patient.gestationalDays}d` : ''}`}
+                            </span>
+                          </>
+                        ) : "-"}
+                      </div>
                     </TableCell>
                     <TableCell className="text-center">
                       {patient.usesInsulin ? (
