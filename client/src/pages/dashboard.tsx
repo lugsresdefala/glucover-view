@@ -96,12 +96,7 @@ interface PatientItem {
   phone?: string;
 }
 
-interface DashboardProps {
-  activeSection?: string;
-  onNavigate?: (section: string) => void;
-}
-
-export default function Dashboard({ activeSection = "dashboard", onNavigate }: DashboardProps) {
+export default function Dashboard() {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [glucoseReadings, setGlucoseReadings] = useState<GlucoseReading[]>([{}]);
@@ -312,68 +307,127 @@ export default function Dashboard({ activeSection = "dashboard", onNavigate }: D
     });
   };
 
-  const getUrgencyLevel = (evaluation: StoredEvaluation): "critical" | "warning" | "info" | "success" => {
-    if (evaluation.recommendation?.urgencyLevel) {
-      return evaluation.recommendation.urgencyLevel as "critical" | "warning" | "info" | "success";
-    }
-    if (!evaluation.glucoseReadings) return "info";
-    const hasCritical = evaluation.glucoseReadings.some(r => {
-      const values = Object.values(r).filter(v => typeof v === "number") as number[];
-      return values.some(v => v < 60 || v > 200);
-    });
-    return hasCritical ? "critical" : "info";
-  };
-
-  const getControlPercent = (evaluation: StoredEvaluation): number | null => {
-    if (!evaluation.glucoseReadings || evaluation.glucoseReadings.length === 0) return null;
-    let inTarget = 0;
-    let total = 0;
-    evaluation.glucoseReadings.forEach(r => {
-      if (r.jejum !== undefined) { total++; if (r.jejum >= 65 && r.jejum <= 95) inTarget++; }
-      if (r.posCafe1h !== undefined) { total++; if (r.posCafe1h < 140) inTarget++; }
-      if (r.posAlmoco1h !== undefined) { total++; if (r.posAlmoco1h < 140) inTarget++; }
-      if (r.posJantar1h !== undefined) { total++; if (r.posJantar1h < 140) inTarget++; }
-    });
-    return total > 0 ? Math.round((inTarget / total) * 100) : null;
-  };
-
-  const urgencyLabels: Record<string, string> = {
-    critical: "Crítico",
-    warning: "Atenção",
-    info: "Estável",
-    success: "Bom"
-  };
-
   return (
-    <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold">Painel Clínico</h1>
-            <p className="text-sm text-muted-foreground">
-              Gestão de diabetes na gestação
-            </p>
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <img 
+              src={hapvidaLogo} 
+              alt="Hapvida" 
+              className="h-10 w-auto"
+              data-testid="img-logo"
+            />
+            <div className="border-l border-border pl-3">
+              <h1 className="text-lg font-semibold">GlucoVer</h1>
+              <p className="text-xs text-muted-foreground">Suporte à Decisão Clínica</p>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium" data-testid="text-total-patients">{isLoadingPatients ? "..." : dashboardMetrics.totalPatients}</span>
-              <span className="text-muted-foreground">pacientes</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium" data-testid="text-total-evaluations">{isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}</span>
-              <span className="text-muted-foreground">avaliações</span>
-            </div>
-            {dashboardMetrics.criticalAlerts > 0 && (
-              <Badge variant="destructive" className="gap-1" data-testid="text-critical-alerts">
-                <AlertTriangle className="h-3 w-3" />
-                {dashboardMetrics.criticalAlerts} críticos
-              </Badge>
+          <div className="flex items-center gap-3">
+            {user && (
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="hidden sm:flex gap-1">
+                  {isAdmin ? <Shield className="h-3 w-3" /> : <Stethoscope className="h-3 w-3" />}
+                  {roleDisplayNames[userRole] || userRole}
+                </Badge>
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>
+                    {user.firstName?.[0] || user.email?.[0]?.toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm text-muted-foreground hidden sm:inline">
+                  {user.firstName || user.email}
+                </span>
+              </div>
             )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              data-testid="button-logout"
+              onClick={async () => {
+                await apiRequest("POST", "/api/user/logout");
+                await queryClient.invalidateQueries({ queryKey: ["/api/user/me"] });
+                window.location.href = "/";
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
         </div>
+      </header>
 
-        <div className="flex flex-wrap gap-3">
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total de Pacientes
+              </CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold" data-testid="text-total-patients">
+                {isLoadingPatients ? "..." : dashboardMetrics.totalPatients}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {isAdmin ? "em todo o sistema" : "vinculados a você"}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Avaliações Realizadas
+              </CardTitle>
+              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold" data-testid="text-total-evaluations">
+                {isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                total de análises
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Últimos 7 Dias
+              </CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold" data-testid="text-recent-evaluations">
+                {isLoadingHistory ? "..." : dashboardMetrics.recentEvaluations}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                novas avaliações
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Alertas Críticos
+              </CardTitle>
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold" data-testid="text-critical-alerts">
+                {isLoadingHistory ? "..." : dashboardMetrics.criticalAlerts}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                pacientes com valores extremos
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="flex flex-wrap gap-3 mb-6">
           <Dialog open={showEvaluationForm} onOpenChange={setShowEvaluationForm}>
             <DialogTrigger asChild>
               <Button data-testid="button-new-evaluation">
@@ -707,17 +761,17 @@ export default function Dashboard({ activeSection = "dashboard", onNavigate }: D
           </Card>
         )}
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            <Card className="shadow-md">
+            <Card>
               <CardHeader>
-                <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Clock className="h-5 w-5 text-primary" />
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
                       Avaliações Recentes
                     </CardTitle>
-                    <CardDescription className="mt-1">
+                    <CardDescription>
                       Últimas análises realizadas
                     </CardDescription>
                   </div>
@@ -836,25 +890,13 @@ export default function Dashboard({ activeSection = "dashboard", onNavigate }: D
                     <div className="space-y-3">
                       {[...evaluations].sort((a, b) => 
                         new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-                      ).map((evaluation) => {
-                        const urgency = getUrgencyLevel(evaluation);
-                        const controlPct = getControlPercent(evaluation);
-                        const urgencyColors: Record<string, string> = {
-                          critical: "bg-destructive/10 border-destructive/30",
-                          warning: "bg-secondary/50 border-secondary",
-                          info: "",
-                          success: "bg-primary/5 border-primary/20"
-                        };
-                        return (
+                      ).map((evaluation) => (
                         <div
                           key={evaluation.id}
                           className={`flex items-center justify-between gap-3 p-3 rounded-md border hover-elevate cursor-pointer ${
-                            selectedIds.has(evaluation.id) ? "bg-muted/50 border-primary" : urgencyColors[urgency]
+                            selectedIds.has(evaluation.id) ? "bg-muted/50 border-primary" : ""
                           }`}
-                          onClick={() => {
-                            handleViewEvaluation(evaluation);
-                            setShowRecommendationModal(true);
-                          }}
+                          onClick={() => selectionMode ? toggleSelection(evaluation.id, { stopPropagation: () => {} } as React.MouseEvent) : handleViewEvaluation(evaluation)}
                           data-testid={`card-evaluation-${evaluation.id}`}
                         >
                           {selectionMode && (
@@ -870,32 +912,23 @@ export default function Dashboard({ activeSection = "dashboard", onNavigate }: D
                             </div>
                           )}
                           <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <Avatar className="h-9 w-9">
+                              <AvatarFallback>
+                                {evaluation.patientName[0]?.toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-medium truncate">
-                                  {evaluation.patientName}
-                                </p>
-                                <Badge 
-                                  variant={urgency === "critical" ? "destructive" : urgency === "warning" ? "secondary" : "outline"}
-                                  className="text-xs shrink-0"
-                                >
-                                  {urgencyLabels[urgency]}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                                <span className="font-mono">{evaluation.gestationalWeeks}s{evaluation.gestationalDays}d</span>
-                                <span>{evaluation.diabetesType || "DMG"}</span>
-                                {evaluation.usesInsulin && <span>Insulina</span>}
-                                {controlPct !== null && (
-                                  <span className={`font-medium ${controlPct >= 80 ? "text-primary" : controlPct >= 60 ? "text-muted-foreground" : "text-destructive"}`}>
-                                    {controlPct}% meta
-                                  </span>
-                                )}
-                              </div>
+                              <p className="text-sm font-medium truncate">
+                                {evaluation.patientName}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {evaluation.gestationalWeeks}sem {evaluation.gestationalDays}d
+                                {evaluation.usesInsulin && " • Insulina"}
+                              </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground hidden sm:block whitespace-nowrap">
+                            <span className="text-xs text-muted-foreground hidden sm:block">
                               {formatDate(evaluation.createdAt)}
                             </span>
                             {!selectionMode && (
@@ -934,14 +967,40 @@ export default function Dashboard({ activeSection = "dashboard", onNavigate }: D
                             )}
                           </div>
                         </div>
-                        );
-                      })}
+                      ))}
                     </div>
                   </ScrollArea>
                 )}
               </CardContent>
             </Card>
 
+            {currentRecommendation?.recommendation && (
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-primary" />
+                      <div>
+                        <p className="font-medium">Recomendação Gerada</p>
+                        <p className="text-sm text-muted-foreground">
+                          Paciente: {currentRecommendation.patientName}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <PDFExportButton evaluation={currentRecommendation} />
+                      <Button 
+                        onClick={() => setShowRecommendationModal(true)}
+                        data-testid="button-view-recommendation"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Ver Análise
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {currentRecommendation && glucoseReadings.some((r) => Object.values(r).some((v) => v !== undefined)) && (
               <>
@@ -957,85 +1016,75 @@ export default function Dashboard({ activeSection = "dashboard", onNavigate }: D
           </div>
 
           <div className="space-y-6">
-            {currentRecommendation?.recommendation ? (
-              <Card className="border-primary/30">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Stethoscope className="h-4 w-4 text-primary" />
-                      Conduta Clínica
-                    </CardTitle>
-                    <div className="flex items-center gap-1">
-                      <PDFExportButton evaluation={currentRecommendation} />
-                      <Button 
-                        size="sm"
-                        onClick={() => setShowRecommendationModal(true)}
-                        data-testid="button-view-recommendation"
-                      >
-                        Ver Completo
-                      </Button>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {currentRecommendation.patientName} • {currentRecommendation.gestationalWeeks}s{currentRecommendation.gestationalDays}d
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-3 text-sm">
-                  {currentRecommendation.recommendation.urgencyLevel && (
-                    <Badge 
-                      variant={currentRecommendation.recommendation.urgencyLevel === "critical" ? "destructive" : "secondary"}
-                      className="mb-2"
-                    >
-                      {urgencyLabels[currentRecommendation.recommendation.urgencyLevel] || currentRecommendation.recommendation.urgencyLevel}
-                    </Badge>
-                  )}
-                  {currentRecommendation.recommendation.mainRecommendation && (
-                    <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {currentRecommendation.recommendation.mainRecommendation.slice(0, 500)}
-                      {currentRecommendation.recommendation.mainRecommendation.length > 500 && "..."}
-                    </div>
-                  )}
-                  {currentRecommendation.recommendation.nextSteps && currentRecommendation.recommendation.nextSteps.length > 0 && (
-                    <div className="pt-2 border-t">
-                      <p className="text-xs font-medium text-muted-foreground mb-1">Próximos passos:</p>
-                      <ul className="text-xs space-y-1">
-                        {currentRecommendation.recommendation.nextSteps.slice(0, 3).map((step, i) => (
-                          <li key={i} className="flex items-start gap-1.5">
-                            <span className="text-primary">•</span>
-                            {step}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="py-6 text-center text-muted-foreground">
-                  <Stethoscope className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Selecione uma avaliação para ver a conduta clínica</p>
-                </CardContent>
-              </Card>
-            )}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Ações Rápidas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button 
+                  className="w-full justify-start" 
+                  variant="outline"
+                  onClick={() => setShowEvaluationForm(true)}
+                  data-testid="button-quick-evaluation"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Avaliação
+                </Button>
+                <Button 
+                  className="w-full justify-start" 
+                  variant="outline"
+                  onClick={() => setShowBatchImport(true)}
+                  data-testid="button-quick-batch"
+                >
+                  <FileStack className="h-4 w-4 mr-2" />
+                  Importar Planilhas
+                </Button>
+                {patients.length > 0 && (
+                  <Button 
+                    className="w-full justify-start" 
+                    variant="outline"
+                    onClick={() => setShowPatientList(true)}
+                    data-testid="button-quick-patients"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Lista de Pacientes
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
 
             {dashboardMetrics.criticalAlerts > 0 && (
-              <Card className="bg-destructive/10 border-destructive/30">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-sm text-destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    Atenção Necessária
+              <Card className="border-destructive/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="h-5 w-5" />
+                    Atenção
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-xs text-destructive/80">
-                    {dashboardMetrics.criticalAlerts} avaliação(ões) com valores críticos
+                  <p className="text-sm text-muted-foreground">
+                    Existem <strong>{dashboardMetrics.criticalAlerts}</strong> avaliações 
+                    com valores glicêmicos críticos que podem necessitar de atenção.
                   </p>
                 </CardContent>
               </Card>
             )}
           </div>
         </div>
+      </main>
+
+      <footer className="border-t border-border mt-12">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <p className="text-xs text-muted-foreground text-center">
+            Sistema de suporte à decisão clínica para Diabetes Mellitus Gestacional.
+            <br />
+            Baseado nas Diretrizes SBD 2025, FEBRASGO 2019 e OMS 2025. Decisões finais devem ser tomadas por profissional de saúde.
+          </p>
+        </div>
+      </footer>
 
       <RecommendationModal
         recommendation={currentRecommendation?.recommendation || null}

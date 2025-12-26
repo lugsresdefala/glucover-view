@@ -2,123 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 
- * HAPVIDA-ALIGNED CLINICAL PALETTE
- * Primary: Hapvida Blue #0056A6 (212 100% 33%)
- * Accent: Hapvida Orange #FF7A00 (29 100% 50%) - for highlights only
- * Clinical neutrals for professional medical environment
- */
-
+/* LIGHT MODE */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
   --opaque-button-border-intensity: -8;
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
-  
-  /* Base - Clean clinical neutrals */
-  --background: 210 18% 98%;
-  --foreground: 212 30% 12%;
-  --border: 210 12% 86%;
-  
-  /* Surface - Subtle elevation from background */
-  --surface: 210 16% 96%;
-  
-  /* Cards - White with subtle warmth */
-  --card: 0 0% 100%;
-  --card-foreground: 212 30% 12%;
-  --card-border: 210 12% 88%;
-  
-  /* Sidebar - Deep navy (desaturated for professionalism) */
-  --sidebar: 215 45% 16%;
-  --sidebar-foreground: 210 25% 94%;
-  --sidebar-border: 215 40% 22%;
-  --sidebar-primary: 212 95% 45%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 215 35% 24%;
-  --sidebar-accent-foreground: 210 25% 94%;
-  --sidebar-ring: 212 95% 45%;
-  
-  /* Popover */
-  --popover: 0 0% 100%;
-  --popover-foreground: 212 30% 12%;
-  --popover-border: 210 12% 88%;
-  
-  /* Primary - Hapvida Blue */
-  --primary: 212 95% 35%;
-  --primary-foreground: 0 0% 100%;
-  
-  /* Secondary - Neutral */
-  --secondary: 210 14% 92%;
-  --secondary-foreground: 212 25% 22%;
-  
-  /* Muted - For subdued elements */
-  --muted: 210 14% 94%;
-  --muted-foreground: 212 12% 48%;
-  
-  /* Accent - Clinical teal (secondary actions) */
-  --accent: 176 50% 92%;
-  --accent-foreground: 176 68% 28%;
-  
-  /* Highlight - Hapvida Orange (sparingly) */
-  --highlight: 29 100% 50%;
-  --highlight-foreground: 0 0% 100%;
-  
-  /* Destructive */
-  --destructive: 2 78% 48%;
-  --destructive-foreground: 0 0% 100%;
-  
-  /* Semantic Status Colors - Clinical precision */
-  --status-success: 152 68% 38%;
-  --status-success-foreground: 0 0% 100%;
-  --status-success-bg: 152 50% 94%;
-  
-  --status-warning: 38 92% 52%;
-  --status-warning-foreground: 38 95% 18%;
-  --status-warning-bg: 38 80% 94%;
-  
-  --status-critical: 2 78% 48%;
-  --status-critical-foreground: 0 0% 100%;
-  --status-critical-bg: 2 70% 96%;
-  
-  --status-info: 212 95% 45%;
-  --status-info-foreground: 0 0% 100%;
-  --status-info-bg: 212 80% 95%;
-  
-  --input: 210 14% 82%;
-  --ring: 212 95% 45%;
-  
-  /* Charts - Clinical palette */
-  --chart-1: 212 95% 40%;
-  --chart-2: 176 68% 38%;
-  --chart-3: 152 68% 38%;
-  --chart-4: 29 90% 52%;
-  --chart-5: 280 50% 50%;
-  
-  /* Typography Scale */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-serif: 'Merriweather', Georgia, serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
-  
-  /* Spacing Tokens */
-  --space-xs: 0.5rem;
-  --space-sm: 0.75rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
-  --space-xl: 2rem;
-  --space-2xl: 3rem;
-  
-  --radius: 0.375rem;
-  
-  /* Shadows - Subtle, professional */
-  --shadow-2xs: 0 1px 2px 0 hsl(212 30% 12% / 0.02);
-  --shadow-xs: 0 1px 3px 0 hsl(212 30% 12% / 0.03);
-  --shadow-sm: 0 1px 2px 0 hsl(212 30% 12% / 0.04), 0 1px 3px -1px hsl(212 30% 12% / 0.02);
-  --shadow: 0 2px 4px 0 hsl(212 30% 12% / 0.05), 0 1px 2px -1px hsl(212 30% 12% / 0.03);
-  --shadow-md: 0 4px 6px -1px hsl(212 30% 12% / 0.06), 0 2px 4px -2px hsl(212 30% 12% / 0.03);
-  --shadow-lg: 0 10px 15px -3px hsl(212 30% 12% / 0.06), 0 4px 6px -4px hsl(212 30% 12% / 0.03);
-  --shadow-xl: 0 20px 25px -5px hsl(212 30% 12% / 0.06), 0 8px 10px -6px hsl(212 30% 12% / 0.03);
-  --shadow-2xl: 0 25px 50px -12px hsl(212 30% 12% / 0.12);
+  --background: 210 5% 98%;
+  --foreground: 210 6% 12%;
+  --border: 210 5% 88%;
+  --card: 210 5% 96%;
+  --card-foreground: 210 6% 12%;
+  --card-border: 210 5% 93%;
+  --sidebar: 210 5% 94%;
+  --sidebar-foreground: 210 6% 15%;
+  --sidebar-border: 210 5% 90%;
+  --sidebar-primary: 210 85% 42%;
+  --sidebar-primary-foreground: 210 85% 98%;
+  --sidebar-accent: 210 8% 88%;
+  --sidebar-accent-foreground: 210 6% 15%;
+  --sidebar-ring: 210 85% 42%;
+  --popover: 210 5% 92%;
+  --popover-foreground: 210 6% 12%;
+  --popover-border: 210 5% 88%;
+  --primary: 210 85% 35%;
+  --primary-foreground: 210 85% 98%;
+  --secondary: 210 8% 86%;
+  --secondary-foreground: 210 6% 15%;
+  --muted: 210 8% 88%;
+  --muted-foreground: 210 6% 35%;
+  --accent: 210 12% 90%;
+  --accent-foreground: 210 6% 15%;
+  --destructive: 358 75% 32%;
+  --destructive-foreground: 358 75% 98%;
+  --input: 210 15% 72%;
+  --ring: 210 85% 42%;
+  --chart-1: 210 85% 35%;
+  --chart-2: 195 75% 38%;
+  --chart-3: 170 65% 32%;
+  --chart-4: 280 70% 35%;
+  --chart-5: 25 80% 38%;
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --radius: .5rem;
+  --shadow-2xs: 0px 2px 0px 0px hsl(210 5% 12% / 0.00);
+  --shadow-xs: 0px 2px 0px 0px hsl(210 5% 12% / 0.00);
+  --shadow-sm: 0px 2px 0px 0px hsl(210 5% 12% / 0.00), 0px 1px 2px -1px hsl(210 5% 12% / 0.00);
+  --shadow: 0px 2px 0px 0px hsl(210 5% 12% / 0.00), 0px 1px 2px -1px hsl(210 5% 12% / 0.00);
+  --shadow-md: 0px 2px 0px 0px hsl(210 5% 12% / 0.00), 0px 2px 4px -1px hsl(210 5% 12% / 0.00);
+  --shadow-lg: 0px 2px 0px 0px hsl(210 5% 12% / 0.00), 0px 4px 6px -1px hsl(210 5% 12% / 0.00);
+  --shadow-xl: 0px 2px 0px 0px hsl(210 5% 12% / 0.00), 0px 8px 10px -1px hsl(210 5% 12% / 0.00);
+  --shadow-2xl: 0px 2px 0px 0px hsl(210 5% 12% / 0.00);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
@@ -151,101 +87,54 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
-/* DARK MODE - Hapvida-Aligned Clinical Palette */
 .dark {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
   --opaque-button-border-intensity: 9;
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
-  
-  /* Base - Dark clinical */
-  --background: 215 30% 8%;
-  --foreground: 210 20% 94%;
-  --border: 215 25% 16%;
-  
-  /* Surface */
-  --surface: 215 28% 10%;
-  
-  /* Cards */
-  --card: 215 28% 11%;
-  --card-foreground: 210 20% 94%;
-  --card-border: 215 25% 15%;
-  
-  /* Sidebar */
-  --sidebar: 215 35% 6%;
-  --sidebar-foreground: 210 20% 92%;
-  --sidebar-border: 215 30% 14%;
-  --sidebar-primary: 212 90% 50%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 215 30% 16%;
-  --sidebar-accent-foreground: 210 20% 92%;
-  --sidebar-ring: 212 90% 50%;
-  
-  /* Popover */
-  --popover: 215 28% 12%;
-  --popover-foreground: 210 20% 94%;
-  --popover-border: 215 25% 18%;
-  
-  /* Primary - Hapvida Blue (brighter for dark) */
-  --primary: 212 90% 50%;
-  --primary-foreground: 0 0% 100%;
-  
-  /* Secondary */
-  --secondary: 215 25% 18%;
-  --secondary-foreground: 210 18% 88%;
-  
-  /* Muted */
-  --muted: 215 25% 16%;
-  --muted-foreground: 212 12% 58%;
-  
-  /* Accent - Teal */
-  --accent: 176 45% 16%;
-  --accent-foreground: 176 55% 78%;
-  
-  /* Highlight - Orange */
-  --highlight: 29 95% 55%;
-  --highlight-foreground: 0 0% 100%;
-  
-  /* Destructive */
-  --destructive: 2 70% 52%;
-  --destructive-foreground: 0 0% 100%;
-  
-  /* Semantic status colors - Dark mode */
-  --status-success: 152 60% 48%;
-  --status-success-foreground: 0 0% 100%;
-  --status-success-bg: 152 50% 14%;
-  
-  --status-warning: 38 85% 58%;
-  --status-warning-foreground: 38 90% 94%;
-  --status-warning-bg: 38 60% 14%;
-  
-  --status-critical: 2 70% 52%;
-  --status-critical-foreground: 0 0% 100%;
-  --status-critical-bg: 2 60% 14%;
-  
-  --status-info: 212 85% 55%;
-  --status-info-foreground: 0 0% 100%;
-  --status-info-bg: 212 60% 14%;
-  
-  --input: 215 25% 22%;
-  --ring: 212 90% 55%;
-  
-  /* Charts */
-  --chart-1: 212 90% 55%;
-  --chart-2: 176 60% 50%;
-  --chart-3: 152 60% 50%;
-  --chart-4: 29 85% 58%;
-  --chart-5: 280 45% 58%;
-  
-  --shadow-2xs: 0 0 0 0 transparent;
-  --shadow-xs: 0 0 0 0 transparent;
-  --shadow-sm: 0 0 0 0 transparent;
-  --shadow: 0 0 0 0 transparent;
-  --shadow-md: 0 0 0 0 transparent;
-  --shadow-lg: 0 0 0 0 transparent;
-  --shadow-xl: 0 0 0 0 transparent;
-  --shadow-2xl: 0 0 0 0 transparent;
+  --background: 210 5% 8%;
+  --foreground: 210 5% 96%;
+  --border: 210 5% 18%;
+  --card: 210 5% 10%;
+  --card-foreground: 210 5% 96%;
+  --card-border: 210 5% 13%;
+  --sidebar: 210 5% 12%;
+  --sidebar-foreground: 210 5% 92%;
+  --sidebar-border: 210 5% 15%;
+  --sidebar-primary: 210 85% 45%;
+  --sidebar-primary-foreground: 210 85% 98%;
+  --sidebar-accent: 210 8% 16%;
+  --sidebar-accent-foreground: 210 5% 92%;
+  --sidebar-ring: 210 85% 45%;
+  --popover: 210 5% 14%;
+  --popover-foreground: 210 5% 96%;
+  --popover-border: 210 5% 17%;
+  --primary: 210 85% 35%;
+  --primary-foreground: 210 85% 98%;
+  --secondary: 210 8% 18%;
+  --secondary-foreground: 210 5% 92%;
+  --muted: 210 8% 16%;
+  --muted-foreground: 210 5% 65%;
+  --accent: 210 12% 17%;
+  --accent-foreground: 210 5% 92%;
+  --destructive: 358 75% 32%;
+  --destructive-foreground: 358 75% 98%;
+  --input: 210 15% 28%;
+  --ring: 210 85% 45%;
+  --chart-1: 210 85% 65%;
+  --chart-2: 195 75% 62%;
+  --chart-3: 170 65% 58%;
+  --chart-4: 280 70% 65%;
+  --chart-5: 25 80% 62%;
+  --shadow-2xs: 0px 2px 0px 0px hsl(210 5% 96% / 0.00);
+  --shadow-xs: 0px 2px 0px 0px hsl(210 5% 96% / 0.00);
+  --shadow-sm: 0px 2px 0px 0px hsl(210 5% 96% / 0.00), 0px 1px 2px -1px hsl(210 5% 96% / 0.00);
+  --shadow: 0px 2px 0px 0px hsl(210 5% 96% / 0.00), 0px 1px 2px -1px hsl(210 5% 96% / 0.00);
+  --shadow-md: 0px 2px 0px 0px hsl(210 5% 96% / 0.00), 0px 2px 4px -1px hsl(210 5% 96% / 0.00);
+  --shadow-lg: 0px 2px 0px 0px hsl(210 5% 96% / 0.00), 0px 4px 6px -1px hsl(210 5% 96% / 0.00);
+  --shadow-xl: 0px 2px 0px 0px hsl(210 5% 96% / 0.00), 0px 8px 10px -1px hsl(210 5% 96% / 0.00);
+  --shadow-2xl: 0px 2px 0px 0px hsl(210 5% 96% / 0.00);
 
 /* Fallback for older browsers */
   --sidebar-primary-border: hsl(var(--sidebar-primary));
@@ -283,68 +172,6 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  }
-  
-  /* Typography Scale - Clinical Hierarchy */
-  h1, .text-display {
-    @apply text-3xl font-semibold tracking-tight leading-tight;
-    color: hsl(var(--foreground));
-  }
-  
-  h2, .text-h2 {
-    @apply text-2xl font-semibold tracking-tight leading-snug;
-    color: hsl(var(--foreground));
-  }
-  
-  h3, .text-h3 {
-    @apply text-xl font-medium tracking-tight leading-snug;
-    color: hsl(var(--foreground));
-  }
-  
-  h4, .text-h4 {
-    @apply text-lg font-medium leading-normal;
-    color: hsl(var(--foreground));
-  }
-  
-  .text-body {
-    @apply text-base leading-relaxed;
-  }
-  
-  .text-body-sm {
-    @apply text-sm leading-relaxed;
-  }
-  
-  .text-caption {
-    @apply text-xs font-medium uppercase tracking-wider;
-    color: hsl(var(--muted-foreground));
-  }
-  
-  .text-label {
-    @apply text-sm font-medium;
-    color: hsl(var(--muted-foreground));
-  }
-  
-  /* Metric value styling - Large, readable numbers */
-  .text-metric {
-    @apply text-4xl font-bold tabular-nums tracking-tight;
-    color: hsl(var(--foreground));
-  }
-  
-  .text-metric-sm {
-    @apply text-2xl font-semibold tabular-nums;
-    color: hsl(var(--foreground));
-  }
-  
-  /* Clinical target comparison */
-  .text-target {
-    @apply text-sm font-medium tabular-nums;
-    color: hsl(var(--muted-foreground));
-  }
-  
-  /* Section dividers for visual hierarchy */
-  .section-divider {
-    @apply border-t border-border my-6;
   }
 }
 
