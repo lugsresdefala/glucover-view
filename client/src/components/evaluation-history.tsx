@@ -92,6 +92,20 @@ export function EvaluationHistory({ evaluations, onViewEvaluation }: EvaluationH
     }).format(date);
   };
 
+  const extractMainRecommendation = (rec: StoredEvaluation["recommendation"]): string => {
+    if (!rec) return "Sem recomendação";
+    
+    const main = rec.mainRecommendation || "";
+    // Extract just the "Conduta Imediata" portion for conciseness
+    const condutaMatch = main.match(/Conduta Imediata:\s*([^.]+\.)/);
+    if (condutaMatch) {
+      return condutaMatch[1].trim();
+    }
+    // Fallback to first sentence of mainRecommendation
+    const firstSentence = main.split(/\.\s/)[0];
+    return firstSentence ? firstSentence.trim() + "." : rec.justification || "Manter conduta atual.";
+  };
+
   const exportActivePatients = () => {
     const activePatients = evaluations
       .filter(e => e.gestationalWeeks < 40 && e.gestationalAgeSource !== "propagated")
@@ -102,24 +116,23 @@ export function EvaluationHistory({ evaluations, onViewEvaluation }: EvaluationH
     }
 
     const exportData = activePatients.map(e => ({
-      "Nome": e.patientName,
-      "IG (semanas)": e.gestationalWeeks,
-      "IG (dias)": e.gestationalDays,
-      "Tipo DM": e.diabetesType || "DMG",
-      "Usa Insulina": e.usesInsulin ? "Sim" : "Não",
-      "Dieta": e.dietAdherence,
-      "Dias Registrados": e.glucoseReadings.length,
-      "Urgência": e.recommendation?.urgencyLevel === "critical" ? "Urgente" : 
-                  e.recommendation?.urgencyLevel === "warning" ? "Atenção" : "Ok",
-      "Data Avaliação": formatDate(e.createdAt),
+      "Paciente": e.patientName,
+      "Conduta": extractMainRecommendation(e.recommendation),
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
+    
+    // Adjust column widths for better readability
+    ws["!cols"] = [
+      { wch: 35 },  // Nome
+      { wch: 80 },  // Conduta
+    ];
+    
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Pacientes Ativas");
+    XLSX.utils.book_append_sheet(wb, ws, "Condutas");
 
     const today = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `pacientes_ativas_${today}.xlsx`);
+    XLSX.writeFile(wb, `condutas_${today}.xlsx`);
   };
 
   const activeCount = evaluations.filter(
