@@ -108,7 +108,7 @@ export function AppLayout({ children, onNavigate, activeSection = "dashboard", s
               <img 
                 src={hapvidaLogo} 
                 alt="Hapvida" 
-                className="h-8 w-auto brightness-0 invert opacity-90"
+                className="h-8 w-auto"
               />
               <div className="flex-1 min-w-0">
                 <h1 className="text-base font-semibold text-sidebar-foreground truncate">GlucoVer</h1>
