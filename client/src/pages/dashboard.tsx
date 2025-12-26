@@ -312,88 +312,68 @@ export default function Dashboard({ activeSection = "dashboard", onNavigate }: D
     });
   };
 
+  const getUrgencyLevel = (evaluation: StoredEvaluation): "critical" | "warning" | "info" | "success" => {
+    if (evaluation.recommendation?.urgencyLevel) {
+      return evaluation.recommendation.urgencyLevel as "critical" | "warning" | "info" | "success";
+    }
+    if (!evaluation.glucoseReadings) return "info";
+    const hasCritical = evaluation.glucoseReadings.some(r => {
+      const values = Object.values(r).filter(v => typeof v === "number") as number[];
+      return values.some(v => v < 60 || v > 200);
+    });
+    return hasCritical ? "critical" : "info";
+  };
+
+  const getControlPercent = (evaluation: StoredEvaluation): number | null => {
+    if (!evaluation.glucoseReadings || evaluation.glucoseReadings.length === 0) return null;
+    let inTarget = 0;
+    let total = 0;
+    evaluation.glucoseReadings.forEach(r => {
+      if (r.jejum !== undefined) { total++; if (r.jejum >= 65 && r.jejum <= 95) inTarget++; }
+      if (r.posCafe1h !== undefined) { total++; if (r.posCafe1h < 140) inTarget++; }
+      if (r.posAlmoco1h !== undefined) { total++; if (r.posAlmoco1h < 140) inTarget++; }
+      if (r.posJantar1h !== undefined) { total++; if (r.posJantar1h < 140) inTarget++; }
+    });
+    return total > 0 ? Math.round((inTarget / total) * 100) : null;
+  };
+
+  const urgencyLabels: Record<string, string> = {
+    critical: "Crítico",
+    warning: "Atenção",
+    info: "Estável",
+    success: "Bom"
+  };
+
   return (
-    <div className="space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-h2">Painel de Controle</h1>
-          <p className="text-body-sm text-muted-foreground">
-            Visão geral do acompanhamento de pacientes com diabetes na gestação
-          </p>
+    <div className="space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold">Painel Clínico</h1>
+            <p className="text-sm text-muted-foreground">
+              Gestão de diabetes na gestação
+            </p>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium" data-testid="text-total-patients">{isLoadingPatients ? "..." : dashboardMetrics.totalPatients}</span>
+              <span className="text-muted-foreground">pacientes</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium" data-testid="text-total-evaluations">{isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}</span>
+              <span className="text-muted-foreground">avaliações</span>
+            </div>
+            {dashboardMetrics.criticalAlerts > 0 && (
+              <Badge variant="destructive" className="gap-1" data-testid="text-critical-alerts">
+                <AlertTriangle className="h-3 w-3" />
+                {dashboardMetrics.criticalAlerts} críticos
+              </Badge>
+            )}
+          </div>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="relative">
-            <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
-              <div className="space-y-1">
-                <p className="text-caption">Pacientes</p>
-              </div>
-              <div className="p-2.5 rounded-lg bg-status-info-bg">
-                <Users className="h-4 w-4 text-status-info" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="text-metric" data-testid="text-total-patients">
-                {isLoadingPatients ? "..." : dashboardMetrics.totalPatients}
-              </p>
-              <p className="text-label">
-                {isAdmin ? "Em todo o sistema" : "Vinculados a você"}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="relative">
-            <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
-              <div className="space-y-1">
-                <p className="text-caption">Avaliações</p>
-              </div>
-              <div className="p-2.5 rounded-lg bg-status-success-bg">
-                <ClipboardList className="h-4 w-4 text-status-success" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="text-metric" data-testid="text-total-evaluations">
-                {isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}
-              </p>
-              <p className="text-label">Total de análises</p>
-            </CardContent>
-          </Card>
-
-          <Card className="relative">
-            <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
-              <div className="space-y-1">
-                <p className="text-caption">Últimos 7 Dias</p>
-              </div>
-              <div className="p-2.5 rounded-lg bg-primary/10">
-                <TrendingUp className="h-4 w-4 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="text-metric" data-testid="text-recent-evaluations">
-                {isLoadingHistory ? "..." : dashboardMetrics.recentEvaluations}
-              </p>
-              <p className="text-label">Novas avaliações</p>
-            </CardContent>
-          </Card>
-
-          <Card className={`relative ${dashboardMetrics.criticalAlerts > 0 ? "ring-2 ring-status-critical/30" : ""}`}>
-            <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
-              <div className="space-y-1">
-                <p className="text-caption">Alertas Críticos</p>
-              </div>
-              <div className="p-2.5 rounded-lg bg-status-critical-bg">
-                <AlertTriangle className="h-4 w-4 text-status-critical" />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p className={`text-metric ${dashboardMetrics.criticalAlerts > 0 ? "text-status-critical" : ""}`} data-testid="text-critical-alerts">
-                {isLoadingHistory ? "..." : dashboardMetrics.criticalAlerts}
-              </p>
-              <p className="text-label">Valores extremos</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="flex flex-wrap gap-3 mb-6">
+        <div className="flex flex-wrap gap-3">
           <Dialog open={showEvaluationForm} onOpenChange={setShowEvaluationForm}>
             <DialogTrigger asChild>
               <Button data-testid="button-new-evaluation">
@@ -856,13 +836,25 @@ export default function Dashboard({ activeSection = "dashboard", onNavigate }: D
                     <div className="space-y-3">
                       {[...evaluations].sort((a, b) => 
                         new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-                      ).map((evaluation) => (
+                      ).map((evaluation) => {
+                        const urgency = getUrgencyLevel(evaluation);
+                        const controlPct = getControlPercent(evaluation);
+                        const urgencyColors: Record<string, string> = {
+                          critical: "bg-destructive/10 border-destructive/30",
+                          warning: "bg-secondary/50 border-secondary",
+                          info: "",
+                          success: "bg-primary/5 border-primary/20"
+                        };
+                        return (
                         <div
                           key={evaluation.id}
                           className={`flex items-center justify-between gap-3 p-3 rounded-md border hover-elevate cursor-pointer ${
-                            selectedIds.has(evaluation.id) ? "bg-muted/50 border-primary" : ""
+                            selectedIds.has(evaluation.id) ? "bg-muted/50 border-primary" : urgencyColors[urgency]
                           }`}
-                          onClick={() => selectionMode ? toggleSelection(evaluation.id, { stopPropagation: () => {} } as React.MouseEvent) : handleViewEvaluation(evaluation)}
+                          onClick={() => {
+                            handleViewEvaluation(evaluation);
+                            setShowRecommendationModal(true);
+                          }}
                           data-testid={`card-evaluation-${evaluation.id}`}
                         >
                           {selectionMode && (
@@ -878,23 +870,32 @@ export default function Dashboard({ activeSection = "dashboard", onNavigate }: D
                             </div>
                           )}
                           <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <Avatar className="h-9 w-9">
-                              <AvatarFallback>
-                                {evaluation.patientName[0]?.toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">
-                                {evaluation.patientName}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {evaluation.gestationalWeeks}sem {evaluation.gestationalDays}d
-                                {evaluation.usesInsulin && " • Insulina"}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium truncate">
+                                  {evaluation.patientName}
+                                </p>
+                                <Badge 
+                                  variant={urgency === "critical" ? "destructive" : urgency === "warning" ? "secondary" : "outline"}
+                                  className="text-xs shrink-0"
+                                >
+                                  {urgencyLabels[urgency]}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                                <span className="font-mono">{evaluation.gestationalWeeks}s{evaluation.gestationalDays}d</span>
+                                <span>{evaluation.diabetesType || "DMG"}</span>
+                                {evaluation.usesInsulin && <span>Insulina</span>}
+                                {controlPct !== null && (
+                                  <span className={`font-medium ${controlPct >= 80 ? "text-primary" : controlPct >= 60 ? "text-muted-foreground" : "text-destructive"}`}>
+                                    {controlPct}% meta
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground hidden sm:block">
+                            <span className="text-xs text-muted-foreground hidden sm:block whitespace-nowrap">
                               {formatDate(evaluation.createdAt)}
                             </span>
                             {!selectionMode && (
@@ -933,40 +934,14 @@ export default function Dashboard({ activeSection = "dashboard", onNavigate }: D
                             )}
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </ScrollArea>
                 )}
               </CardContent>
             </Card>
 
-            {currentRecommendation?.recommendation && (
-              <Card className="border-primary/30 bg-primary/5">
-                <CardContent className="py-4">
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="font-medium">Recomendação Gerada</p>
-                        <p className="text-sm text-muted-foreground">
-                          Paciente: {currentRecommendation.patientName}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <PDFExportButton evaluation={currentRecommendation} />
-                      <Button 
-                        onClick={() => setShowRecommendationModal(true)}
-                        data-testid="button-view-recommendation"
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        Ver Análise
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {currentRecommendation && glucoseReadings.some((r) => Object.values(r).some((v) => v !== undefined)) && (
               <>
@@ -982,57 +957,79 @@ export default function Dashboard({ activeSection = "dashboard", onNavigate }: D
           </div>
 
           <div className="space-y-6">
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Calendar className="h-5 w-5 text-primary" />
-                  Ações Rápidas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button 
-                  className="w-full justify-start" 
-                  onClick={() => setShowEvaluationForm(true)}
-                  data-testid="button-quick-evaluation"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nova Avaliação
-                </Button>
-                <Button 
-                  className="w-full justify-start" 
-                  variant="outline"
-                  onClick={() => setShowBatchImport(true)}
-                  data-testid="button-quick-batch"
-                >
-                  <FileStack className="h-4 w-4 mr-2" />
-                  Importar Planilhas
-                </Button>
-                {patients.length > 0 && (
-                  <Button 
-                    className="w-full justify-start" 
-                    variant="outline"
-                    onClick={() => setShowPatientList(true)}
-                    data-testid="button-quick-patients"
-                  >
-                    <Users className="h-4 w-4 mr-2" />
-                    Lista de Pacientes
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+            {currentRecommendation?.recommendation ? (
+              <Card className="border-primary/30">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Stethoscope className="h-4 w-4 text-primary" />
+                      Conduta Clínica
+                    </CardTitle>
+                    <div className="flex items-center gap-1">
+                      <PDFExportButton evaluation={currentRecommendation} />
+                      <Button 
+                        size="sm"
+                        onClick={() => setShowRecommendationModal(true)}
+                        data-testid="button-view-recommendation"
+                      >
+                        Ver Completo
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {currentRecommendation.patientName} • {currentRecommendation.gestationalWeeks}s{currentRecommendation.gestationalDays}d
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  {currentRecommendation.recommendation.urgencyLevel && (
+                    <Badge 
+                      variant={currentRecommendation.recommendation.urgencyLevel === "critical" ? "destructive" : "secondary"}
+                      className="mb-2"
+                    >
+                      {urgencyLabels[currentRecommendation.recommendation.urgencyLevel] || currentRecommendation.recommendation.urgencyLevel}
+                    </Badge>
+                  )}
+                  {currentRecommendation.recommendation.mainRecommendation && (
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {currentRecommendation.recommendation.mainRecommendation.slice(0, 500)}
+                      {currentRecommendation.recommendation.mainRecommendation.length > 500 && "..."}
+                    </div>
+                  )}
+                  {currentRecommendation.recommendation.nextSteps && currentRecommendation.recommendation.nextSteps.length > 0 && (
+                    <div className="pt-2 border-t">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Próximos passos:</p>
+                      <ul className="text-xs space-y-1">
+                        {currentRecommendation.recommendation.nextSteps.slice(0, 3).map((step, i) => (
+                          <li key={i} className="flex items-start gap-1.5">
+                            <span className="text-primary">•</span>
+                            {step}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-6 text-center text-muted-foreground">
+                  <Stethoscope className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Selecione uma avaliação para ver a conduta clínica</p>
+                </CardContent>
+              </Card>
+            )}
 
             {dashboardMetrics.criticalAlerts > 0 && (
-              <Card className="shadow-md bg-status-critical-bg border-status-critical/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-status-critical">
-                    <AlertTriangle className="h-5 w-5" />
+              <Card className="bg-destructive/10 border-destructive/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-sm text-destructive">
+                    <AlertTriangle className="h-4 w-4" />
                     Atenção Necessária
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-status-critical-foreground/80">
-                    Existem <strong className="text-status-critical">{dashboardMetrics.criticalAlerts}</strong> avaliações 
-                    com valores glicêmicos críticos que podem necessitar de atenção imediata.
+                  <p className="text-xs text-destructive/80">
+                    {dashboardMetrics.criticalAlerts} avaliação(ões) com valores críticos
                   </p>
                 </CardContent>
               </Card>
