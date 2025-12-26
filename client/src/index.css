@@ -224,20 +224,22 @@
 
   /* Census Header - Top bar with patient context */
   .census-header {
-    @apply col-span-full py-3 px-4 rounded-lg border border-border;
-    background: linear-gradient(135deg, hsl(var(--muted)) 0%, hsl(var(--muted)/0.6) 100%);
-    box-shadow: inset 0 1px 0 hsl(var(--background)/0.5), 0 1px 3px hsl(var(--foreground)/0.05);
+    @apply col-span-full py-3 px-4 rounded-lg border border-primary/20;
+    background: linear-gradient(135deg, hsl(var(--primary)/0.08) 0%, hsl(var(--primary)/0.03) 100%);
+    box-shadow: inset 0 1px 0 hsl(var(--background)/0.8), 0 2px 8px hsl(var(--primary)/0.08);
   }
 
   /* Clinical Panels with depth */
   .clinical-panel {
     @apply bg-card border border-card-border rounded-lg p-4;
-    box-shadow: 0 1px 3px hsl(var(--foreground)/0.04), inset 0 1px 0 hsl(var(--background)/0.5);
+    background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--card)/0.95) 100%);
+    box-shadow: 0 2px 8px hsl(var(--primary)/0.06), inset 0 1px 0 hsl(var(--background)/0.8);
   }
 
   .clinical-panel-elevated {
-    @apply bg-card border border-card-border rounded-lg p-4;
-    box-shadow: 0 4px 12px hsl(var(--foreground)/0.08), 0 1px 3px hsl(var(--foreground)/0.04);
+    @apply bg-card border border-primary/10 rounded-lg p-4;
+    background: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--primary)/0.02) 100%);
+    box-shadow: 0 4px 16px hsl(var(--primary)/0.12), 0 2px 6px hsl(var(--foreground)/0.04);
   }
 
   .clinical-header {
@@ -308,8 +310,8 @@
 
   /* Metrics Bar */
   .metrics-bar {
-    @apply flex flex-wrap items-center gap-6 py-3 px-4 rounded-lg border border-border;
-    background: linear-gradient(135deg, hsl(var(--muted)/0.5) 0%, hsl(var(--muted)/0.3) 100%);
+    @apply flex flex-wrap items-center gap-6 py-3 px-4 rounded-lg border border-primary/15;
+    background: linear-gradient(135deg, hsl(var(--primary)/0.06) 0%, hsl(var(--accent)/0.04) 100%);
   }
 
   .metric-item {
