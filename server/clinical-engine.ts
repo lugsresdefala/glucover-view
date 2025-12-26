@@ -50,6 +50,470 @@ export interface ClinicalRule {
 }
 
 // =============================================================================
+// INSULIN ADJUSTMENT ANALYSIS - EVIDENCE-BASED ALGORITHM
+// =============================================================================
+
+/**
+ * Tipos de ajuste de insulina
+ */
+export type InsulinAdjustmentType = "NPH_NOTURNA" | "NPH_MANHA" | "NPH_ALMOCO" | "NPH_JANTAR" | 
+                                     "RAPIDA_CAFE" | "RAPIDA_ALMOCO" | "RAPIDA_JANTAR";
+
+export type AdjustmentDirection = "AUMENTAR" | "REDUZIR" | "MANTER" | "SOLICITAR_DADOS";
+
+/**
+ * Resultado de análise para um período específico
+ */
+export interface PeriodAdjustmentResult {
+  periodo: string;
+  insulinaAfetada: InsulinAdjustmentType;
+  direcao: AdjustmentDirection;
+  justificativa: string;
+  diasComProblema: number;
+  totalDiasAnalisados: number;
+  valoresObservados: number[];
+  valorReferencia?: number; // Para análises que dependem de outro período (ex: madrugada para jejum)
+  deltaCalculado?: number;  // Para análises pré/pós
+}
+
+/**
+ * Resultado completo da análise de ajustes de insulina
+ */
+export interface InsulinAdjustmentAnalysis {
+  ajustesRecomendados: PeriodAdjustmentResult[];
+  resumoGeral: string;
+  prioridadeMaxima: AdjustmentDirection;
+  temDadosInsuficientes: boolean;
+  periodosSemDados: string[];
+}
+
+/**
+ * Constantes do algoritmo
+ */
+const ADJUSTMENT_THRESHOLDS = {
+  DIAS_MINIMOS_PADRAO: 3,        // Mínimo de dias com problema para considerar padrão
+  DIAS_MINIMOS_HIPO: 2,         // Mínimo de episódios de hipoglicemia para reduzir
+  DELTA_POS_PRE_LIMITE: 40,     // Delta pós-pré acima do qual indica problema na rápida
+  JEJUM_LIMITE: 95,             // Limite superior para jejum
+  PRE_PRANDIAL_LIMITE: 100,     // Limite superior para pré-prandial
+  POS_PRANDIAL_LIMITE: 140,     // Limite superior para pós-prandial 1h
+  MADRUGADA_LIMITE: 100,        // Limite superior para madrugada
+  HIPO_LIMITE: 65,              // Limite inferior (hipoglicemia)
+};
+
+/**
+ * Mapeamento de períodos para insulinas responsáveis
+ */
+const PERIOD_TO_INSULIN_MAP: Record<string, { basal: InsulinAdjustmentType; rapida?: InsulinAdjustmentType }> = {
+  jejum: { basal: "NPH_NOTURNA" },
+  posCafe1h: { basal: "NPH_NOTURNA", rapida: "RAPIDA_CAFE" },
+  preAlmoco: { basal: "NPH_MANHA" },
+  posAlmoco1h: { basal: "NPH_MANHA", rapida: "RAPIDA_ALMOCO" },
+  preJantar: { basal: "NPH_ALMOCO" },
+  posJantar1h: { basal: "NPH_ALMOCO", rapida: "RAPIDA_JANTAR" },
+  madrugada: { basal: "NPH_JANTAR" },
+};
+
+/**
+ * Nomes legíveis para os períodos
+ */
+const PERIOD_LABELS: Record<string, string> = {
+  jejum: "Jejum",
+  posCafe1h: "1h pós-café",
+  preAlmoco: "Pré-almoço",
+  posAlmoco1h: "1h pós-almoço",
+  preJantar: "Pré-jantar",
+  posJantar1h: "1h pós-jantar",
+  madrugada: "Madrugada (3h)",
+};
+
+/**
+ * Nomes legíveis para as insulinas
+ */
+const INSULIN_LABELS: Record<InsulinAdjustmentType, string> = {
+  NPH_NOTURNA: "NPH noturna (ao deitar)",
+  NPH_MANHA: "NPH manhã (café)",
+  NPH_ALMOCO: "NPH almoço",
+  NPH_JANTAR: "NPH jantar",
+  RAPIDA_CAFE: "Rápida café da manhã",
+  RAPIDA_ALMOCO: "Rápida almoço",
+  RAPIDA_JANTAR: "Rápida jantar",
+};
+
+/**
+ * Extrai valores de um período específico de todos os dias de leitura
+ */
+function extractPeriodValues(readings: GlucoseReading[], period: keyof GlucoseReading): number[] {
+  return readings
+    .map(r => r[period])
+    .filter((v): v is number => typeof v === "number" && v > 0);
+}
+
+/**
+ * Conta dias com valor acima do limite
+ */
+function countDaysAboveLimit(values: number[], limit: number): number {
+  return values.filter(v => v > limit).length;
+}
+
+/**
+ * Conta dias com valor abaixo do limite (hipoglicemia)
+ */
+function countDaysBelowLimit(values: number[], limit: number): number {
+  return values.filter(v => v < limit).length;
+}
+
+/**
+ * Analisa jejum elevado considerando madrugada (Efeito Somogyi)
+ */
+function analyzeJejumWithMadrugada(readings: GlucoseReading[]): PeriodAdjustmentResult | null {
+  const jejumValues = extractPeriodValues(readings, "jejum");
+  const madrugadaValues = extractPeriodValues(readings, "madrugada");
+  
+  if (jejumValues.length < ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
+    return null;
+  }
+  
+  const diasJejumAlto = countDaysAboveLimit(jejumValues, ADJUSTMENT_THRESHOLDS.JEJUM_LIMITE);
+  
+  if (diasJejumAlto < ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
+    return null; // Não há padrão de jejum elevado
+  }
+  
+  // Jejum elevado em ≥3 dias - verificar madrugada
+  if (madrugadaValues.length === 0) {
+    return {
+      periodo: PERIOD_LABELS.jejum,
+      insulinaAfetada: "NPH_NOTURNA",
+      direcao: "SOLICITAR_DADOS",
+      justificativa: `Jejum >95 mg/dL em ${diasJejumAlto}/${jejumValues.length} dias. Necessário monitorizar glicemia da madrugada (3h) para diferenciar dose insuficiente de NPH vs Efeito Somogyi.`,
+      diasComProblema: diasJejumAlto,
+      totalDiasAnalisados: jejumValues.length,
+      valoresObservados: jejumValues,
+    };
+  }
+  
+  // Analisar correlação jejum alto com madrugada
+  const diasMadrugadaAlta = countDaysAboveLimit(madrugadaValues, ADJUSTMENT_THRESHOLDS.MADRUGADA_LIMITE);
+  const diasMadrugadaBaixa = countDaysBelowLimit(madrugadaValues, ADJUSTMENT_THRESHOLDS.HIPO_LIMITE);
+  const avgMadrugada = madrugadaValues.reduce((a, b) => a + b, 0) / madrugadaValues.length;
+  
+  if (diasMadrugadaBaixa >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_HIPO) {
+    // EFEITO SOMOGYI - hipoglicemia noturna causando hiperglicemia de rebote
+    return {
+      periodo: PERIOD_LABELS.jejum,
+      insulinaAfetada: "NPH_NOTURNA",
+      direcao: "REDUZIR",
+      justificativa: `Jejum >95 mg/dL em ${diasJejumAlto} dias com hipoglicemia na madrugada (<65 mg/dL) em ${diasMadrugadaBaixa} dias. Padrão compatível com Efeito Somogyi (hiperglicemia de rebote). Opção: reduzir NPH noturna.`,
+      diasComProblema: diasJejumAlto,
+      totalDiasAnalisados: jejumValues.length,
+      valoresObservados: jejumValues,
+      valorReferencia: Math.round(avgMadrugada),
+    };
+  }
+  
+  if (diasMadrugadaAlta >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
+    // Madrugada alta = NPH noturna insuficiente
+    return {
+      periodo: PERIOD_LABELS.jejum,
+      insulinaAfetada: "NPH_NOTURNA",
+      direcao: "AUMENTAR",
+      justificativa: `Jejum >95 mg/dL em ${diasJejumAlto} dias com madrugada elevada (>100 mg/dL) em ${diasMadrugadaAlta} dias (média ${Math.round(avgMadrugada)} mg/dL). NPH noturna insuficiente. Opção: aumentar NPH ao deitar.`,
+      diasComProblema: diasJejumAlto,
+      totalDiasAnalisados: jejumValues.length,
+      valoresObservados: jejumValues,
+      valorReferencia: Math.round(avgMadrugada),
+    };
+  }
+  
+  // Madrugada normal mas jejum alto - fenômeno do alvorecer ou ajuste fino
+  return {
+    periodo: PERIOD_LABELS.jejum,
+    insulinaAfetada: "NPH_NOTURNA",
+    direcao: "AUMENTAR",
+    justificativa: `Jejum >95 mg/dL em ${diasJejumAlto} dias com madrugada normal (média ${Math.round(avgMadrugada)} mg/dL). Possível fenômeno do alvorecer. Opção: ajuste fino de NPH noturna ou avaliar horário de aplicação.`,
+    diasComProblema: diasJejumAlto,
+    totalDiasAnalisados: jejumValues.length,
+    valoresObservados: jejumValues,
+    valorReferencia: Math.round(avgMadrugada),
+  };
+}
+
+/**
+ * Analisa pré-prandial elevado (indica problema na NPH anterior)
+ */
+function analyzePrePrandial(
+  readings: GlucoseReading[], 
+  prePeriod: "preAlmoco" | "preJantar",
+  nphResponsavel: InsulinAdjustmentType
+): PeriodAdjustmentResult | null {
+  const values = extractPeriodValues(readings, prePeriod);
+  
+  if (values.length < ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
+    return null;
+  }
+  
+  const diasAlto = countDaysAboveLimit(values, ADJUSTMENT_THRESHOLDS.PRE_PRANDIAL_LIMITE);
+  const diasBaixo = countDaysBelowLimit(values, ADJUSTMENT_THRESHOLDS.HIPO_LIMITE);
+  
+  // Verificar hipoglicemia primeiro
+  if (diasBaixo >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_HIPO) {
+    return {
+      periodo: PERIOD_LABELS[prePeriod],
+      insulinaAfetada: nphResponsavel,
+      direcao: "REDUZIR",
+      justificativa: `Hipoglicemia (<65 mg/dL) em ${diasBaixo}/${values.length} dias no período ${PERIOD_LABELS[prePeriod]}. Opção: reduzir ${INSULIN_LABELS[nphResponsavel]}.`,
+      diasComProblema: diasBaixo,
+      totalDiasAnalisados: values.length,
+      valoresObservados: values,
+    };
+  }
+  
+  if (diasAlto >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
+    const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+    return {
+      periodo: PERIOD_LABELS[prePeriod],
+      insulinaAfetada: nphResponsavel,
+      direcao: "AUMENTAR",
+      justificativa: `${PERIOD_LABELS[prePeriod]} >100 mg/dL em ${diasAlto}/${values.length} dias (média ${avg} mg/dL). Indica ${INSULIN_LABELS[nphResponsavel]} insuficiente. Opção: aumentar dose.`,
+      diasComProblema: diasAlto,
+      totalDiasAnalisados: values.length,
+      valoresObservados: values,
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Analisa pós-prandial considerando delta com pré-prandial
+ * REGRA CRÍTICA: Se delta > 40 repetidamente → problema na rápida
+ *                Se delta ≤ 40 mas pós alto → problema na NPH anterior
+ */
+function analyzePosPrandial(
+  readings: GlucoseReading[],
+  prePeriod: "jejum" | "preAlmoco" | "preJantar",
+  posPeriod: "posCafe1h" | "posAlmoco1h" | "posJantar1h",
+  rapidaResponsavel: InsulinAdjustmentType,
+  nphAnterior: InsulinAdjustmentType
+): PeriodAdjustmentResult | null {
+  const preValues = extractPeriodValues(readings, prePeriod);
+  const posValues = extractPeriodValues(readings, posPeriod);
+  
+  if (posValues.length < ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
+    return null;
+  }
+  
+  // Verificar hipoglicemia pós-prandial primeiro
+  const diasHipoPOS = countDaysBelowLimit(posValues, ADJUSTMENT_THRESHOLDS.HIPO_LIMITE);
+  if (diasHipoPOS >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_HIPO) {
+    return {
+      periodo: PERIOD_LABELS[posPeriod],
+      insulinaAfetada: rapidaResponsavel,
+      direcao: "REDUZIR",
+      justificativa: `Hipoglicemia (<65 mg/dL) em ${diasHipoPOS}/${posValues.length} dias no ${PERIOD_LABELS[posPeriod]}. Opção: reduzir ${INSULIN_LABELS[rapidaResponsavel]}.`,
+      diasComProblema: diasHipoPOS,
+      totalDiasAnalisados: posValues.length,
+      valoresObservados: posValues,
+    };
+  }
+  
+  // Contar dias com pós elevado
+  const diasPosAlto = countDaysAboveLimit(posValues, ADJUSTMENT_THRESHOLDS.POS_PRANDIAL_LIMITE);
+  
+  if (diasPosAlto < ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
+    return null; // Pós-prandial OK
+  }
+  
+  // Calcular deltas (pós - pré) para dias que têm ambos valores
+  const deltas: { delta: number; pre: number; pos: number }[] = [];
+  readings.forEach(r => {
+    const pre = r[prePeriod];
+    const pos = r[posPeriod];
+    if (typeof pre === "number" && typeof pos === "number" && pre > 0 && pos > 0) {
+      deltas.push({ delta: pos - pre, pre, pos });
+    }
+  });
+  
+  if (deltas.length === 0 && preValues.length === 0) {
+    // Sem dados de pré-prandial - não podemos determinar se é rápida ou NPH
+    return {
+      periodo: PERIOD_LABELS[posPeriod],
+      insulinaAfetada: rapidaResponsavel,
+      direcao: "SOLICITAR_DADOS",
+      justificativa: `${PERIOD_LABELS[posPeriod]} >140 mg/dL em ${diasPosAlto} dias, porém sem dados de ${PERIOD_LABELS[prePeriod]} para calcular excursão glicêmica. Necessário monitorizar ${PERIOD_LABELS[prePeriod]} para diferenciar problema na rápida vs NPH.`,
+      diasComProblema: diasPosAlto,
+      totalDiasAnalisados: posValues.length,
+      valoresObservados: posValues,
+    };
+  }
+  
+  // Analisar deltas
+  const diasDeltaAlto = deltas.filter(d => d.delta > ADJUSTMENT_THRESHOLDS.DELTA_POS_PRE_LIMITE).length;
+  const diasDeltaNormalMasPosAlto = deltas.filter(d => d.delta <= ADJUSTMENT_THRESHOLDS.DELTA_POS_PRE_LIMITE && d.pos > ADJUSTMENT_THRESHOLDS.POS_PRANDIAL_LIMITE).length;
+  const avgDelta = deltas.length > 0 ? Math.round(deltas.reduce((a, b) => a + b.delta, 0) / deltas.length) : 0;
+  const avgPos = Math.round(posValues.reduce((a, b) => a + b, 0) / posValues.length);
+  
+  if (diasDeltaAlto >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
+    // Delta > 40 em ≥3 dias → problema na rápida
+    return {
+      periodo: PERIOD_LABELS[posPeriod],
+      insulinaAfetada: rapidaResponsavel,
+      direcao: "AUMENTAR",
+      justificativa: `Excursão glicêmica >40 mg/dL em ${diasDeltaAlto}/${deltas.length} dias (delta médio ${avgDelta} mg/dL). Indica ${INSULIN_LABELS[rapidaResponsavel]} insuficiente. Opção: aumentar dose.`,
+      diasComProblema: diasDeltaAlto,
+      totalDiasAnalisados: deltas.length,
+      valoresObservados: posValues,
+      deltaCalculado: avgDelta,
+    };
+  }
+  
+  if (diasDeltaNormalMasPosAlto >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
+    // Delta ≤ 40 mas pós alto → problema na NPH anterior (pré já estava alto)
+    const avgPre = deltas.length > 0 ? Math.round(deltas.reduce((a, b) => a + b.pre, 0) / deltas.length) : 0;
+    return {
+      periodo: PERIOD_LABELS[posPeriod],
+      insulinaAfetada: nphAnterior,
+      direcao: "AUMENTAR",
+      justificativa: `${PERIOD_LABELS[posPeriod]} elevado (média ${avgPos} mg/dL) com excursão glicêmica adequada (delta médio ${avgDelta} mg/dL ≤40). ${PERIOD_LABELS[prePeriod]} já elevado (média ${avgPre} mg/dL). Problema na ${INSULIN_LABELS[nphAnterior]}, não na rápida. Opção: aumentar NPH.`,
+      diasComProblema: diasDeltaNormalMasPosAlto,
+      totalDiasAnalisados: deltas.length,
+      valoresObservados: posValues,
+      deltaCalculado: avgDelta,
+      valorReferencia: avgPre,
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Analisa madrugada elevada isoladamente
+ */
+function analyzeMadrugada(readings: GlucoseReading[]): PeriodAdjustmentResult | null {
+  const values = extractPeriodValues(readings, "madrugada");
+  
+  if (values.length < ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
+    return null;
+  }
+  
+  const diasBaixo = countDaysBelowLimit(values, ADJUSTMENT_THRESHOLDS.HIPO_LIMITE);
+  
+  if (diasBaixo >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_HIPO) {
+    return {
+      periodo: PERIOD_LABELS.madrugada,
+      insulinaAfetada: "NPH_JANTAR",
+      direcao: "REDUZIR",
+      justificativa: `Hipoglicemia na madrugada (<65 mg/dL) em ${diasBaixo}/${values.length} dias. Opção: reduzir NPH do jantar ou realocar para ao deitar.`,
+      diasComProblema: diasBaixo,
+      totalDiasAnalisados: values.length,
+      valoresObservados: values,
+    };
+  }
+  
+  // Madrugada alta é tratada junto com jejum (via analyzeJejumWithMadrugada)
+  return null;
+}
+
+/**
+ * Função principal: Analisa todos os períodos e retorna recomendações de ajuste
+ */
+export function analyzeInsulinAdjustments(readings: GlucoseReading[]): InsulinAdjustmentAnalysis {
+  const ajustes: PeriodAdjustmentResult[] = [];
+  const periodosSemDados: string[] = [];
+  
+  // 1. Analisar jejum (considerando madrugada para Efeito Somogyi)
+  const jejumResult = analyzeJejumWithMadrugada(readings);
+  if (jejumResult) {
+    ajustes.push(jejumResult);
+  }
+  
+  // 2. Analisar pré-almoço → NPH manhã
+  const preAlmocoResult = analyzePrePrandial(readings, "preAlmoco", "NPH_MANHA");
+  if (preAlmocoResult) {
+    ajustes.push(preAlmocoResult);
+  } else if (extractPeriodValues(readings, "preAlmoco").length === 0) {
+    periodosSemDados.push(PERIOD_LABELS.preAlmoco);
+  }
+  
+  // 3. Analisar pré-jantar → NPH almoço
+  const preJantarResult = analyzePrePrandial(readings, "preJantar", "NPH_ALMOCO");
+  if (preJantarResult) {
+    ajustes.push(preJantarResult);
+  } else if (extractPeriodValues(readings, "preJantar").length === 0) {
+    periodosSemDados.push(PERIOD_LABELS.preJantar);
+  }
+  
+  // 4. Analisar pós-café (delta jejum → pós-café)
+  const posCafeResult = analyzePosPrandial(readings, "jejum", "posCafe1h", "RAPIDA_CAFE", "NPH_NOTURNA");
+  if (posCafeResult) {
+    ajustes.push(posCafeResult);
+  }
+  
+  // 5. Analisar pós-almoço (delta pré-almoço → pós-almoço)
+  const posAlmocoResult = analyzePosPrandial(readings, "preAlmoco", "posAlmoco1h", "RAPIDA_ALMOCO", "NPH_MANHA");
+  if (posAlmocoResult) {
+    ajustes.push(posAlmocoResult);
+  }
+  
+  // 6. Analisar pós-jantar (delta pré-jantar → pós-jantar)
+  const posJantarResult = analyzePosPrandial(readings, "preJantar", "posJantar1h", "RAPIDA_JANTAR", "NPH_ALMOCO");
+  if (posJantarResult) {
+    ajustes.push(posJantarResult);
+  }
+  
+  // 7. Analisar madrugada isoladamente (hipoglicemia noturna)
+  const madrugadaResult = analyzeMadrugada(readings);
+  if (madrugadaResult) {
+    ajustes.push(madrugadaResult);
+  } else if (extractPeriodValues(readings, "madrugada").length === 0) {
+    periodosSemDados.push(PERIOD_LABELS.madrugada);
+  }
+  
+  // Determinar prioridade máxima
+  let prioridadeMaxima: AdjustmentDirection = "MANTER";
+  if (ajustes.some(a => a.direcao === "REDUZIR")) {
+    prioridadeMaxima = "REDUZIR"; // Segurança primeiro - hipoglicemia
+  } else if (ajustes.some(a => a.direcao === "SOLICITAR_DADOS")) {
+    prioridadeMaxima = "SOLICITAR_DADOS";
+  } else if (ajustes.some(a => a.direcao === "AUMENTAR")) {
+    prioridadeMaxima = "AUMENTAR";
+  }
+  
+  // Gerar resumo
+  let resumoGeral = "";
+  if (ajustes.length === 0) {
+    resumoGeral = "Perfil glicêmico sem padrões que indiquem necessidade de ajuste de doses no momento. Manter esquema atual e continuar monitorização.";
+  } else {
+    const aumentar = ajustes.filter(a => a.direcao === "AUMENTAR");
+    const reduzir = ajustes.filter(a => a.direcao === "REDUZIR");
+    const solicitar = ajustes.filter(a => a.direcao === "SOLICITAR_DADOS");
+    
+    const partes: string[] = [];
+    
+    if (reduzir.length > 0) {
+      partes.push(`Opção de redução em ${reduzir.map(a => INSULIN_LABELS[a.insulinaAfetada]).join(", ")} devido a hipoglicemia`);
+    }
+    if (aumentar.length > 0) {
+      partes.push(`Opção de aumento em ${aumentar.map(a => INSULIN_LABELS[a.insulinaAfetada]).join(", ")}`);
+    }
+    if (solicitar.length > 0) {
+      partes.push(`Dados adicionais necessários para ${solicitar.map(a => a.periodo).join(", ")}`);
+    }
+    
+    resumoGeral = partes.join(". ") + ".";
+  }
+  
+  return {
+    ajustesRecomendados: ajustes,
+    resumoGeral,
+    prioridadeMaxima,
+    temDadosInsuficientes: periodosSemDados.length > 0 || ajustes.some(a => a.direcao === "SOLICITAR_DADOS"),
+    periodosSemDados,
+  };
+}
+
+// =============================================================================
 // SBD 2025 - TODAS AS 17 RECOMENDAÇÕES
 // =============================================================================
 export const SBD_2025_RULES: Record<string, ClinicalRule> = {
