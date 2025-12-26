@@ -321,7 +321,17 @@ function generateDeterministicRecommendation(
   // Verificar padrão recorrente de hipoglicemia antes de recomendar redução de dose
   const hypoPattern = hasRecurrentHypoglycemia(analysis);
   
-  if (hasHypo || hasSevereHyper) {
+  // CRITICAL FIX: Check if recent 7-day data shows good control despite historical alerts
+  // If recent control is good (≥70% in target AND not worsening), don't escalate based on old data
+  const recentHypoCount = s7?.criticalAlerts?.filter(a => a.type === "hypoglycemia").length || 0;
+  const recentHyperCount = s7?.criticalAlerts?.filter(a => a.type === "severe_hyperglycemia").length || 0;
+  const hasRecentCriticalIssues = recentHypoCount >= 2 || recentHyperCount >= 2;
+  const recentControlIsGood = recent7DayPercent >= 70 && !isRecentWorsening;
+  
+  // Override historical alerts if recent control is good and no recent critical issues
+  const shouldIgnoreHistoricalAlerts = recentControlIsGood && !hasRecentCriticalIssues && s7 !== null;
+  
+  if ((hasHypo || hasSevereHyper) && !shouldIgnoreHistoricalAlerts) {
     if (hasHypo && hasSevereHyper) {
       const insulinAdjust = generateInsulinAdjustmentRecommendation(analysis, evaluation);
       condutaImediata = `REVISÃO DO ESQUEMA INSULÍNICO. Perfil instável com variabilidade glicêmica significativa. ${insulinAdjust}`;
