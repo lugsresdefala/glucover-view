@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   generateClinicalAnalysis,
+  analyzeInsulinAdjustments,
   SBD_2025_RULES,
   FEBRASGO_2019_RULES,
   WHO_2025_RULES,
   type GlucoseAnalysisByPeriod,
+  type InsulinAdjustmentAnalysis,
 } from "./clinical-engine";
 import type { PatientEvaluation, GlucoseReading } from "@shared/schema";
 
@@ -347,5 +349,217 @@ describe("Clinical Engine - Diabetes Type Specific Rules", () => {
     expect(ruleIds).toContain("SBD-R10");
     expect(ruleIds).toContain("SBD-R11");
     expect(ruleIds).toContain("SBD-R16");
+  });
+});
+
+// =============================================================================
+// INSULIN ADJUSTMENT ANALYSIS TESTS
+// =============================================================================
+
+describe("Insulin Adjustment Analysis - Fasting with Dawn Correlation", () => {
+  it("should recommend increasing NPH when fasting high AND dawn high (≥3 days)", () => {
+    const readings: GlucoseReading[] = [
+      { jejum: 110, madrugada: 115 },
+      { jejum: 105, madrugada: 120 },
+      { jejum: 108, madrugada: 110 },
+      { jejum: 102, madrugada: 105 },
+    ];
+
+    const result = analyzeInsulinAdjustments(readings);
+    const jejumAdjust = result.ajustesRecomendados.find(a => a.periodo === "Jejum");
+
+    expect(jejumAdjust).toBeDefined();
+    expect(jejumAdjust?.insulinaAfetada).toBe("NPH_NOTURNA");
+    expect(jejumAdjust?.direcao).toBe("AUMENTAR");
+    expect(jejumAdjust?.justificativa).toContain("madrugada elevada");
+  });
+
+  it("should recommend REDUCING NPH when fasting high BUT dawn LOW (Somogyi effect)", () => {
+    const readings: GlucoseReading[] = [
+      { jejum: 115, madrugada: 55 },
+      { jejum: 120, madrugada: 60 },
+      { jejum: 110, madrugada: 58 },
+      { jejum: 105, madrugada: 62 },
+    ];
+
+    const result = analyzeInsulinAdjustments(readings);
+    const jejumAdjust = result.ajustesRecomendados.find(a => a.periodo === "Jejum");
+
+    expect(jejumAdjust).toBeDefined();
+    expect(jejumAdjust?.insulinaAfetada).toBe("NPH_NOTURNA");
+    expect(jejumAdjust?.direcao).toBe("REDUZIR");
+    expect(jejumAdjust?.justificativa).toContain("Somogyi");
+  });
+
+  it("should request dawn data when fasting high but no dawn readings", () => {
+    const readings: GlucoseReading[] = [
+      { jejum: 110 },
+      { jejum: 105 },
+      { jejum: 108 },
+    ];
+
+    const result = analyzeInsulinAdjustments(readings);
+    const jejumAdjust = result.ajustesRecomendados.find(a => a.periodo === "Jejum");
+
+    expect(jejumAdjust).toBeDefined();
+    expect(jejumAdjust?.direcao).toBe("SOLICITAR_DADOS");
+    expect(jejumAdjust?.justificativa).toContain("madrugada");
+  });
+});
+
+describe("Insulin Adjustment Analysis - Pre-prandial Patterns", () => {
+  it("should recommend increasing morning NPH when pre-lunch high (≥3 days)", () => {
+    const readings: GlucoseReading[] = [
+      { preAlmoco: 115 },
+      { preAlmoco: 110 },
+      { preAlmoco: 120 },
+      { preAlmoco: 108 },
+    ];
+
+    const result = analyzeInsulinAdjustments(readings);
+    const preAlmocoAdjust = result.ajustesRecomendados.find(a => a.periodo === "Pré-almoço");
+
+    expect(preAlmocoAdjust).toBeDefined();
+    expect(preAlmocoAdjust?.insulinaAfetada).toBe("NPH_MANHA");
+    expect(preAlmocoAdjust?.direcao).toBe("AUMENTAR");
+  });
+
+  it("should recommend increasing lunch NPH when pre-dinner high (≥3 days)", () => {
+    const readings: GlucoseReading[] = [
+      { preJantar: 115 },
+      { preJantar: 112 },
+      { preJantar: 118 },
+    ];
+
+    const result = analyzeInsulinAdjustments(readings);
+    const preJantarAdjust = result.ajustesRecomendados.find(a => a.periodo === "Pré-jantar");
+
+    expect(preJantarAdjust).toBeDefined();
+    expect(preJantarAdjust?.insulinaAfetada).toBe("NPH_ALMOCO");
+    expect(preJantarAdjust?.direcao).toBe("AUMENTAR");
+  });
+});
+
+describe("Insulin Adjustment Analysis - Post-prandial Delta Logic", () => {
+  it("should recommend rapid insulin when delta >40 repeatedly (post-lunch)", () => {
+    // Post-lunch 170, pre-lunch 95 → delta = 75 (>40) → rapid insulin problem
+    const readings: GlucoseReading[] = [
+      { preAlmoco: 95, posAlmoco1h: 170 },
+      { preAlmoco: 90, posAlmoco1h: 165 },
+      { preAlmoco: 92, posAlmoco1h: 160 },
+    ];
+
+    const result = analyzeInsulinAdjustments(readings);
+    const posAlmocoAdjust = result.ajustesRecomendados.find(a => a.periodo === "1h pós-almoço");
+
+    expect(posAlmocoAdjust).toBeDefined();
+    expect(posAlmocoAdjust?.insulinaAfetada).toBe("RAPIDA_ALMOCO");
+    expect(posAlmocoAdjust?.direcao).toBe("AUMENTAR");
+    expect(posAlmocoAdjust?.justificativa).toContain("Excursão glicêmica >40");
+  });
+
+  it("should recommend NPH (not rapid) when delta ≤40 but post high", () => {
+    // Post-lunch 160, pre-lunch 130 → delta = 30 (≤40) → NPH problem, not rapid
+    const readings: GlucoseReading[] = [
+      { preAlmoco: 130, posAlmoco1h: 160 },
+      { preAlmoco: 125, posAlmoco1h: 155 },
+      { preAlmoco: 128, posAlmoco1h: 158 },
+    ];
+
+    const result = analyzeInsulinAdjustments(readings);
+    const posAlmocoAdjust = result.ajustesRecomendados.find(a => a.periodo === "1h pós-almoço");
+
+    expect(posAlmocoAdjust).toBeDefined();
+    expect(posAlmocoAdjust?.insulinaAfetada).toBe("NPH_MANHA");
+    expect(posAlmocoAdjust?.direcao).toBe("AUMENTAR");
+    expect(posAlmocoAdjust?.justificativa).toContain("excursão glicêmica adequada");
+    expect(posAlmocoAdjust?.justificativa).toContain("não na rápida");
+  });
+
+  it("should request pre-meal data when post high but no pre-meal readings", () => {
+    const readings: GlucoseReading[] = [
+      { posAlmoco1h: 165 },
+      { posAlmoco1h: 170 },
+      { posAlmoco1h: 160 },
+    ];
+
+    const result = analyzeInsulinAdjustments(readings);
+    const posAlmocoAdjust = result.ajustesRecomendados.find(a => a.periodo === "1h pós-almoço");
+
+    expect(posAlmocoAdjust).toBeDefined();
+    expect(posAlmocoAdjust?.direcao).toBe("SOLICITAR_DADOS");
+    expect(posAlmocoAdjust?.justificativa).toContain("Pré-almoço");
+  });
+});
+
+describe("Insulin Adjustment Analysis - Hypoglycemia Detection", () => {
+  it("should recommend reducing NPH when pre-meal hypoglycemia (≥2 episodes)", () => {
+    const readings: GlucoseReading[] = [
+      { preAlmoco: 58 },
+      { preAlmoco: 62 },
+      { preAlmoco: 85 },
+    ];
+
+    const result = analyzeInsulinAdjustments(readings);
+    const hypoAdjust = result.ajustesRecomendados.find(a => a.direcao === "REDUZIR");
+
+    expect(hypoAdjust).toBeDefined();
+    expect(hypoAdjust?.insulinaAfetada).toBe("NPH_MANHA");
+    expect(hypoAdjust?.justificativa).toContain("Hipoglicemia");
+  });
+
+  it("should recommend reducing rapid when post-meal hypoglycemia (≥2 episodes)", () => {
+    const readings: GlucoseReading[] = [
+      { jejum: 90, posCafe1h: 55 },
+      { jejum: 88, posCafe1h: 60 },
+      { jejum: 92, posCafe1h: 110 },
+    ];
+
+    const result = analyzeInsulinAdjustments(readings);
+    const hypoAdjust = result.ajustesRecomendados.find(a => a.direcao === "REDUZIR");
+
+    expect(hypoAdjust).toBeDefined();
+    expect(hypoAdjust?.insulinaAfetada).toBe("RAPIDA_CAFE");
+  });
+
+  it("should prioritize reduction over increase when both patterns present", () => {
+    const readings: GlucoseReading[] = [
+      { jejum: 110, preAlmoco: 55, madrugada: 115 },
+      { jejum: 108, preAlmoco: 60, madrugada: 110 },
+      { jejum: 112, preAlmoco: 85, madrugada: 105 },
+    ];
+
+    const result = analyzeInsulinAdjustments(readings);
+
+    expect(result.prioridadeMaxima).toBe("REDUZIR");
+  });
+});
+
+describe("Insulin Adjustment Analysis - No Adjustment Needed", () => {
+  it("should return no adjustments when all readings in target", () => {
+    const readings: GlucoseReading[] = [
+      { jejum: 88, posCafe1h: 125, preAlmoco: 85, posAlmoco1h: 130 },
+      { jejum: 90, posCafe1h: 120, preAlmoco: 88, posAlmoco1h: 125 },
+      { jejum: 85, posCafe1h: 115, preAlmoco: 82, posAlmoco1h: 128 },
+    ];
+
+    const result = analyzeInsulinAdjustments(readings);
+
+    expect(result.ajustesRecomendados.length).toBe(0);
+    expect(result.prioridadeMaxima).toBe("MANTER");
+    expect(result.resumoGeral).toContain("Manter");
+  });
+
+  it("should not trigger adjustment for isolated high readings (< 3 days)", () => {
+    const readings: GlucoseReading[] = [
+      { jejum: 110 }, // High
+      { jejum: 88 },  // Normal
+      { jejum: 85 },  // Normal
+    ];
+
+    const result = analyzeInsulinAdjustments(readings);
+    const jejumAdjust = result.ajustesRecomendados.find(a => a.periodo === "Jejum");
+
+    expect(jejumAdjust).toBeUndefined();
   });
 });
