@@ -145,37 +145,33 @@ export class NotificationService {
   }
 
   static async getUserNotifications(userId: string, includeRead: boolean = false) {
-    let query = db
+    const whereConditions = includeRead
+      ? eq(notifications.userId, userId)
+      : and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        );
+
+    return await db
       .select()
       .from(notifications)
-      .where(eq(notifications.userId, userId))
+      .where(whereConditions)
       .orderBy(desc(notifications.createdAt));
-
-    if (!includeRead) {
-      query = query.where(and(
-        eq(notifications.userId, userId),
-        eq(notifications.isRead, false)
-      )) as any;
-    }
-
-    return await query;
   }
 
   static async getPatientNotifications(patientId: number, includeRead: boolean = false) {
-    let query = db
+    const whereConditions = includeRead
+      ? eq(notifications.patientId, patientId)
+      : and(
+          eq(notifications.patientId, patientId),
+          eq(notifications.isRead, false)
+        );
+
+    return await db
       .select()
       .from(notifications)
-      .where(eq(notifications.patientId, patientId))
+      .where(whereConditions)
       .orderBy(desc(notifications.createdAt));
-
-    if (!includeRead) {
-      query = query.where(and(
-        eq(notifications.patientId, patientId),
-        eq(notifications.isRead, false)
-      )) as any;
-    }
-
-    return await query;
   }
 
   static async markAsRead(notificationId: number, userId?: string, patientId?: number) {
