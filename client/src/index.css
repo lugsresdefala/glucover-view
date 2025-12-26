@@ -2,59 +2,97 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LIGHT MODE */
+/* LIGHT MODE - Medical Professional Palette */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
   --opaque-button-border-intensity: -8;
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
-  --background: 210 5% 98%;
-  --foreground: 210 6% 12%;
-  --border: 210 5% 88%;
-  --card: 210 5% 96%;
-  --card-foreground: 210 6% 12%;
-  --card-border: 210 5% 93%;
-  --sidebar: 210 5% 94%;
-  --sidebar-foreground: 210 6% 15%;
-  --sidebar-border: 210 5% 90%;
-  --sidebar-primary: 210 85% 42%;
-  --sidebar-primary-foreground: 210 85% 98%;
-  --sidebar-accent: 210 8% 88%;
-  --sidebar-accent-foreground: 210 6% 15%;
-  --sidebar-ring: 210 85% 42%;
-  --popover: 210 5% 92%;
-  --popover-foreground: 210 6% 12%;
-  --popover-border: 210 5% 88%;
-  --primary: 210 85% 35%;
-  --primary-foreground: 210 85% 98%;
-  --secondary: 210 8% 86%;
-  --secondary-foreground: 210 6% 15%;
-  --muted: 210 8% 88%;
-  --muted-foreground: 210 6% 35%;
-  --accent: 210 12% 90%;
-  --accent-foreground: 210 6% 15%;
-  --destructive: 358 75% 32%;
-  --destructive-foreground: 358 75% 98%;
-  --input: 210 15% 72%;
-  --ring: 210 85% 42%;
-  --chart-1: 210 85% 35%;
-  --chart-2: 195 75% 38%;
-  --chart-3: 170 65% 32%;
-  --chart-4: 280 70% 35%;
-  --chart-5: 25 80% 38%;
-  --font-sans: Inter, system-ui, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  /* Base colors - Clean clinical white/gray */
+  --background: 210 20% 99%;
+  --foreground: 215 25% 15%;
+  --border: 210 15% 90%;
+  
+  /* Cards - Subtle elevation */
+  --card: 0 0% 100%;
+  --card-foreground: 215 25% 15%;
+  --card-border: 210 15% 92%;
+  
+  /* Sidebar - Professional blue-gray */
+  --sidebar: 215 30% 18%;
+  --sidebar-foreground: 210 20% 95%;
+  --sidebar-border: 215 25% 25%;
+  --sidebar-primary: 199 89% 48%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 215 25% 25%;
+  --sidebar-accent-foreground: 210 20% 95%;
+  --sidebar-ring: 199 89% 48%;
+  
+  /* Popover */
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 25% 15%;
+  --popover-border: 210 15% 90%;
+  
+  /* Primary - Deep medical blue */
+  --primary: 215 70% 40%;
+  --primary-foreground: 0 0% 100%;
+  
+  /* Secondary - Neutral gray */
+  --secondary: 210 15% 93%;
+  --secondary-foreground: 215 20% 25%;
+  
+  /* Muted - Subdued text */
+  --muted: 210 15% 95%;
+  --muted-foreground: 215 15% 45%;
+  
+  /* Accent - Teal medical accent */
+  --accent: 175 60% 92%;
+  --accent-foreground: 175 70% 25%;
+  
+  /* Destructive - Clear red */
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  
+  /* Semantic status colors */
+  --status-success: 142 70% 45%;
+  --status-success-foreground: 0 0% 100%;
+  --status-success-bg: 142 70% 95%;
+  --status-warning: 38 92% 50%;
+  --status-warning-foreground: 38 92% 20%;
+  --status-warning-bg: 38 92% 95%;
+  --status-critical: 0 72% 51%;
+  --status-critical-foreground: 0 0% 100%;
+  --status-critical-bg: 0 72% 96%;
+  --status-info: 199 89% 48%;
+  --status-info-foreground: 0 0% 100%;
+  --status-info-bg: 199 89% 95%;
+  
+  --input: 210 15% 80%;
+  --ring: 215 70% 50%;
+  
+  /* Charts - Medical-friendly palette */
+  --chart-1: 215 70% 45%;
+  --chart-2: 175 60% 42%;
+  --chart-3: 142 60% 40%;
+  --chart-4: 280 55% 50%;
+  --chart-5: 38 85% 50%;
+  
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-serif: 'Merriweather', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
   --radius: .5rem;
-  --shadow-2xs: 0px 2px 0px 0px hsl(210 5% 12% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(210 5% 12% / 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(210 5% 12% / 0.00), 0px 1px 2px -1px hsl(210 5% 12% / 0.00);
-  --shadow: 0px 2px 0px 0px hsl(210 5% 12% / 0.00), 0px 1px 2px -1px hsl(210 5% 12% / 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(210 5% 12% / 0.00), 0px 2px 4px -1px hsl(210 5% 12% / 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(210 5% 12% / 0.00), 0px 4px 6px -1px hsl(210 5% 12% / 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(210 5% 12% / 0.00), 0px 8px 10px -1px hsl(210 5% 12% / 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(210 5% 12% / 0.00);
+  /* Subtle professional shadows */
+  --shadow-2xs: 0 1px 2px 0 hsl(215 25% 15% / 0.03);
+  --shadow-xs: 0 1px 3px 0 hsl(215 25% 15% / 0.04);
+  --shadow-sm: 0 1px 2px 0 hsl(215 25% 15% / 0.05), 0 1px 3px -1px hsl(215 25% 15% / 0.03);
+  --shadow: 0 2px 4px 0 hsl(215 25% 15% / 0.06), 0 1px 2px -1px hsl(215 25% 15% / 0.04);
+  --shadow-md: 0 4px 6px -1px hsl(215 25% 15% / 0.08), 0 2px 4px -2px hsl(215 25% 15% / 0.04);
+  --shadow-lg: 0 10px 15px -3px hsl(215 25% 15% / 0.08), 0 4px 6px -4px hsl(215 25% 15% / 0.04);
+  --shadow-xl: 0 20px 25px -5px hsl(215 25% 15% / 0.08), 0 8px 10px -6px hsl(215 25% 15% / 0.04);
+  --shadow-2xl: 0 25px 50px -12px hsl(215 25% 15% / 0.15);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
@@ -87,46 +125,82 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
+/* DARK MODE - Medical Professional Palette */
 .dark {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
   --opaque-button-border-intensity: 9;
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
-  --background: 210 5% 8%;
-  --foreground: 210 5% 96%;
-  --border: 210 5% 18%;
-  --card: 210 5% 10%;
-  --card-foreground: 210 5% 96%;
-  --card-border: 210 5% 13%;
-  --sidebar: 210 5% 12%;
-  --sidebar-foreground: 210 5% 92%;
-  --sidebar-border: 210 5% 15%;
-  --sidebar-primary: 210 85% 45%;
-  --sidebar-primary-foreground: 210 85% 98%;
-  --sidebar-accent: 210 8% 16%;
-  --sidebar-accent-foreground: 210 5% 92%;
-  --sidebar-ring: 210 85% 45%;
-  --popover: 210 5% 14%;
-  --popover-foreground: 210 5% 96%;
-  --popover-border: 210 5% 17%;
-  --primary: 210 85% 35%;
-  --primary-foreground: 210 85% 98%;
-  --secondary: 210 8% 18%;
-  --secondary-foreground: 210 5% 92%;
-  --muted: 210 8% 16%;
-  --muted-foreground: 210 5% 65%;
-  --accent: 210 12% 17%;
-  --accent-foreground: 210 5% 92%;
-  --destructive: 358 75% 32%;
-  --destructive-foreground: 358 75% 98%;
-  --input: 210 15% 28%;
-  --ring: 210 85% 45%;
-  --chart-1: 210 85% 65%;
-  --chart-2: 195 75% 62%;
-  --chart-3: 170 65% 58%;
-  --chart-4: 280 70% 65%;
-  --chart-5: 25 80% 62%;
+  
+  /* Base colors - Dark clinical */
+  --background: 215 25% 9%;
+  --foreground: 210 20% 95%;
+  --border: 215 20% 18%;
+  
+  /* Cards */
+  --card: 215 25% 12%;
+  --card-foreground: 210 20% 95%;
+  --card-border: 215 20% 16%;
+  
+  /* Sidebar */
+  --sidebar: 215 30% 8%;
+  --sidebar-foreground: 210 20% 92%;
+  --sidebar-border: 215 25% 15%;
+  --sidebar-primary: 199 89% 48%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 215 25% 18%;
+  --sidebar-accent-foreground: 210 20% 92%;
+  --sidebar-ring: 199 89% 48%;
+  
+  /* Popover */
+  --popover: 215 25% 14%;
+  --popover-foreground: 210 20% 95%;
+  --popover-border: 215 20% 20%;
+  
+  /* Primary - Lighter for dark mode */
+  --primary: 215 70% 50%;
+  --primary-foreground: 0 0% 100%;
+  
+  /* Secondary */
+  --secondary: 215 20% 20%;
+  --secondary-foreground: 210 20% 90%;
+  
+  /* Muted */
+  --muted: 215 20% 18%;
+  --muted-foreground: 215 15% 60%;
+  
+  /* Accent - Teal */
+  --accent: 175 50% 18%;
+  --accent-foreground: 175 60% 80%;
+  
+  /* Destructive */
+  --destructive: 0 62% 45%;
+  --destructive-foreground: 0 0% 100%;
+  
+  /* Semantic status colors for dark mode */
+  --status-success: 142 60% 50%;
+  --status-success-foreground: 0 0% 100%;
+  --status-success-bg: 142 60% 15%;
+  --status-warning: 38 85% 55%;
+  --status-warning-foreground: 38 85% 95%;
+  --status-warning-bg: 38 60% 15%;
+  --status-critical: 0 65% 50%;
+  --status-critical-foreground: 0 0% 100%;
+  --status-critical-bg: 0 60% 15%;
+  --status-info: 199 80% 55%;
+  --status-info-foreground: 0 0% 100%;
+  --status-info-bg: 199 60% 15%;
+  
+  --input: 215 20% 25%;
+  --ring: 215 70% 55%;
+  
+  /* Charts */
+  --chart-1: 215 70% 60%;
+  --chart-2: 175 55% 55%;
+  --chart-3: 142 55% 55%;
+  --chart-4: 280 50% 60%;
+  --chart-5: 38 80% 60%;
   --shadow-2xs: 0px 2px 0px 0px hsl(210 5% 96% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(210 5% 96% / 0.00);
   --shadow-sm: 0px 2px 0px 0px hsl(210 5% 96% / 0.00), 0px 1px 2px -1px hsl(210 5% 96% / 0.00);

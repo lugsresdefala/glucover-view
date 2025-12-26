@@ -80,6 +80,26 @@ export default {
           away: "rgb(245 158 11)",
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
+          success: {
+            DEFAULT: "hsl(var(--status-success) / <alpha-value>)",
+            foreground: "hsl(var(--status-success-foreground) / <alpha-value>)",
+            bg: "hsl(var(--status-success-bg) / <alpha-value>)",
+          },
+          warning: {
+            DEFAULT: "hsl(var(--status-warning) / <alpha-value>)",
+            foreground: "hsl(var(--status-warning-foreground) / <alpha-value>)",
+            bg: "hsl(var(--status-warning-bg) / <alpha-value>)",
+          },
+          critical: {
+            DEFAULT: "hsl(var(--status-critical) / <alpha-value>)",
+            foreground: "hsl(var(--status-critical-foreground) / <alpha-value>)",
+            bg: "hsl(var(--status-critical-bg) / <alpha-value>)",
+          },
+          info: {
+            DEFAULT: "hsl(var(--status-info) / <alpha-value>)",
+            foreground: "hsl(var(--status-info-foreground) / <alpha-value>)",
+            bg: "hsl(var(--status-info-bg) / <alpha-value>)",
+          },
         },
       },
       fontFamily: {
