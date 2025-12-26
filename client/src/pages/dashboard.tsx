@@ -167,6 +167,39 @@ export default function Dashboard() {
     };
   }, [evaluations, patients]);
 
+  const clinicalTasks = useMemo(() => {
+    const urgencyWeight = { critical: 3, warning: 2, info: 1 } as Record<string, number>;
+    return evaluations
+      .filter(e => e.recommendation?.nextSteps?.length)
+      .map(e => ({
+        id: e.id,
+        patientName: e.patientName,
+        urgency: (e.recommendation?.urgencyLevel || "info") as "critical" | "warning" | "info",
+        summary: e.recommendation?.nextSteps?.[0] || "",
+        gestationalWeeks: e.gestationalWeeks,
+        gestationalDays: e.gestationalDays,
+        issuedAt: e.createdAt,
+        evaluation: e,
+      }))
+      .sort((a, b) =>
+        (urgencyWeight[b.urgency] || 0) - (urgencyWeight[a.urgency] || 0) ||
+        new Date(b.issuedAt || 0).getTime() - new Date(a.issuedAt || 0).getTime()
+      )
+      .slice(0, 10);
+  }, [evaluations]);
+
+  const formatTimeAgo = (date: string | Date | undefined) => {
+    if (!date) return "";
+    const now = new Date();
+    const then = new Date(date);
+    const diffMs = now.getTime() - then.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays > 0) return `há ${diffDays}d`;
+    if (diffHours > 0) return `há ${diffHours}h`;
+    return "agora";
+  };
+
   const analyzeMutation = useMutation({
     mutationFn: async (data: PatientEvaluation) => {
       const response = await apiRequest("POST", "/api/analyze", data);
