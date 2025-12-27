@@ -1,0 +1,34 @@
+services:
+  # Backend API Service
+  - type: web
+    name: glucover-api
+    runtime: node
+    plan: free
+    env: node
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: glucover-db
+          property: connectionString
+      - key: ALLOWED_ORIGINS
+        sync: false
+    healthCheckPath: /healthz
+    autoDeploy: true
+
+  # PostgreSQL Database
+  - type: pserv
+    name: glucover-db
+    plan: free
+    region: oregon
+    ipAllowList: []
