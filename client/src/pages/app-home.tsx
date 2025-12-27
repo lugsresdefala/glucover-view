@@ -112,7 +112,7 @@ export default function AppHome() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 min-h-full bg-gradient-to-br from-blue-100 via-indigo-100 to-slate-100 dark:from-blue-950 dark:via-indigo-900 dark:to-slate-900">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 min-h-full dark:bg-gradient-to-br dark:from-blue-950 dark:via-indigo-900 dark:to-slate-900">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-white/20" data-testid="metric-patients">
           <CardContent className="p-4">
