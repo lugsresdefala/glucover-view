@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { Link } from "wouter";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -111,6 +111,7 @@ interface DashboardProps {
 export default function Dashboard({ section = "dashboard" }: DashboardProps) {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const [location] = useLocation();
   const [glucoseReadings, setGlucoseReadings] = useState<GlucoseReading[]>([{}]);
   const [insulinRegimens, setInsulinRegimens] = useState<InsulinRegimen[]>([]);
   const [currentRecommendation, setCurrentRecommendation] = useState<StoredEvaluation | null>(null);
@@ -118,6 +119,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showRecommendationModal, setShowRecommendationModal] = useState(false);
+  const [patientFromUrl, setPatientFromUrl] = useState<string | null>(null);
   
   const showBatchImport = section === "import";
   const showPatientList = section === "patients";
@@ -151,6 +153,22 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
       insulinRegimens: [],
     },
   });
+
+  const hasProcessedPatientRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const patientParam = params.get("patient");
+      if (patientParam && hasProcessedPatientRef.current !== patientParam) {
+        const decodedName = decodeURIComponent(patientParam);
+        hasProcessedPatientRef.current = patientParam;
+        setPatientFromUrl(decodedName);
+        form.setValue("patientName", decodedName);
+        setShowEvaluationForm(true);
+      }
+    }
+  }, [location, form]);
 
   const { data: evaluations = [], isLoading: isLoadingHistory } = useQuery<StoredEvaluation[]>({
     queryKey: ["/api/evaluations"],

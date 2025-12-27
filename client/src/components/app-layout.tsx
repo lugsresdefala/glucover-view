@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState, useLayoutEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   Sidebar, 
@@ -13,6 +13,7 @@ import {
   SidebarFooter,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,27 @@ import { apiRequest } from "@/lib/queryClient";
 import { roleDisplayNames, type UserRole } from "@shared/schema";
 import hapvidaLogo from "@assets/layout_set_logo_1766044185087.png";
 
+function useMediaQuery(query: string) {
+  const getMatches = () => {
+    if (typeof window !== "undefined") {
+      return window.matchMedia(query).matches;
+    }
+    return false;
+  };
+  
+  const [matches, setMatches] = useState(getMatches);
+  
+  useLayoutEffect(() => {
+    const media = window.matchMedia(query);
+    setMatches(media.matches);
+    const listener = () => setMatches(media.matches);
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, [query]);
+  
+  return matches;
+}
+
 const roleIcons: Record<UserRole, typeof Stethoscope> = {
   admin: Shield,
   coordinator: Shield,
@@ -45,11 +67,24 @@ interface AppLayoutProps {
   showPatientList?: boolean;
 }
 
+function SidebarAutoCollapse({ isMobile }: { isMobile: boolean }) {
+  const { setOpen } = useSidebar();
+  
+  useEffect(() => {
+    if (isMobile) {
+      setOpen(false);
+    }
+  }, [isMobile, setOpen]);
+  
+  return null;
+}
+
 export function AppLayout({ children, showPatientList = false }: AppLayoutProps) {
   const { user } = useAuth();
   const [location] = useLocation();
   const userRole = (user?.role || "medico") as UserRole;
   const RoleIcon = roleIcons[userRole] || Stethoscope;
+  const isMobile = useMediaQuery("(max-width: 1023px)");
 
   const getActiveSection = () => {
     if (location.includes("/history")) return "history";
@@ -70,26 +105,26 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
   };
 
   const sidebarStyle = {
-    "--sidebar-width": "16rem",
-    "--sidebar-width-icon": "3.5rem",
+    "--sidebar-width": "15rem",
+    "--sidebar-width-icon": "3rem",
   };
 
   const menuItems = [
     { 
       id: "dashboard", 
-      label: "Painel Principal", 
+      label: "Painel", 
       icon: LayoutDashboard, 
       href: "/app" 
     },
     { 
       id: "history", 
-      label: "Histórico", 
+      label: "Avaliações", 
       icon: ClipboardList, 
       href: "/app/history" 
     },
     { 
       id: "import", 
-      label: "Importar Dados", 
+      label: "Importar", 
       icon: FileStack, 
       href: "/app/import" 
     },
@@ -105,9 +140,13 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
   }
 
   return (
-    <SidebarProvider style={sidebarStyle as React.CSSProperties}>
+    <SidebarProvider 
+      style={sidebarStyle as React.CSSProperties}
+      defaultOpen={!isMobile}
+    >
+      <SidebarAutoCollapse isMobile={isMobile} />
       <div className="flex h-screen w-full overflow-hidden">
-        <Sidebar>
+        <Sidebar collapsible="icon" variant="sidebar">
           <SidebarHeader className="p-4 border-b border-sidebar-border">
             <div className="flex items-center gap-3">
               <img 

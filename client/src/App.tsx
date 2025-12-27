@@ -13,68 +13,43 @@ import Landing from "@/pages/landing";
 import PatientAuth from "@/pages/patient-auth";
 import PatientDashboard from "@/pages/patient-dashboard";
 import ProfessionalAuth from "@/pages/professional-auth";
+import AppHome from "@/pages/app-home";
+import AppPatients from "@/pages/app-patients";
+import AppImport from "@/pages/app-import";
 import { FullPageLoading } from "@/components/loading-spinner";
 
 function PatientRoutes() {
   const [location] = useLocation();
   
-  // If on patient login page, show it without checking auth
   if (location === "/paciente/login") {
     return <PatientAuth />;
   }
   
-  // Only check auth for non-login pages
   const { data: patientData, isLoading } = useQuery<{ patient: { id: number; name: string } | null }>({
     queryKey: ["/api/patient/me"],
     retry: false,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   if (isLoading) {
     return <FullPageLoading text="Verificando autenticação..." />;
   }
 
-  // If patient is logged in, show dashboard
   if (patientData?.patient) {
     return <PatientDashboard />;
   }
 
-  // Not logged in, redirect to login
   return <PatientAuth />;
-}
-
-function ProfessionalRoutes() {
-  const [location] = useLocation();
-  const { isLoading, isAuthenticated } = useAuth();
-
-  // If on professional login page, show it
-  if (location === "/profissional/login") {
-    return <ProfessionalAuth />;
-  }
-
-  if (isLoading) {
-    return <FullPageLoading text="Verificando autenticação..." />;
-  }
-
-  // If authenticated, show dashboard
-  if (isAuthenticated) {
-    return <Dashboard />;
-  }
-
-  // Not logged in, show landing page
-  return <Landing />;
 }
 
 function AuthenticatedApp() {
   const { isLoading, isAuthenticated } = useAuth();
   const [location] = useLocation();
 
-  // Handle patient routes separately
   if (location.startsWith("/paciente")) {
     return <PatientRoutes />;
   }
 
-  // Handle professional login route
   if (location === "/profissional/login") {
     return <ProfessionalAuth />;
   }
@@ -87,17 +62,25 @@ function AuthenticatedApp() {
     return <Landing />;
   }
 
-  // Derive section from URL
-  const getSection = () => {
-    if (location.includes("/app/history")) return "history";
-    if (location.includes("/app/import")) return "import";
-    if (location.includes("/app/patients")) return "patients";
-    return "dashboard";
+  const renderContent = () => {
+    if (location === "/app" || location === "/app/") {
+      return <AppHome />;
+    }
+    if (location.includes("/app/patients")) {
+      return <AppPatients />;
+    }
+    if (location.includes("/app/import")) {
+      return <AppImport />;
+    }
+    if (location.includes("/app/history")) {
+      return <Dashboard section="history" />;
+    }
+    return <AppHome />;
   };
 
   return (
     <AppLayout showPatientList={true}>
-      <Dashboard section={getSection()} />
+      {renderContent()}
     </AppLayout>
   );
 }
