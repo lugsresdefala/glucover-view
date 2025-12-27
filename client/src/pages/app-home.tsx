@@ -114,61 +114,77 @@ export default function AppHome() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="hover-elevate cursor-default" data-testid="metric-patients">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-2xl font-semibold tabular-nums">{dashboardMetrics.totalPatients}</p>
-                <p className="text-sm text-muted-foreground truncate">Pacientes</p>
-              </div>
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
+        <div 
+          className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-4 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 transition-shadow cursor-default"
+          data-testid="metric-patients"
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+          <div className="relative flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="text-3xl font-bold tabular-nums text-white">{dashboardMetrics.totalPatients}</p>
+              <p className="text-sm text-blue-100/80 truncate">Pacientes</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="w-10 h-10 rounded-lg bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0">
+              <Users className="h-5 w-5 text-white" />
+            </div>
+          </div>
+        </div>
 
-        <Card className="hover-elevate cursor-default" data-testid="metric-evaluations">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-2xl font-semibold tabular-nums">{dashboardMetrics.totalEvaluations}</p>
-                <p className="text-sm text-muted-foreground truncate">Avaliações</p>
-              </div>
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-                <ClipboardList className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
+        <div 
+          className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 p-4 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-shadow cursor-default"
+          data-testid="metric-evaluations"
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+          <div className="relative flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="text-3xl font-bold tabular-nums text-white">{dashboardMetrics.totalEvaluations}</p>
+              <p className="text-sm text-emerald-100/80 truncate">Avaliações</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="w-10 h-10 rounded-lg bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0">
+              <ClipboardList className="h-5 w-5 text-white" />
+            </div>
+          </div>
+        </div>
 
-        <Card className="hover-elevate cursor-default" data-testid="metric-recent">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-2xl font-semibold tabular-nums">{dashboardMetrics.recentEvaluations}</p>
-                <p className="text-sm text-muted-foreground truncate">Últimos 7 dias</p>
-              </div>
-              <div className="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center shrink-0">
-                <TrendingUp className="h-5 w-5 text-sky-600 dark:text-sky-400" />
-              </div>
+        <div 
+          className="relative overflow-hidden rounded-xl bg-gradient-to-br from-sky-600 via-sky-700 to-cyan-800 p-4 shadow-lg shadow-sky-500/20 hover:shadow-xl hover:shadow-sky-500/30 transition-shadow cursor-default"
+          data-testid="metric-recent"
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+          <div className="relative flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="text-3xl font-bold tabular-nums text-white">{dashboardMetrics.recentEvaluations}</p>
+              <p className="text-sm text-sky-100/80 truncate">Últimos 7 dias</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="w-10 h-10 rounded-lg bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0">
+              <TrendingUp className="h-5 w-5 text-white" />
+            </div>
+          </div>
+        </div>
 
-        <Card className={`hover-elevate cursor-default ${dashboardMetrics.criticalAlerts > 0 ? "border-red-500/30" : ""}`} data-testid="metric-alerts">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-2xl font-semibold tabular-nums">{dashboardMetrics.criticalAlerts}</p>
-                <p className="text-sm text-muted-foreground truncate">Alertas</p>
-              </div>
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${dashboardMetrics.criticalAlerts > 0 ? "bg-red-500/10" : "bg-muted"}`}>
-                <AlertTriangle className={`h-5 w-5 ${dashboardMetrics.criticalAlerts > 0 ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`} />
-              </div>
+        <div 
+          className={`relative overflow-hidden rounded-xl p-4 shadow-lg transition-shadow cursor-default ${
+            dashboardMetrics.criticalAlerts > 0 
+              ? "bg-gradient-to-br from-red-600 via-red-700 to-rose-800 shadow-red-500/20 hover:shadow-xl hover:shadow-red-500/30" 
+              : "bg-gradient-to-br from-slate-500 via-slate-600 to-slate-700 shadow-slate-500/20 hover:shadow-xl hover:shadow-slate-500/30"
+          }`}
+          data-testid="metric-alerts"
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+          <div className="relative flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="text-3xl font-bold tabular-nums text-white">{dashboardMetrics.criticalAlerts}</p>
+              <p className={`text-sm truncate ${dashboardMetrics.criticalAlerts > 0 ? "text-red-100/80" : "text-slate-100/80"}`}>Alertas</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="w-10 h-10 rounded-lg bg-white/15 backdrop-blur-sm flex items-center justify-center shrink-0">
+              <AlertTriangle className="h-5 w-5 text-white" />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
