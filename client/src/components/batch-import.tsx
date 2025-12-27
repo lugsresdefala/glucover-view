@@ -117,10 +117,35 @@ function parseGlucoseValue(value: unknown): number | undefined {
   if (value === null || value === undefined || value === "" || value === "-") {
     return undefined;
   }
-  const num = typeof value === "number" ? value : parseFloat(String(value).replace(",", "."));
-  if (isNaN(num) || num < 0 || num > 600) {
+  
+  // If it's already a number, use it directly
+  if (typeof value === "number") {
+    if (isNaN(value) || value < 20 || value > 600) {
+      return undefined;
+    }
+    return Math.round(value);
+  }
+  
+  // Convert to string and normalize ALL whitespace (including NBSP \u00A0)
+  let strValue = String(value)
+    .replace(/[\u00A0\u2007\u202F\u2060]/g, " ")  // Replace non-breaking spaces
+    .replace(/\s+/g, " ")  // Normalize whitespace
+    .trim();
+  
+  // Extract only the numeric part (handles "110 mg/dL", "95,5", etc.)
+  const match = strValue.match(/^[\d]+[,.]?[\d]*/);
+  if (!match) {
     return undefined;
   }
+  
+  const numStr = match[0].replace(",", ".");
+  const num = parseFloat(numStr);
+  
+  // Validate: glucose values below 20 or above 600 are clinically impossible
+  if (isNaN(num) || num < 20 || num > 600) {
+    return undefined;
+  }
+  
   return Math.round(num);
 }
 
@@ -441,9 +466,19 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         }
         
         let debugRowCount = 0;
+        let consecutiveEmptyRows = 0;
+        const MAX_EMPTY_ROWS = 3; // Stop after 3 consecutive rows without glucose data
+        
         for (let i = headerRowIndex + 1; i < rawData.length; i++) {
           const row = rawData[i];
-          if (!row || row.length === 0) continue;
+          if (!row || row.length === 0) {
+            consecutiveEmptyRows++;
+            if (consecutiveEmptyRows >= MAX_EMPTY_ROWS) {
+              console.log(`[DEBUG ${patientName}] Stopping at row ${i}: ${MAX_EMPTY_ROWS} consecutive empty rows`);
+              break;
+            }
+            continue;
+          }
           
           const reading: GlucoseReading = {};
           let hasAnyValue = false;
@@ -496,10 +531,18 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           if (hasAnyValue) {
             glucoseReadings.push(reading);
             debugRowCount++;
+            consecutiveEmptyRows = 0; // Reset counter when we find valid data
             // Track the gestational age of the last row with actual glucose data
             if (currentRowAge > 0) {
               lastGestationalAgeWithGlucose = currentRowAge;
               lastSourceWithGlucose = currentSource;
+            }
+          } else {
+            // Row exists but has no valid glucose data - count as "empty" for stopping purposes
+            consecutiveEmptyRows++;
+            if (consecutiveEmptyRows >= MAX_EMPTY_ROWS) {
+              console.log(`[DEBUG ${patientName}] Stopping at row ${i}: ${MAX_EMPTY_ROWS} consecutive rows without glucose data`);
+              break;
             }
           }
         }
