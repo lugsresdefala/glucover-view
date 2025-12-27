@@ -939,7 +939,12 @@ export function BatchImport() {
                               {`${patient.gestationalWeeks}s${patient.gestationalDays > 0 ? `+${patient.gestationalDays}d` : ''}`}
                             </span>
                           </>
-                        ) : "-"}
+                        ) : (
+                          <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1" title="Planilha sem DUM e sem coluna IG preenchida">
+                            <AlertCircle className="h-4 w-4" />
+                            <span className="text-xs">Sem DUM</span>
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
