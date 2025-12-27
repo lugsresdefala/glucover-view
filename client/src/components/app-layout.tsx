@@ -26,7 +26,8 @@ import {
   LogOut,
   Activity,
   Stethoscope,
-  Shield
+  Shield,
+  X
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -80,9 +81,10 @@ function SidebarAutoCollapse({ isMobile }: { isMobile: boolean }) {
 }
 
 function SidebarHeaderContent() {
-  const { open } = useSidebar();
+  const { open, openMobile, isMobile, setOpenMobile } = useSidebar();
+  const isOpen = isMobile ? openMobile : open;
   
-  if (!open) {
+  if (!isOpen) {
     return (
       <div className="flex justify-center">
         <div className="h-8 w-8 bg-sidebar-accent text-sidebar-accent-foreground flex items-center justify-center text-sm font-bold">
@@ -94,6 +96,17 @@ function SidebarHeaderContent() {
   
   return (
     <div className="flex items-center gap-3">
+      {isMobile && (
+        <Button 
+          variant="ghost" 
+          size="icon"
+          className="shrink-0 text-sidebar-foreground"
+          onClick={() => setOpenMobile(false)}
+          data-testid="button-close-sidebar"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      )}
       <img 
         src={hapvidaLogo} 
         alt="Hapvida" 
@@ -113,11 +126,12 @@ function SidebarFooterContent({ user, userRole, RoleIcon, onLogout }: {
   RoleIcon: typeof Stethoscope;
   onLogout: () => void;
 }) {
-  const { open } = useSidebar();
+  const { open, openMobile, isMobile } = useSidebar();
+  const isOpen = isMobile ? openMobile : open;
   
   if (!user) return null;
   
-  if (!open) {
+  if (!isOpen) {
     return (
       <div className="flex flex-col items-center gap-2">
         <Avatar className="h-8 w-8">
