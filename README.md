@@ -1,27 +1,80 @@
-# glucover-view
+# GluCover
 
-Aplicação full-stack para acompanhamento glicêmico e geração de recomendações clínicas para DMG, agora desvinculada de dependências do Replit.
+Aplicação full-stack para acompanhamento glicêmico e geração de recomendações clínicas para Diabetes Mellitus Gestacional (DMG), com suporte completo a deploy em plataformas gratuitas.
 
-## Configuração rápida
+## 🚀 Deploy Rápido (Plataformas Gratuitas)
+
+Este projeto está configurado para deploy gratuito com preview e produção:
+
+- **Frontend**: [Vercel](https://vercel.com) (gratuito)
+- **Backend**: [Render](https://render.com), [Railway](https://railway.app), ou [Fly.io](https://fly.io) (gratuito)
+- **Database**: [Neon](https://neon.tech), [Supabase](https://supabase.com), ou Render PostgreSQL (gratuito)
+
+### Deploy em 3 Passos
+
+1. **Backend no Render/Railway**
+   - Conecte seu repositório GitHub
+   - Configure variáveis de ambiente (ver `.env.example`)
+   - Deploy automático com `npm run build` → `npm start`
+
+2. **Database PostgreSQL**
+   - Crie um banco gratuito no Neon, Supabase ou Render
+   - Configure `DATABASE_URL` no backend
+   - Execute `npm run db:push` para criar tabelas
+
+3. **Frontend no Vercel**
+   - Importe repositório no Vercel
+   - Configure `VITE_API_BASE_URL` apontando para o backend
+   - Deploy automático de `dist/public`
+
+📖 **[Guia Completo de Deploy](./DEPLOYMENT.md)** - Instruções detalhadas para cada plataforma
+
+## Configuração Local
 
 1. Copie o arquivo `.env.example` para `.env` e preencha:
-   - `DATABASE_URL`: URL de um banco Postgres (Neon/Supabase possuem camadas gratuitas).
-   - `SESSION_SECRET`: chave para assinar a sessão.
-   - `SESSION_COOKIE_SECURE` (opcional): defina como `true` se o deploy estiver atrás de HTTPS.
-   - `OPENAI_API_KEY` (opcional): define um provedor padrão de IA; se ausente, o sistema usa recomendações determinísticas.
-2. Instale dependências: `npm install`
-3. Execute o build de produção (interface + API): `npm run build`
-4. Suba o servidor: `npm run start` (serve a API e os assets estáticos gerados em `dist/public`)
+   - `DATABASE_URL`: URL de um banco Postgres (Neon/Supabase possuem camadas gratuitas)
+   - `SESSION_SECRET`: chave para assinar a sessão
+   - `SESSION_COOKIE_SECURE`: defina como `true` para HTTPS em produção
+   - `OPENAI_API_KEY` (opcional): para recomendações via IA; se ausente, usa recomendações determinísticas
 
-## Deploy sugerido (Vercel + backend gratuito)
+2. Instale dependências:
+   ```bash
+   npm install
+   ```
 
-- **Frontend**: no Vercel, use `npm run build` e defina o diretório de saída como `dist/public`. Configure a variável `VITE_API_BASE_URL` apontando para o backend.
-- **Backend**: qualquer serviço Node gratuito (Render/Railway/Fly.io) usando Postgres gratuito (Neon/Supabase). Defina `ALLOWED_ORIGINS` com o domínio do Vercel para liberar CORS/CSRF e mantenha `SESSION_COOKIE_SECURE=true`.
+3. Execute migrações do banco de dados:
+   ```bash
+   npm run db:push
+   ```
+
+4. Execute em modo desenvolvimento:
+   ```bash
+   npm run dev
+   ```
+
+Ou para produção:
+   ```bash
+   npm run build
+   npm start
+   ```
 
 ## Desenvolvimento
 
-- `npm run dev`: inicia o servidor em modo desenvolvimento com Vite em middleware.
-- `npm run check`: valida tipos TypeScript.
+- `npm run dev`: inicia o servidor em modo desenvolvimento com Vite
+- `npm run check`: valida tipos TypeScript
+- `npm run build`: cria build de produção
+- `npm run db:push`: aplica migrações do banco de dados
+
+## Scripts Disponíveis
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Modo desenvolvimento com hot reload |
+| `npm run build` | Build de produção (frontend + backend) |
+| `npm start` | Inicia servidor de produção |
+| `npm run check` | Validação de tipos TypeScript |
+| `npm run db:push` | Aplica schema do banco de dados |
+| `npm test` | Executa testes unitários |
 
 ## Arquitetura rápida (arquivos principais)
 
@@ -44,4 +97,59 @@ Aplicação full-stack para acompanhamento glicêmico e geração de recomendaç
 
 ## Banco de dados
 
-O projeto usa Postgres via Drizzle ORM. Rode migrações com `npm run db:push` após configurar o `DATABASE_URL`. Nenhum serviço do Replit é necessário.
+O projeto usa PostgreSQL via Drizzle ORM. Execute migrações com `npm run db:push` após configurar o `DATABASE_URL`.
+
+### Provedores Gratuitos de PostgreSQL
+
+- **[Neon](https://neon.tech)**: 10GB, auto-suspend, ideal para desenvolvimento
+- **[Supabase](https://supabase.com)**: 500MB, inclui autenticação e storage
+- **[Render PostgreSQL](https://render.com)**: 1GB, 90 dias de retenção
+
+## Funcionalidades
+
+- ✅ Autenticação dual (pacientes e profissionais)
+- ✅ Monitoramento de glicemia com importação via Excel
+- ✅ Análise clínica baseada em diretrizes (SBD 2025, FEBRASGO 2019, WHO 2025)
+- ✅ Recomendações via IA (OpenAI) com fallback determinístico
+- ✅ Geração de relatórios em PDF
+- ✅ Dashboard com gráficos e métricas
+- ✅ Histórico de avaliações
+- ✅ Sistema de notificações
+- ✅ Logs de auditoria
+
+## Tecnologias
+
+### Frontend
+- React 18 + TypeScript
+- Vite (build e dev server)
+- TailwindCSS + shadcn/ui
+- TanStack React Query
+- Recharts (gráficos)
+- Wouter (roteamento)
+
+### Backend
+- Node.js 20+
+- Express.js
+- PostgreSQL + Drizzle ORM
+- OpenAI API (opcional)
+- Session-based auth
+
+## Ambientes de Deploy
+
+### Preview (Pull Requests)
+- Vercel automaticamente cria preview para cada PR
+- Render/Railway podem ser configurados para preview branches
+
+### Produção (Branch main)
+- Deploy automático no merge para `main`
+- Frontend: Vercel
+- Backend: Render/Railway/Fly.io
+- Database: Neon/Supabase
+
+## CI/CD
+
+GitHub Actions está configurado para:
+- ✅ Type checking (TypeScript)
+- ✅ Build de produção
+- ✅ Testes unitários
+- ✅ Deploy automático (via Vercel/Render)
