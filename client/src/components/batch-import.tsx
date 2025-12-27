@@ -1140,94 +1140,98 @@ export function BatchImport() {
 
         {/* Summary Modal */}
         <Dialog open={showSummary} onOpenChange={setShowSummary}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader className="pb-4 border-b">
+              <DialogTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 bg-green-100 dark:bg-green-900 rounded-md">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                </div>
                 Resumo do Processamento
               </DialogTitle>
             </DialogHeader>
             
             {summaryData && (
-              <div className="space-y-4 overflow-y-auto">
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="text-center p-3 bg-muted rounded-md">
-                    <div className="text-2xl font-bold">{summaryData.totalProcessed}</div>
-                    <div className="text-xs text-muted-foreground">Total Processado</div>
+              <div className="space-y-6 pt-4">
+                <div className={`grid gap-4 ${summaryData.totalErrors > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                  <div className="text-center p-4 bg-muted rounded-md">
+                    <div className="text-3xl font-bold">{summaryData.totalProcessed}</div>
+                    <div className="text-sm text-muted-foreground mt-1">Total Processado</div>
                   </div>
-                  <div className="text-center p-3 bg-green-50 dark:bg-green-950 rounded-md">
-                    <div className="text-2xl font-bold text-green-600">{summaryData.totalSuccess}</div>
-                    <div className="text-xs text-muted-foreground">Sucesso</div>
+                  <div className="text-center p-4 bg-green-50 dark:bg-green-950 rounded-md border border-green-200 dark:border-green-800">
+                    <div className="text-3xl font-bold text-green-600">{summaryData.totalSuccess}</div>
+                    <div className="text-sm text-muted-foreground mt-1">Sucesso</div>
                   </div>
                   {summaryData.totalErrors > 0 && (
-                    <div className="text-center p-3 bg-red-50 dark:bg-red-950 rounded-md">
-                      <div className="text-2xl font-bold text-red-600">{summaryData.totalErrors}</div>
-                      <div className="text-xs text-muted-foreground">Erros</div>
+                    <div className="text-center p-4 bg-red-50 dark:bg-red-950 rounded-md border border-red-200 dark:border-red-800">
+                      <div className="text-3xl font-bold text-red-600">{summaryData.totalErrors}</div>
+                      <div className="text-sm text-muted-foreground mt-1">Erros</div>
                     </div>
                   )}
                 </div>
 
-                <div className="border-t pt-3">
-                  <h4 className="font-medium mb-2 flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-base flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
                     Detalhes por Paciente
                   </h4>
-                  <ScrollArea className="h-[300px]">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Paciente</TableHead>
-                          <TableHead className="text-center">Status</TableHead>
-                          <TableHead className="text-center">Dias Anteriores</TableHead>
-                          <TableHead className="text-center">Dias Atuais</TableHead>
-                          <TableHead className="text-center">Novos</TableHead>
-                          <TableHead className="text-center">Urgência</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {summaryData.updates.map((update, idx) => (
-                          <TableRow key={idx}>
-                            <TableCell className="font-medium text-sm">{update.patientName}</TableCell>
-                            <TableCell className="text-center">
-                              {update.isUpdate ? (
-                                <Badge variant="outline" className="text-xs">
-                                  <RefreshCw className="h-3 w-3 mr-1" />
-                                  Atualização
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-green-600 text-xs">Novo</Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-center font-mono text-sm">
-                              {update.previousDays || "-"}
-                            </TableCell>
-                            <TableCell className="text-center font-mono text-sm">
-                              {update.newDays}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {update.addedDays > 0 ? (
-                                <Badge className="bg-blue-600 text-xs">+{update.addedDays}</Badge>
-                              ) : (
-                                <span className="text-muted-foreground">-</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              {update.urgencyLevel === "critical" ? (
-                                <Badge variant="destructive" className="text-xs">Crítico</Badge>
-                              ) : update.urgencyLevel === "warning" ? (
-                                <Badge className="bg-amber-500 text-xs">Atenção</Badge>
-                              ) : (
-                                <Badge variant="secondary" className="text-xs">Info</Badge>
-                              )}
-                            </TableCell>
+                  <div className="border rounded-md">
+                    <ScrollArea className="h-[280px]">
+                      <Table>
+                        <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
+                          <TableRow>
+                            <TableHead className="font-semibold">Paciente</TableHead>
+                            <TableHead className="text-center font-semibold">Status</TableHead>
+                            <TableHead className="text-center font-semibold">Anterior</TableHead>
+                            <TableHead className="text-center font-semibold">Atual</TableHead>
+                            <TableHead className="text-center font-semibold">Novos</TableHead>
+                            <TableHead className="text-center font-semibold">Urgência</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </ScrollArea>
+                        </TableHeader>
+                        <TableBody>
+                          {summaryData.updates.map((update, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell className="font-medium">{update.patientName}</TableCell>
+                              <TableCell className="text-center">
+                                {update.isUpdate ? (
+                                  <Badge variant="outline" className="text-xs">
+                                    <RefreshCw className="h-3 w-3 mr-1" />
+                                    Atualizado
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-green-600 text-xs">Novo</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center font-mono">
+                                {update.previousDays || "-"}
+                              </TableCell>
+                              <TableCell className="text-center font-mono">
+                                {update.newDays}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {update.addedDays > 0 ? (
+                                  <Badge className="bg-blue-600 text-xs">+{update.addedDays}</Badge>
+                                ) : (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {update.urgencyLevel === "critical" ? (
+                                  <Badge variant="destructive" className="text-xs">Crítico</Badge>
+                                ) : update.urgencyLevel === "warning" ? (
+                                  <Badge className="bg-amber-500 text-xs">Atenção</Badge>
+                                ) : (
+                                  <Badge variant="secondary" className="text-xs">Info</Badge>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </ScrollArea>
+                  </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-2 border-t">
+                <div className="flex justify-end gap-3 pt-4 border-t">
                   <Button variant="outline" onClick={() => setShowSummary(false)}>
                     Fechar
                   </Button>
