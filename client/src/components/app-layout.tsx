@@ -173,7 +173,6 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
                       <SidebarMenuButton
                         asChild
                         isActive={activeSection === item.id}
-                        className="w-full"
                         data-testid={`nav-${item.id}`}
                       >
                         <Link href={item.href}>
@@ -262,7 +261,7 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
             </div>
           </header>
 
-          <main className="flex-1 overflow-auto bg-muted/30 dark:bg-transparent">
+          <main className="flex-1 overflow-auto bg-transparent">
             {children}
           </main>
         </div>
