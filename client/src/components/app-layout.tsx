@@ -80,17 +80,14 @@ function SidebarAutoCollapse({ isMobile }: { isMobile: boolean }) {
 }
 
 function SidebarHeaderContent() {
-  const { state } = useSidebar();
-  const isExpanded = state === "expanded";
+  const { open } = useSidebar();
   
-  if (!isExpanded) {
+  if (!open) {
     return (
       <div className="flex justify-center">
-        <img 
-          src={hapvidaLogo} 
-          alt="Hapvida" 
-          className="h-6 w-auto"
-        />
+        <div className="h-8 w-8 bg-sidebar-accent text-sidebar-accent-foreground flex items-center justify-center text-sm font-bold">
+          G
+        </div>
       </div>
     );
   }
@@ -100,7 +97,7 @@ function SidebarHeaderContent() {
       <img 
         src={hapvidaLogo} 
         alt="Hapvida" 
-        className="h-8 w-auto shrink-0"
+        className="h-8 w-auto shrink-0 max-w-[100px]"
       />
       <div className="flex-1 min-w-0">
         <h1 className="text-base font-semibold text-sidebar-foreground truncate">GluCover</h1>
@@ -116,12 +113,11 @@ function SidebarFooterContent({ user, userRole, RoleIcon, onLogout }: {
   RoleIcon: typeof Stethoscope;
   onLogout: () => void;
 }) {
-  const { state } = useSidebar();
-  const isExpanded = state === "expanded";
+  const { open } = useSidebar();
   
   if (!user) return null;
   
-  if (!isExpanded) {
+  if (!open) {
     return (
       <div className="flex flex-col items-center gap-2">
         <Avatar className="h-8 w-8">
@@ -322,7 +318,7 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
             </div>
           </header>
 
-          <main className="flex-1 overflow-auto bg-gradient-to-br from-blue-950 via-indigo-900 to-slate-900">
+          <main className="flex-1 overflow-auto bg-gradient-to-br from-blue-100 via-indigo-100 to-slate-200 dark:from-blue-950 dark:via-indigo-900 dark:to-slate-900">
             {children}
           </main>
         </div>
