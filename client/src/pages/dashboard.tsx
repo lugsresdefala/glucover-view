@@ -1108,7 +1108,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
       </main>
 
       <footer className="border-t border-border mt-12">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="w-full px-4 py-4">
           <p className="text-xs text-muted-foreground text-center">
             Sistema de suporte à decisão clínica para Diabetes Mellitus Gestacional.
             <br />

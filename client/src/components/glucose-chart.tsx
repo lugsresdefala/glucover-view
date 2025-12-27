@@ -21,14 +21,18 @@ interface GlucoseChartProps {
 
 const glucoseSeries = [
   { key: "jejum", label: "Jejum", color: "hsl(210, 70%, 50%)", target: 95 },
-  { key: "posCafe1h", label: "Pós-café", color: "hsl(25, 70%, 50%)", target: 140 },
-  { key: "posAlmoco1h", label: "Pós-almoço", color: "hsl(160, 60%, 40%)", target: 140 },
-  { key: "posJantar1h", label: "Pós-jantar", color: "hsl(280, 60%, 50%)", target: 140 },
+  { key: "preCafe", label: "Pré-café", color: "hsl(190, 60%, 45%)", target: 95 },
+  { key: "posCafe1h", label: "Pós-café 1h", color: "hsl(25, 70%, 50%)", target: 140 },
+  { key: "preAlmoco", label: "Pré-almoço", color: "hsl(140, 50%, 40%)", target: 100 },
+  { key: "posAlmoco1h", label: "Pós-almoço 1h", color: "hsl(160, 60%, 40%)", target: 140 },
+  { key: "preJantar", label: "Pré-jantar", color: "hsl(260, 50%, 50%)", target: 100 },
+  { key: "posJantar1h", label: "Pós-jantar 1h", color: "hsl(280, 60%, 50%)", target: 140 },
+  { key: "madrugada", label: "Madrugada", color: "hsl(320, 50%, 45%)", target: 95 },
 ] as const;
 
 export function GlucoseChart({ readings }: GlucoseChartProps) {
   const [visibleSeries, setVisibleSeries] = useState<Set<string>>(
-    new Set(["jejum", "posCafe1h"])
+    new Set(["jejum", "posCafe1h", "posAlmoco1h", "posJantar1h"])
   );
 
   if (readings.length === 0) {
@@ -49,9 +53,13 @@ export function GlucoseChart({ readings }: GlucoseChartProps) {
   const chartData = readings.map((reading, index) => ({
     day: `D${index + 1}`,
     jejum: reading.jejum ?? null,
+    preCafe: reading.preCafe ?? null,
     posCafe1h: reading.posCafe1h ?? null,
+    preAlmoco: reading.preAlmoco ?? null,
     posAlmoco1h: reading.posAlmoco1h ?? null,
+    preJantar: reading.preJantar ?? null,
     posJantar1h: reading.posJantar1h ?? null,
+    madrugada: reading.madrugada ?? null,
   }));
 
   const toggleSeries = (key: string) => {
@@ -71,7 +79,7 @@ export function GlucoseChart({ readings }: GlucoseChartProps) {
   };
 
   const showMain = () => {
-    setVisibleSeries(new Set(["jejum", "posCafe1h"]));
+    setVisibleSeries(new Set(["jejum", "posCafe1h", "posAlmoco1h", "posJantar1h"]));
   };
 
   return (

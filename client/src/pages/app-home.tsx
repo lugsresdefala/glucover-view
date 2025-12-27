@@ -112,7 +112,7 @@ export default function AppHome() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 min-h-full">
+    <div className="p-6 w-full space-y-6 min-h-full">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-white/80 backdrop-blur-sm border-white/20 dark:bg-slate-800/80" data-testid="metric-patients">
           <CardContent className="p-4">
