@@ -262,7 +262,7 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
             </div>
           </header>
 
-          <main className="flex-1 overflow-auto bg-muted/30">
+          <main className="flex-1 overflow-auto bg-transparent">
             {children}
           </main>
         </div>
