@@ -179,19 +179,31 @@ export function AppLayout({ children, onNavigate, activeSection = "dashboard", s
         </Sidebar>
 
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-          <header className="sticky top-0 z-40 flex items-center justify-between gap-4 px-6 py-3 bg-background border-b border-border shadow-sm">
-            <div className="flex items-center gap-3">
+          <header className="sticky top-0 z-40 flex items-center justify-between gap-4 px-6 py-4 glass border-b border-border/30">
+            <div className="flex items-center gap-4">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
-              <div className="hidden md:block">
-                <h2 className="text-lg font-semibold">
-                  {activeSection === "dashboard" && "Painel Principal"}
-                  {activeSection === "history" && "Histórico de Avaliações"}
-                  {activeSection === "import" && "Importar Planilhas"}
-                  {activeSection === "patients" && "Lista de Pacientes"}
-                </h2>
+              <div className="hidden md:flex items-center gap-3">
+                {activeSection === "dashboard" && <LayoutDashboard className="h-5 w-5 text-primary" />}
+                {activeSection === "history" && <ClipboardList className="h-5 w-5 text-primary" />}
+                {activeSection === "import" && <FileStack className="h-5 w-5 text-primary" />}
+                {activeSection === "patients" && <Users className="h-5 w-5 text-primary" />}
+                <div>
+                  <h2 className="type-title text-foreground">
+                    {activeSection === "dashboard" && "Painel Principal"}
+                    {activeSection === "history" && "Histórico de Avaliações"}
+                    {activeSection === "import" && "Importar Planilhas"}
+                    {activeSection === "patients" && "Lista de Pacientes"}
+                  </h2>
+                  <p className="type-caption">
+                    {activeSection === "dashboard" && "Resumo de avaliações e acesso rápido"}
+                    {activeSection === "history" && "Consulte avaliações anteriores"}
+                    {activeSection === "import" && "Importação de dados em lote"}
+                    {activeSection === "patients" && "Gestão de pacientes vinculados"}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <ThemeToggle />
             </div>
           </header>
