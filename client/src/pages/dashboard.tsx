@@ -432,14 +432,24 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
                 Nova Avaliação
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0" hideCloseButton>
+              <DialogHeader className="flex flex-row items-center justify-between gap-4 p-4 border-b bg-muted/30">
                 <DialogTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
                   Nova Avaliação de Paciente
                 </DialogTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowEvaluationForm(false)}
+                  className="shrink-0"
+                  data-testid="button-close-evaluation-form"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </DialogHeader>
-              <Form {...form}>
+              <div className="p-6">
+                <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
@@ -701,7 +711,8 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
                     </div>
                   )}
                 </form>
-              </Form>
+                </Form>
+              </div>
             </DialogContent>
           </Dialog>
 
