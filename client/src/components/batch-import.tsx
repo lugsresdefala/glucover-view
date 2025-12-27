@@ -785,27 +785,23 @@ export function BatchImport() {
 
     // Criar dados para a planilha
     const exportData = sortedPatients.map(patient => {
-      const rec = patient.newEvaluation?.recommendation as any;
+      const rec = patient.newEvaluation?.recommendation;
       
-      // Construir texto da recomendação
+      // Construir texto da recomendação usando a estrutura ClinicalRecommendation
       let recomendacao = "";
       
-      if (rec?.condutaImediata) {
-        recomendacao += `CONDUTA IMEDIATA: ${rec.condutaImediata}\n`;
-      }
-      if (rec?.estrategiaContinuada) {
-        recomendacao += `ESTRATÉGIA CONTINUADA: ${rec.estrategiaContinuada}\n`;
-      }
-      if (rec?.ruleApplied) {
-        recomendacao += `REGRA: ${rec.ruleApplied}`;
+      if (rec?.mainRecommendation) {
+        recomendacao = rec.mainRecommendation;
       }
       
-      // Fallback para texto simples
-      if (!recomendacao && rec?.text) {
-        recomendacao = rec.text;
+      // Adicionar justificativa se disponível
+      if (rec?.justification) {
+        recomendacao += `\n\nJUSTIFICATIVA: ${rec.justification}`;
       }
-      if (!recomendacao && typeof rec === 'string') {
-        recomendacao = rec;
+      
+      // Adicionar próximos passos se disponíveis
+      if (rec?.nextSteps && rec.nextSteps.length > 0) {
+        recomendacao += `\n\nPRÓXIMOS PASSOS:\n${rec.nextSteps.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
       }
       
       return {
