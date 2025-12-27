@@ -79,6 +79,74 @@ function SidebarAutoCollapse({ isMobile }: { isMobile: boolean }) {
   return null;
 }
 
+function SidebarHeaderContent() {
+  const { state } = useSidebar();
+  const isExpanded = state === "expanded";
+  
+  return (
+    <div className="flex items-center gap-3">
+      <img 
+        src={hapvidaLogo} 
+        alt="Hapvida" 
+        className="h-8 w-auto shrink-0"
+      />
+      {isExpanded && (
+        <div className="flex-1 min-w-0">
+          <h1 className="text-base font-semibold text-sidebar-foreground truncate">GluCover</h1>
+          <p className="text-xs text-sidebar-foreground/60 truncate">Apoio à Decisão Clínica</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SidebarFooterContent({ user, userRole, RoleIcon, onLogout }: { 
+  user: any; 
+  userRole: UserRole; 
+  RoleIcon: typeof Stethoscope;
+  onLogout: () => void;
+}) {
+  const { state } = useSidebar();
+  const isExpanded = state === "expanded";
+  
+  if (!user) return null;
+  
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <Avatar className="h-9 w-9 shrink-0">
+          <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-sm">
+            {user.firstName?.[0]?.toUpperCase() || "U"}
+          </AvatarFallback>
+        </Avatar>
+        {isExpanded && (
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-sidebar-foreground truncate">
+              {user.firstName} {user.lastName || ""}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <RoleIcon className="h-3 w-3 text-sidebar-foreground/60" />
+              <span className="text-xs text-sidebar-foreground/60">
+                {roleDisplayNames[userRole]}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+      <Button 
+        variant="ghost" 
+        size={isExpanded ? "sm" : "icon"}
+        className={isExpanded ? "w-full justify-start text-sidebar-foreground/70" : "text-sidebar-foreground/70"}
+        onClick={onLogout}
+        data-testid="button-logout"
+      >
+        <LogOut className="h-4 w-4" />
+        {isExpanded && <span className="ml-2">Sair</span>}
+      </Button>
+    </div>
+  );
+}
+
 export function AppLayout({ children, showPatientList = false }: AppLayoutProps) {
   const { user } = useAuth();
   const [location] = useLocation();
@@ -148,17 +216,7 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
       <div className="flex h-screen w-full overflow-hidden">
         <Sidebar collapsible="icon" variant="sidebar">
           <SidebarHeader className="p-4 border-b border-sidebar-border">
-            <div className="flex items-center gap-3">
-              <img 
-                src={hapvidaLogo} 
-                alt="Hapvida" 
-                className="h-8 w-auto"
-              />
-              <div className="flex-1 min-w-0">
-                <h1 className="text-base font-semibold text-sidebar-foreground truncate">GluCover</h1>
-                <p className="text-xs text-sidebar-foreground/60 truncate">Apoio à Decisão Clínica</p>
-              </div>
-            </div>
+            <SidebarHeaderContent />
           </SidebarHeader>
 
           <SidebarContent>
@@ -188,38 +246,12 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
           </SidebarContent>
 
           <SidebarFooter className="p-4 border-t border-sidebar-border">
-            {user && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-9 w-9">
-                    <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-sm">
-                      {user.firstName?.[0]?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-sidebar-foreground truncate">
-                      {user.firstName} {user.lastName || ""}
-                    </p>
-                    <div className="flex items-center gap-1.5">
-                      <RoleIcon className="h-3 w-3 text-sidebar-foreground/60" />
-                      <span className="text-xs text-sidebar-foreground/60">
-                        {roleDisplayNames[userRole]}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-                  onClick={handleLogout}
-                  data-testid="button-logout"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sair
-                </Button>
-              </div>
-            )}
+            <SidebarFooterContent 
+              user={user} 
+              userRole={userRole} 
+              RoleIcon={RoleIcon} 
+              onLogout={handleLogout} 
+            />
           </SidebarFooter>
         </Sidebar>
 
@@ -261,7 +293,7 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
             </div>
           </header>
 
-          <main className="flex-1 overflow-auto bg-transparent">
+          <main className="flex-1 overflow-auto bg-gradient-to-br from-blue-950 via-indigo-900 to-slate-900">
             {children}
           </main>
         </div>

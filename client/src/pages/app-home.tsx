@@ -112,7 +112,7 @@ export default function AppHome() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 min-h-full bg-gradient-to-br from-blue-950 via-indigo-900 to-slate-900">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 min-h-full">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-white/80 backdrop-blur-sm border-white/20 dark:bg-slate-800/80" data-testid="metric-patients">
           <CardContent className="p-4">
@@ -121,7 +121,7 @@ export default function AppHome() {
                 <p className="text-2xl font-semibold tabular-nums">{dashboardMetrics.totalPatients}</p>
                 <p className="text-sm text-muted-foreground truncate">Pacientes</p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 bg-primary/10 flex items-center justify-center shrink-0">
                 <Users className="h-5 w-5 text-primary" />
               </div>
             </div>
@@ -135,7 +135,7 @@ export default function AppHome() {
                 <p className="text-2xl font-semibold tabular-nums">{dashboardMetrics.totalEvaluations}</p>
                 <p className="text-sm text-muted-foreground truncate">Avaliações</p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 bg-emerald-500/10 flex items-center justify-center shrink-0">
                 <ClipboardList className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
             </div>
@@ -149,7 +149,7 @@ export default function AppHome() {
                 <p className="text-2xl font-semibold tabular-nums">{dashboardMetrics.recentEvaluations}</p>
                 <p className="text-sm text-muted-foreground truncate">Últimos 7 dias</p>
               </div>
-              <div className="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 bg-sky-500/10 flex items-center justify-center shrink-0">
                 <TrendingUp className="h-5 w-5 text-sky-600 dark:text-sky-400" />
               </div>
             </div>
@@ -163,7 +163,7 @@ export default function AppHome() {
                 <p className="text-2xl font-semibold tabular-nums">{dashboardMetrics.criticalAlerts}</p>
                 <p className="text-sm text-muted-foreground truncate">Alertas</p>
               </div>
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${dashboardMetrics.criticalAlerts > 0 ? "bg-red-500/10" : "bg-muted"}`}>
+              <div className={`w-10 h-10 flex items-center justify-center shrink-0 ${dashboardMetrics.criticalAlerts > 0 ? "bg-red-500/10" : "bg-muted"}`}>
                 <AlertTriangle className={`h-5 w-5 ${dashboardMetrics.criticalAlerts > 0 ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`} />
               </div>
             </div>
@@ -199,7 +199,7 @@ export default function AppHome() {
                     <button
                       key={task.id}
                       onClick={() => handleViewRecommendation(task.evaluation)}
-                      className="w-full text-left p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer group"
+                      className="w-full text-left p-3 border bg-card hover:bg-accent/50 transition-colors cursor-pointer group"
                       data-testid={`task-${task.id}`}
                     >
                       <div className="flex items-start gap-3">
