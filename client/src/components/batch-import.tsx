@@ -765,6 +765,81 @@ export function BatchImport() {
     setProgress(0);
   };
 
+  const exportToExcel = () => {
+    // Filtrar apenas pacientes com recomendações geradas
+    const successfulPatients = patients.filter(p => p.status === "success" && p.newEvaluation?.recommendation);
+    
+    if (successfulPatients.length === 0) {
+      toast({
+        title: "Nenhuma recomendação para exportar",
+        description: "Gere as recomendações primeiro antes de exportar.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Ordenar alfabeticamente por nome
+    const sortedPatients = [...successfulPatients].sort((a, b) => 
+      a.patientName.localeCompare(b.patientName, 'pt-BR')
+    );
+
+    // Criar dados para a planilha
+    const exportData = sortedPatients.map(patient => {
+      const rec = patient.newEvaluation?.recommendation as any;
+      
+      // Construir texto da recomendação
+      let recomendacao = "";
+      
+      if (rec?.condutaImediata) {
+        recomendacao += `CONDUTA IMEDIATA: ${rec.condutaImediata}\n`;
+      }
+      if (rec?.estrategiaContinuada) {
+        recomendacao += `ESTRATÉGIA CONTINUADA: ${rec.estrategiaContinuada}\n`;
+      }
+      if (rec?.ruleApplied) {
+        recomendacao += `REGRA: ${rec.ruleApplied}`;
+      }
+      
+      // Fallback para texto simples
+      if (!recomendacao && rec?.text) {
+        recomendacao = rec.text;
+      }
+      if (!recomendacao && typeof rec === 'string') {
+        recomendacao = rec;
+      }
+      
+      return {
+        "Nome": patient.patientName,
+        "Recomendação": recomendacao.trim() || "Sem recomendação"
+      };
+    });
+
+    // Criar workbook e worksheet
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    
+    // Ajustar largura das colunas
+    ws['!cols'] = [
+      { wch: 40 },  // Nome
+      { wch: 100 }, // Recomendação
+    ];
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Recomendações");
+
+    // Gerar nome do arquivo com data
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const fileName = `recomendacoes_${dateStr}.xlsx`;
+
+    // Download
+    XLSX.writeFile(wb, fileName);
+
+    toast({
+      title: "Exportação concluída",
+      description: `${sortedPatients.length} recomendações exportadas para ${fileName}`,
+    });
+  };
+
   const getStatusBadge = (status: ParsedPatientData["status"]) => {
     switch (status) {
       case "pending":
@@ -838,6 +913,18 @@ export function BatchImport() {
                   </>
                 )}
               </Button>
+
+              {patients.some(p => p.status === "success") && (
+                <Button
+                  variant="outline"
+                  onClick={exportToExcel}
+                  disabled={isGenerating}
+                  data-testid="button-export-excel"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Exportar Excel
+                </Button>
+              )}
 
               <Button
                 variant="ghost"
