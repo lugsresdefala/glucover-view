@@ -14,7 +14,6 @@ import PatientAuth from "@/pages/patient-auth";
 import PatientDashboard from "@/pages/patient-dashboard";
 import ProfessionalAuth from "@/pages/professional-auth";
 import { FullPageLoading } from "@/components/loading-spinner";
-import { useState } from "react";
 
 function PatientRoutes() {
   const [location] = useLocation();
@@ -69,7 +68,6 @@ function ProfessionalRoutes() {
 function AuthenticatedApp() {
   const { isLoading, isAuthenticated } = useAuth();
   const [location] = useLocation();
-  const [activeSection, setActiveSection] = useState("dashboard");
 
   // Handle patient routes separately
   if (location.startsWith("/paciente")) {
@@ -89,16 +87,17 @@ function AuthenticatedApp() {
     return <Landing />;
   }
 
+  // Derive section from URL
+  const getSection = () => {
+    if (location.includes("/app/history")) return "history";
+    if (location.includes("/app/import")) return "import";
+    if (location.includes("/app/patients")) return "patients";
+    return "dashboard";
+  };
+
   return (
-    <AppLayout 
-      activeSection={activeSection} 
-      onNavigate={setActiveSection}
-      showPatientList={true}
-    >
-      <Dashboard 
-        activeSection={activeSection}
-        onNavigate={setActiveSection}
-      />
+    <AppLayout showPatientList={true}>
+      <Dashboard section={getSection()} />
     </AppLayout>
   );
 }

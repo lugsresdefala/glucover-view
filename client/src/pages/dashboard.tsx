@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -103,18 +104,24 @@ interface PatientItem {
   phone?: string;
 }
 
-export default function Dashboard() {
+interface DashboardProps {
+  section?: "dashboard" | "history" | "import" | "patients";
+}
+
+export default function Dashboard({ section = "dashboard" }: DashboardProps) {
   const { toast } = useToast();
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [glucoseReadings, setGlucoseReadings] = useState<GlucoseReading[]>([{}]);
   const [insulinRegimens, setInsulinRegimens] = useState<InsulinRegimen[]>([]);
   const [currentRecommendation, setCurrentRecommendation] = useState<StoredEvaluation | null>(null);
   const [showEvaluationForm, setShowEvaluationForm] = useState(false);
-  const [showBatchImport, setShowBatchImport] = useState(false);
-  const [showPatientList, setShowPatientList] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showRecommendationModal, setShowRecommendationModal] = useState(false);
+  
+  const showBatchImport = section === "import";
+  const showPatientList = section === "patients";
+  const showHistory = section === "history" || section === "dashboard";
 
   const { data: patients = [], isLoading: isLoadingPatients } = useQuery<PatientItem[]>({
     queryKey: ["/api/doctor/patients"],
@@ -680,25 +687,6 @@ export default function Dashboard() {
             </DialogContent>
           </Dialog>
 
-          <Button 
-            variant={showBatchImport ? "secondary" : "outline"}
-            onClick={() => setShowBatchImport(!showBatchImport)}
-            data-testid="button-toggle-batch-import"
-          >
-            <FileStack className="h-4 w-4 mr-2" />
-            Importar Lote
-          </Button>
-
-          {patients.length > 0 && (
-            <Button 
-              variant={showPatientList ? "secondary" : "outline"}
-              onClick={() => setShowPatientList(!showPatientList)}
-              data-testid="button-toggle-patients"
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Ver Pacientes ({patients.length})
-            </Button>
-          )}
         </div>
 
         {showBatchImport && (
@@ -707,7 +695,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {showPatientList && patients.length > 0 && (
+        {showPatientList && (
           <Card className="mb-6">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between gap-2">
@@ -722,42 +710,41 @@ export default function Dashboard() {
                       : "Pacientes vinculadas ao seu perfil"}
                   </CardDescription>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setShowPatientList(false)}
-                >
-                  Fechar
-                </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {patients.map((patient) => (
-                  <div 
-                    key={patient.id} 
-                    className="flex items-center gap-3 p-3 rounded-md border hover-elevate cursor-pointer"
-                    onClick={() => {
-                      form.setValue("patientName", patient.name);
-                      setShowPatientList(false);
-                      setShowEvaluationForm(true);
-                    }}
-                    data-testid={`card-patient-${patient.id}`}
-                  >
-                    <Avatar className="h-9 w-9">
-                      <AvatarFallback>{patient.name[0]?.toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{patient.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{patient.email}</p>
+              {isLoadingPatients ? (
+                <p className="text-muted-foreground text-center py-8">Carregando pacientes...</p>
+              ) : patients.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">Nenhuma paciente vinculada.</p>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {patients.map((patient) => (
+                    <div 
+                      key={patient.id} 
+                      className="flex items-center gap-3 p-3 rounded-md border hover-elevate cursor-pointer"
+                      onClick={() => {
+                        form.setValue("patientName", patient.name);
+                        setShowEvaluationForm(true);
+                      }}
+                      data-testid={`card-patient-${patient.id}`}
+                    >
+                      <Avatar className="h-9 w-9">
+                        <AvatarFallback>{patient.name[0]?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{patient.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{patient.email}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
 
+        {showHistory && (
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <Card>
@@ -1040,21 +1027,25 @@ export default function Dashboard() {
                 <Button 
                   className="w-full justify-start" 
                   variant="outline"
-                  onClick={() => setShowBatchImport(true)}
+                  asChild
                   data-testid="button-quick-batch"
                 >
-                  <FileStack className="h-4 w-4 mr-2" />
-                  Importar Planilhas
+                  <Link href="/app/import">
+                    <FileStack className="h-4 w-4 mr-2" />
+                    Importar Planilhas
+                  </Link>
                 </Button>
                 {patients.length > 0 && (
                   <Button 
                     className="w-full justify-start" 
                     variant="outline"
-                    onClick={() => setShowPatientList(true)}
+                    asChild
                     data-testid="button-quick-patients"
                   >
-                    <Users className="h-4 w-4 mr-2" />
-                    Lista de Pacientes
+                    <Link href="/app/patients">
+                      <Users className="h-4 w-4 mr-2" />
+                      Lista de Pacientes
+                    </Link>
                   </Button>
                 )}
               </CardContent>
@@ -1078,6 +1069,7 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+        )}
       </main>
 
       <footer className="border-t border-border mt-12">

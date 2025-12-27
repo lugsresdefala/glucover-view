@@ -17,13 +17,11 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { 
   LayoutDashboard, 
   ClipboardList,
   FileStack,
   Users,
-  Settings,
   LogOut,
   Activity,
   Stethoscope,
@@ -44,16 +42,23 @@ const roleIcons: Record<UserRole, typeof Stethoscope> = {
 
 interface AppLayoutProps {
   children: ReactNode;
-  onNavigate?: (section: string) => void;
-  activeSection?: string;
   showPatientList?: boolean;
 }
 
-export function AppLayout({ children, onNavigate, activeSection = "dashboard", showPatientList = false }: AppLayoutProps) {
+export function AppLayout({ children, showPatientList = false }: AppLayoutProps) {
   const { user } = useAuth();
-  const [location, setLocation] = useLocation();
+  const [location] = useLocation();
   const userRole = (user?.role || "medico") as UserRole;
   const RoleIcon = roleIcons[userRole] || Stethoscope;
+
+  const getActiveSection = () => {
+    if (location.includes("/history")) return "history";
+    if (location.includes("/import")) return "import";
+    if (location.includes("/patients")) return "patients";
+    return "dashboard";
+  };
+
+  const activeSection = getActiveSection();
 
   const handleLogout = async () => {
     try {
@@ -74,19 +79,19 @@ export function AppLayout({ children, onNavigate, activeSection = "dashboard", s
       id: "dashboard", 
       label: "Painel Principal", 
       icon: LayoutDashboard, 
-      onClick: () => onNavigate?.("dashboard") 
+      href: "/app" 
     },
     { 
       id: "history", 
       label: "Histórico", 
       icon: ClipboardList, 
-      onClick: () => onNavigate?.("history") 
+      href: "/app/history" 
     },
     { 
       id: "import", 
       label: "Importar Dados", 
       icon: FileStack, 
-      onClick: () => onNavigate?.("import") 
+      href: "/app/import" 
     },
   ];
 
@@ -95,7 +100,7 @@ export function AppLayout({ children, onNavigate, activeSection = "dashboard", s
       id: "patients", 
       label: "Pacientes", 
       icon: Users, 
-      onClick: () => onNavigate?.("patients") 
+      href: "/app/patients" 
     });
   }
 
@@ -127,13 +132,15 @@ export function AppLayout({ children, onNavigate, activeSection = "dashboard", s
                   {menuItems.map((item) => (
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton
-                        onClick={item.onClick}
+                        asChild
                         isActive={activeSection === item.id}
                         className="w-full"
                         data-testid={`nav-${item.id}`}
                       >
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.label}</span>
+                        <Link href={item.href}>
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.label}</span>
+                        </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
