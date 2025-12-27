@@ -86,7 +86,15 @@ import {
   type AnalyzeResponse,
   roleDisplayNames,
   type UserRole,
+  diabetesTypes,
+  type DiabetesType,
 } from "@shared/schema";
+
+const diabetesTypeLabels: Record<DiabetesType, string> = {
+  DMG: "Diabetes Mellitus Gestacional",
+  DM1: "Diabetes Mellitus tipo 1",
+  DM2: "Diabetes Mellitus tipo 2",
+};
 
 interface PatientItem {
   id: number;
@@ -126,7 +134,8 @@ export default function Dashboard() {
     resolver: zodResolver(patientEvaluationSchema),
     defaultValues: {
       patientName: "",
-      weight: undefined, // Peso DEVE ser informado pela paciente - nunca usar valor padrão
+      diabetesType: "DMG",
+      weight: undefined,
       gestationalWeeks: 28,
       gestationalDays: 0,
       usesInsulin: false,
@@ -421,6 +430,31 @@ export default function Dashboard() {
                               data-testid="input-patient-name"
                             />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="diabetesType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de Diabetes</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-diabetes-type">
+                                <SelectValue placeholder="Selecione o tipo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {diabetesTypes.map((type) => (
+                                <SelectItem key={type} value={type}>
+                                  {diabetesTypeLabels[type]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}

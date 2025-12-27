@@ -10,8 +10,8 @@ import { ArrowLeft, Plus, Trash2, AlertTriangle, AlertCircle, Info, Loader2 } fr
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { GlucoseReading, InsulinRegimen, ClinicalRecommendation, AnalyzeResponse } from "@shared/schema";
-import { checkCriticalGlucose, insulinTypes } from "@shared/schema";
+import type { GlucoseReading, InsulinRegimen, ClinicalRecommendation, AnalyzeResponse, DiabetesType } from "@shared/schema";
+import { checkCriticalGlucose, insulinTypes, diabetesTypes } from "@shared/schema";
 import { Badge } from "@/components/ui/badge";
 import { GlucoseInput } from "@/components/glucose-input";
 
@@ -21,9 +21,16 @@ interface PatientEvaluationFormProps {
   onSuccess: () => void;
 }
 
+const diabetesTypeLabels: Record<DiabetesType, string> = {
+  DMG: "Diabetes Mellitus Gestacional",
+  DM1: "Diabetes Mellitus tipo 1",
+  DM2: "Diabetes Mellitus tipo 2",
+};
+
 export function PatientEvaluationForm({ patientName, onCancel, onSuccess }: PatientEvaluationFormProps) {
   const { toast } = useToast();
-  const [weight, setWeight] = useState<number | undefined>(undefined); // Peso DEVE ser informado
+  const [diabetesType, setDiabetesType] = useState<DiabetesType>("DMG");
+  const [weight, setWeight] = useState<number | undefined>(undefined);
   const [gestationalWeeks, setGestationalWeeks] = useState<number>(28);
   const [gestationalDays, setGestationalDays] = useState<number>(0);
   const [usesInsulin, setUsesInsulin] = useState(false);
@@ -38,6 +45,7 @@ export function PatientEvaluationForm({ patientName, onCancel, onSuccess }: Pati
     mutationFn: async () => {
       const data = {
         patientName,
+        diabetesType,
         weight,
         gestationalWeeks,
         gestationalDays,
@@ -174,6 +182,20 @@ export function PatientEvaluationForm({ patientName, onCancel, onSuccess }: Pati
           <CardTitle>Dados Clínicos</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Tipo de Diabetes</Label>
+            <Select value={diabetesType} onValueChange={(v) => setDiabetesType(v as DiabetesType)}>
+              <SelectTrigger data-testid="select-diabetes-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {diabetesTypes.map((type) => (
+                  <SelectItem key={type} value={type}>{diabetesTypeLabels[type]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Peso (kg)</Label>
