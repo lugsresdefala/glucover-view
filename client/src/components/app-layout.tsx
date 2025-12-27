@@ -83,6 +83,18 @@ function SidebarHeaderContent() {
   const { state } = useSidebar();
   const isExpanded = state === "expanded";
   
+  if (!isExpanded) {
+    return (
+      <div className="flex justify-center">
+        <img 
+          src={hapvidaLogo} 
+          alt="Hapvida" 
+          className="h-6 w-auto"
+        />
+      </div>
+    );
+  }
+  
   return (
     <div className="flex items-center gap-3">
       <img 
@@ -90,12 +102,10 @@ function SidebarHeaderContent() {
         alt="Hapvida" 
         className="h-8 w-auto shrink-0"
       />
-      {isExpanded && (
-        <div className="flex-1 min-w-0">
-          <h1 className="text-base font-semibold text-sidebar-foreground truncate">GluCover</h1>
-          <p className="text-xs text-sidebar-foreground/60 truncate">Apoio à Decisão Clínica</p>
-        </div>
-      )}
+      <div className="flex-1 min-w-0">
+        <h1 className="text-base font-semibold text-sidebar-foreground truncate">GluCover</h1>
+        <p className="text-xs text-sidebar-foreground/60 truncate">Apoio à Decisão Clínica</p>
+      </div>
     </div>
   );
 }
@@ -111,6 +121,27 @@ function SidebarFooterContent({ user, userRole, RoleIcon, onLogout }: {
   
   if (!user) return null;
   
+  if (!isExpanded) {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <Avatar className="h-8 w-8">
+          <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs">
+            {user.firstName?.[0]?.toUpperCase() || "U"}
+          </AvatarFallback>
+        </Avatar>
+        <Button 
+          variant="ghost" 
+          size="icon"
+          className="text-sidebar-foreground/70"
+          onClick={onLogout}
+          data-testid="button-logout"
+        >
+          <LogOut className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+  
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
@@ -119,29 +150,27 @@ function SidebarFooterContent({ user, userRole, RoleIcon, onLogout }: {
             {user.firstName?.[0]?.toUpperCase() || "U"}
           </AvatarFallback>
         </Avatar>
-        {isExpanded && (
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">
-              {user.firstName} {user.lastName || ""}
-            </p>
-            <div className="flex items-center gap-1.5">
-              <RoleIcon className="h-3 w-3 text-sidebar-foreground/60" />
-              <span className="text-xs text-sidebar-foreground/60">
-                {roleDisplayNames[userRole]}
-              </span>
-            </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-sidebar-foreground truncate">
+            {user.firstName} {user.lastName || ""}
+          </p>
+          <div className="flex items-center gap-1.5">
+            <RoleIcon className="h-3 w-3 text-sidebar-foreground/60" />
+            <span className="text-xs text-sidebar-foreground/60">
+              {roleDisplayNames[userRole]}
+            </span>
           </div>
-        )}
+        </div>
       </div>
       <Button 
         variant="ghost" 
-        size={isExpanded ? "sm" : "icon"}
-        className={isExpanded ? "w-full justify-start text-sidebar-foreground/70" : "text-sidebar-foreground/70"}
+        size="sm"
+        className="w-full justify-start text-sidebar-foreground/70"
         onClick={onLogout}
         data-testid="button-logout"
       >
-        <LogOut className="h-4 w-4" />
-        {isExpanded && <span className="ml-2">Sair</span>}
+        <LogOut className="h-4 w-4 mr-2" />
+        Sair
       </Button>
     </div>
   );
@@ -215,7 +244,7 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
       <SidebarAutoCollapse isMobile={isMobile} />
       <div className="flex h-screen w-full overflow-hidden">
         <Sidebar collapsible="icon" variant="sidebar">
-          <SidebarHeader className="p-4 border-b border-sidebar-border">
+          <SidebarHeader className="px-4 py-3 border-b border-sidebar-border group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-2">
             <SidebarHeaderContent />
           </SidebarHeader>
 
@@ -245,7 +274,7 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
             </SidebarGroup>
           </SidebarContent>
 
-          <SidebarFooter className="p-4 border-t border-sidebar-border">
+          <SidebarFooter className="px-4 py-3 border-t border-sidebar-border group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-2">
             <SidebarFooterContent 
               user={user} 
               userRole={userRole} 
