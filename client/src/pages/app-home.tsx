@@ -271,15 +271,15 @@ export default function AppHome() {
           </Card>
 
           {dashboardMetrics.criticalAlerts > 0 && (
-            <Card className="border-red-500/30 bg-red-500/10 backdrop-blur-sm">
+            <Card className="bg-red-100/95 dark:bg-red-900/90 backdrop-blur-sm border-red-300 dark:border-red-700">
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base text-red-700 dark:text-red-400">
+                <CardTitle className="flex items-center gap-2 text-base text-red-800 dark:text-red-200">
                   <AlertTriangle className="h-4 w-4" />
                   Atenção Necessária
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-red-700 dark:text-red-300">
                   <strong>{dashboardMetrics.criticalAlerts}</strong> avaliações com valores glicêmicos críticos.
                 </p>
               </CardContent>
