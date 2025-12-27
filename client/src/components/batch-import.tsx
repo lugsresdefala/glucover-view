@@ -1140,57 +1140,59 @@ export function BatchImport() {
 
         {/* Summary Modal */}
         <Dialog open={showSummary} onOpenChange={setShowSummary}>
-          <DialogContent className="sm:max-w-2xl">
-            <DialogHeader className="pb-4 border-b">
-              <DialogTitle className="flex items-center gap-3 text-xl">
-                <div className="p-2 bg-green-100 dark:bg-green-900 rounded-md">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
-                </div>
-                Resumo do Processamento
-              </DialogTitle>
-            </DialogHeader>
+          <DialogContent className="sm:max-w-3xl p-0">
+            <div className="p-6 pb-4 border-b bg-muted/30">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3 text-lg">
+                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-md">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  </div>
+                  Resumo do Processamento
+                </DialogTitle>
+              </DialogHeader>
+            </div>
             
             {summaryData && (
-              <div className="space-y-6 pt-4">
-                <div className={`grid gap-4 ${summaryData.totalErrors > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                  <div className="text-center p-4 bg-muted rounded-md">
-                    <div className="text-3xl font-bold">{summaryData.totalProcessed}</div>
-                    <div className="text-sm text-muted-foreground mt-1">Total Processado</div>
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div className="p-4 bg-muted rounded-md">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">Total</p>
+                    <p className="text-2xl font-bold font-mono">{summaryData.totalProcessed}</p>
                   </div>
-                  <div className="text-center p-4 bg-green-50 dark:bg-green-950 rounded-md border border-green-200 dark:border-green-800">
-                    <div className="text-3xl font-bold text-green-600">{summaryData.totalSuccess}</div>
-                    <div className="text-sm text-muted-foreground mt-1">Sucesso</div>
+                  <div className="p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">Sucesso</p>
+                    <p className="text-2xl font-bold font-mono text-green-600">{summaryData.totalSuccess}</p>
                   </div>
                   {summaryData.totalErrors > 0 && (
-                    <div className="text-center p-4 bg-red-50 dark:bg-red-950 rounded-md border border-red-200 dark:border-red-800">
-                      <div className="text-3xl font-bold text-red-600">{summaryData.totalErrors}</div>
-                      <div className="text-sm text-muted-foreground mt-1">Erros</div>
+                    <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">Erros</p>
+                      <p className="text-2xl font-bold font-mono text-red-600">{summaryData.totalErrors}</p>
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="font-semibold text-base flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <h4 className="font-semibold text-sm flex items-center gap-2 text-muted-foreground uppercase tracking-wide">
+                    <TrendingUp className="h-4 w-4" />
                     Detalhes por Paciente
                   </h4>
-                  <div className="border rounded-md">
-                    <ScrollArea className="h-[280px]">
+                  <div className="border rounded-md overflow-hidden">
+                    <ScrollArea className="h-[260px]">
                       <Table>
-                        <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
+                        <TableHeader className="sticky top-0 bg-muted">
                           <TableRow>
-                            <TableHead className="font-semibold">Paciente</TableHead>
-                            <TableHead className="text-center font-semibold">Status</TableHead>
-                            <TableHead className="text-center font-semibold">Anterior</TableHead>
-                            <TableHead className="text-center font-semibold">Atual</TableHead>
-                            <TableHead className="text-center font-semibold">Novos</TableHead>
-                            <TableHead className="text-center font-semibold">Urgência</TableHead>
+                            <TableHead className="font-semibold text-xs">Paciente</TableHead>
+                            <TableHead className="text-center font-semibold text-xs w-24">Status</TableHead>
+                            <TableHead className="text-center font-semibold text-xs w-20">Anterior</TableHead>
+                            <TableHead className="text-center font-semibold text-xs w-20">Atual</TableHead>
+                            <TableHead className="text-center font-semibold text-xs w-20">Novos</TableHead>
+                            <TableHead className="text-center font-semibold text-xs w-24">Urgência</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {summaryData.updates.map((update, idx) => (
                             <TableRow key={idx}>
-                              <TableCell className="font-medium">{update.patientName}</TableCell>
+                              <TableCell className="font-medium text-sm">{update.patientName}</TableCell>
                               <TableCell className="text-center">
                                 {update.isUpdate ? (
                                   <Badge variant="outline" className="text-xs">
@@ -1201,17 +1203,17 @@ export function BatchImport() {
                                   <Badge className="bg-green-600 text-xs">Novo</Badge>
                                 )}
                               </TableCell>
-                              <TableCell className="text-center font-mono">
+                              <TableCell className="text-center font-mono text-sm">
                                 {update.previousDays || "-"}
                               </TableCell>
-                              <TableCell className="text-center font-mono">
+                              <TableCell className="text-center font-mono text-sm">
                                 {update.newDays}
                               </TableCell>
                               <TableCell className="text-center">
                                 {update.addedDays > 0 ? (
                                   <Badge className="bg-blue-600 text-xs">+{update.addedDays}</Badge>
                                 ) : (
-                                  <span className="text-muted-foreground">-</span>
+                                  <span className="text-muted-foreground text-sm">-</span>
                                 )}
                               </TableCell>
                               <TableCell className="text-center">
