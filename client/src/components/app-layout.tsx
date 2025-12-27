@@ -228,6 +228,14 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
           <header className="sticky top-0 z-40 flex items-center justify-between gap-4 px-6 py-4 glass border-b border-border/30">
             <div className="flex items-center gap-4">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <div className="md:hidden flex items-center gap-2">
+                <img 
+                  src={hapvidaLogo} 
+                  alt="Hapvida" 
+                  className="h-6 w-auto"
+                />
+                <span className="font-semibold text-foreground">GluCover</span>
+              </div>
               <div className="hidden md:flex items-center gap-3">
                 {activeSection === "dashboard" && <LayoutDashboard className="h-5 w-5 text-primary" />}
                 {activeSection === "history" && <ClipboardList className="h-5 w-5 text-primary" />}
