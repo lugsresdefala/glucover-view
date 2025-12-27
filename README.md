@@ -27,7 +27,10 @@ Este projeto está configurado para deploy gratuito com preview e produção:
    - Configure `VITE_API_BASE_URL` apontando para o backend
    - Deploy automático de `dist/public`
 
-📖 **[Guia Completo de Deploy](./DEPLOYMENT.md)** - Instruções detalhadas para cada plataforma
+📖 **Documentação**:
+- **[Guia Rápido de Deploy](./QUICKSTART.md)** - Deploy em 10 minutos
+- **[Guia Completo de Deploy](./DEPLOYMENT.md)** - Instruções detalhadas
+- **[Problemas Conhecidos](./KNOWN_ISSUES.md)** - Issues conhecidos e soluções
 
 ## Configuração Local
 
