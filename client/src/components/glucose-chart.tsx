@@ -1,15 +1,16 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   ReferenceLine,
-  ReferenceArea,
+  Cell,
 } from "recharts";
 import type { GlucoseReading } from "@shared/schema";
 
@@ -17,27 +18,24 @@ interface GlucoseChartProps {
   readings: GlucoseReading[];
 }
 
-const glucoseFieldLabels: Record<string, string> = {
+type ViewMode = "jejum" | "posPrandial" | "resumo";
+
+const viewLabels: Record<ViewMode, string> = {
   jejum: "Jejum",
-  posCafe1h: "1h pós-café",
-  preAlmoco: "Pré-almoço",
-  posAlmoco1h: "1h pós-almoço",
-  preJantar: "Pré-jantar",
-  posJantar1h: "1h pós-jantar",
-  madrugada: "Madrugada",
+  posPrandial: "Pós-prandial",
+  resumo: "Resumo",
 };
 
-const colors = {
-  jejum: "hsl(210, 85%, 50%)",
-  posCafe1h: "hsl(25, 80%, 50%)",
-  preAlmoco: "hsl(170, 65%, 45%)",
-  posAlmoco1h: "hsl(280, 70%, 50%)",
-  preJantar: "hsl(195, 75%, 50%)",
-  posJantar1h: "hsl(358, 75%, 50%)",
-  madrugada: "hsl(45, 80%, 50%)",
-};
+function getBarColor(value: number, isJejum: boolean): string {
+  const target = isJejum ? 95 : 140;
+  if (value <= target) return "hsl(160, 60%, 45%)";
+  if (value <= target + 20) return "hsl(45, 80%, 50%)";
+  return "hsl(0, 70%, 50%)";
+}
 
 export function GlucoseChart({ readings }: GlucoseChartProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>("resumo");
+
   if (readings.length === 0) {
     return (
       <Card>
@@ -53,44 +51,78 @@ export function GlucoseChart({ readings }: GlucoseChartProps) {
     );
   }
 
-  const chartData = readings.map((reading, index) => ({
-    name: `Dia ${index + 1}`,
-    ...reading,
-  }));
+  // Build chart data based on view mode
+  let chartData: { name: string; value: number; isJejum: boolean }[] = [];
+  let yAxisLabel = "mg/dL";
+  let referenceValue = 140;
 
-  const activeFields = Object.keys(glucoseFieldLabels).filter((key) =>
-    readings.some((r) => r[key as keyof GlucoseReading] !== undefined)
-  );
+  if (viewMode === "jejum") {
+    chartData = readings
+      .map((r, i) => ({ name: `D${i + 1}`, value: r.jejum ?? 0, isJejum: true }))
+      .filter(d => d.value > 0);
+    referenceValue = 95;
+  } else if (viewMode === "posPrandial") {
+    chartData = readings.map((r, i) => {
+      const postMeals = [r.posCafe1h, r.posAlmoco1h, r.posJantar1h].filter(v => v !== undefined && v !== null) as number[];
+      const avg = postMeals.length > 0 ? Math.round(postMeals.reduce((a, b) => a + b, 0) / postMeals.length) : 0;
+      return { name: `D${i + 1}`, value: avg, isJejum: false };
+    }).filter(d => d.value > 0);
+    referenceValue = 140;
+  } else {
+    // Resumo: média por período
+    const periods = [
+      { key: "jejum", label: "Jejum", isJejum: true },
+      { key: "posCafe1h", label: "Pós-café", isJejum: false },
+      { key: "posAlmoco1h", label: "Pós-almoço", isJejum: false },
+      { key: "posJantar1h", label: "Pós-jantar", isJejum: false },
+    ];
+    chartData = periods.map(p => {
+      const values = readings
+        .map(r => r[p.key as keyof GlucoseReading] as number | undefined)
+        .filter(v => v !== undefined && v !== null && v > 0) as number[];
+      const avg = values.length > 0 ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : 0;
+      return { name: p.label, value: avg, isJejum: p.isJejum };
+    }).filter(d => d.value > 0);
+    referenceValue = 0; // Don't show reference in summary
+  }
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold">Evolução Glicêmica</CardTitle>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <CardTitle className="text-lg font-semibold">Evolução Glicêmica</CardTitle>
+          <div className="flex gap-1">
+            {(Object.keys(viewLabels) as ViewMode[]).map(mode => (
+              <Button
+                key={mode}
+                variant={viewMode === mode ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode(mode)}
+                data-testid={`button-chart-${mode}`}
+              >
+                {viewLabels[mode]}
+              </Button>
+            ))}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="h-80 w-full" data-testid="chart-glucose">
+        <div className="h-64 w-full" data-testid="chart-glucose">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={chartData}
-              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
               <XAxis
                 dataKey="name"
-                className="text-xs"
-                tick={{ fill: "hsl(var(--muted-foreground))" }}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
               />
               <YAxis
-                domain={[60, 200]}
-                className="text-xs"
-                tick={{ fill: "hsl(var(--muted-foreground))" }}
-                label={{
-                  value: "mg/dL",
-                  angle: -90,
-                  position: "insideLeft",
-                  fill: "hsl(var(--muted-foreground))",
-                  fontSize: 12,
-                }}
+                domain={[0, 200]}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+                label={{ value: yAxisLabel, angle: -90, position: "insideLeft", fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
               />
               <Tooltip
                 contentStyle={{
@@ -98,60 +130,39 @@ export function GlucoseChart({ readings }: GlucoseChartProps) {
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "0.375rem",
                   color: "hsl(var(--popover-foreground))",
+                  fontSize: 12,
                 }}
-                labelStyle={{ fontWeight: 600 }}
+                formatter={(value: number) => [`${value} mg/dL`, "Glicemia"]}
               />
-              <Legend
-                wrapperStyle={{ fontSize: "12px" }}
-                formatter={(value) => glucoseFieldLabels[value] || value}
-              />
-              <ReferenceArea
-                y1={0}
-                y2={95}
-                fill="hsl(170, 65%, 45%)"
-                fillOpacity={0.1}
-                label={{
-                  value: "Meta jejum",
-                  position: "insideBottomRight",
-                  fill: "hsl(var(--muted-foreground))",
-                  fontSize: 10,
-                }}
-              />
-              <ReferenceLine
-                y={95}
-                stroke="hsl(170, 65%, 45%)"
-                strokeDasharray="5 5"
-                strokeOpacity={0.6}
-              />
-              <ReferenceLine
-                y={140}
-                stroke="hsl(25, 80%, 50%)"
-                strokeDasharray="5 5"
-                strokeOpacity={0.6}
-              />
-              {activeFields.map((field) => (
-                <Line
-                  key={field}
-                  type="monotone"
-                  dataKey={field}
-                  stroke={colors[field as keyof typeof colors]}
-                  strokeWidth={2}
-                  dot={{ r: 4, strokeWidth: 2 }}
-                  activeDot={{ r: 6 }}
-                  connectNulls
+              {referenceValue > 0 && (
+                <ReferenceLine
+                  y={referenceValue}
+                  stroke="hsl(0, 70%, 50%)"
+                  strokeDasharray="4 4"
+                  strokeWidth={1.5}
+                  label={{ value: `Meta: ${referenceValue}`, position: "right", fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
                 />
-              ))}
-            </LineChart>
+              )}
+              <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={40}>
+                {chartData.map((entry, index) => (
+                  <Cell key={index} fill={getBarColor(entry.value, entry.isJejum)} />
+                ))}
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
+        <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-0.5 bg-green-500" style={{ borderStyle: "dashed" }} />
-            <span>Meta jejum: ≤95 mg/dL</span>
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(160, 60%, 45%)" }} />
+            <span>Na meta</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-0.5 bg-orange-500" style={{ borderStyle: "dashed" }} />
-            <span>Meta 1h pós-prandial: ≤140 mg/dL</span>
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(45, 80%, 50%)" }} />
+            <span>Atenção</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "hsl(0, 70%, 50%)" }} />
+            <span>Acima da meta</span>
           </div>
         </div>
       </CardContent>
