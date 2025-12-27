@@ -24,7 +24,15 @@ import {
   Trash2,
   Sparkles,
   Download,
+  RefreshCw,
+  TrendingUp,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { GlucoseReading, StoredEvaluation } from "@shared/schema";
@@ -638,6 +646,20 @@ export function BatchImport() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [importErrors, setImportErrors] = useState<ImportError[]>([]);
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryData, setSummaryData] = useState<{
+    totalProcessed: number;
+    totalSuccess: number;
+    totalErrors: number;
+    updates: Array<{
+      patientName: string;
+      isUpdate: boolean;
+      previousDays: number;
+      newDays: number;
+      addedDays: number;
+      urgencyLevel?: string;
+    }>;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -704,6 +726,18 @@ export function BatchImport() {
     setProgress(0);
 
     const updatedPatients = [...patients];
+    const summaryUpdates: typeof summaryData extends null ? never : NonNullable<typeof summaryData>["updates"] = [];
+
+    // Fetch existing evaluations to compare
+    let existingEvaluations: StoredEvaluation[] = [];
+    try {
+      const existingResponse = await fetch("/api/evaluations", { credentials: "include" });
+      if (existingResponse.ok) {
+        existingEvaluations = await existingResponse.json();
+      }
+    } catch {
+      // Continue without previous data
+    }
 
     for (let i = 0; i < updatedPatients.length; i++) {
       const patient = updatedPatients[i];
@@ -712,21 +746,28 @@ export function BatchImport() {
       updatedPatients[i] = { ...patient, status: "processing" };
       setPatients([...updatedPatients]);
 
+      // Find previous evaluation for this patient
+      const previousEval = existingEvaluations.find(
+        e => e.patientName.toLowerCase().trim() === patient.patientName.toLowerCase().trim()
+      );
+      const previousDays = previousEval?.glucoseReadings?.length || 0;
+
       try {
+        const validReadings = patient.glucoseReadings.filter(r => 
+          Object.values(r).some(v => typeof v === "number" && v > 0)
+        );
+
         const evaluationData = {
           patientName: patient.patientName,
-          weight: null, // Peso não disponível na planilha
+          weight: null,
           gestationalWeeks: patient.gestationalWeeks || 0,
           gestationalDays: patient.gestationalDays || 0,
           gestationalAgeSource: patient.gestationalAgeSource || "explicit",
           usesInsulin: patient.usesInsulin,
           insulinRegimens: [],
           dietAdherence: "regular" as const,
-          glucoseReadings: patient.glucoseReadings.filter(r => 
-            Object.values(r).some(v => typeof v === "number" && v > 0)
-          ),
+          glucoseReadings: validReadings,
         };
-        
 
         const response = await apiRequest("POST", "/api/analyze", evaluationData);
         const result = await response.json();
@@ -735,7 +776,19 @@ export function BatchImport() {
           ...patient,
           status: "success",
           newEvaluation: result.evaluation,
+          previousEvaluation: previousEval,
         };
+
+        // Track summary data
+        const newDays = validReadings.length;
+        summaryUpdates.push({
+          patientName: patient.patientName,
+          isUpdate: !!previousEval,
+          previousDays,
+          newDays,
+          addedDays: Math.max(0, newDays - previousDays),
+          urgencyLevel: result.evaluation?.recommendation?.urgencyLevel,
+        });
       } catch (err) {
         const message = err instanceof Error ? err.message : "Erro ao gerar recomendação";
         updatedPatients[i] = {
@@ -753,10 +806,16 @@ export function BatchImport() {
     queryClient.invalidateQueries({ queryKey: ["/api/evaluations"] });
     
     const successCount = updatedPatients.filter(p => p.status === "success").length;
-    toast({
-      title: "Processamento concluído",
-      description: `${successCount} de ${updatedPatients.length} pacientes processados com sucesso.`,
+    const errorCount = updatedPatients.filter(p => p.status === "error").length;
+
+    // Show summary modal
+    setSummaryData({
+      totalProcessed: updatedPatients.length,
+      totalSuccess: successCount,
+      totalErrors: errorCount,
+      updates: summaryUpdates.sort((a, b) => a.patientName.localeCompare(b.patientName, 'pt-BR')),
     });
+    setShowSummary(true);
   };
 
   const clearAll = () => {
@@ -1078,6 +1137,109 @@ export function BatchImport() {
             </p>
           </div>
         )}
+
+        {/* Summary Modal */}
+        <Dialog open={showSummary} onOpenChange={setShowSummary}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                Resumo do Processamento
+              </DialogTitle>
+            </DialogHeader>
+            
+            {summaryData && (
+              <div className="space-y-4 overflow-y-auto">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center p-3 bg-muted rounded-md">
+                    <div className="text-2xl font-bold">{summaryData.totalProcessed}</div>
+                    <div className="text-xs text-muted-foreground">Total Processado</div>
+                  </div>
+                  <div className="text-center p-3 bg-green-50 dark:bg-green-950 rounded-md">
+                    <div className="text-2xl font-bold text-green-600">{summaryData.totalSuccess}</div>
+                    <div className="text-xs text-muted-foreground">Sucesso</div>
+                  </div>
+                  {summaryData.totalErrors > 0 && (
+                    <div className="text-center p-3 bg-red-50 dark:bg-red-950 rounded-md">
+                      <div className="text-2xl font-bold text-red-600">{summaryData.totalErrors}</div>
+                      <div className="text-xs text-muted-foreground">Erros</div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t pt-3">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Detalhes por Paciente
+                  </h4>
+                  <ScrollArea className="h-[300px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Paciente</TableHead>
+                          <TableHead className="text-center">Status</TableHead>
+                          <TableHead className="text-center">Dias Anteriores</TableHead>
+                          <TableHead className="text-center">Dias Atuais</TableHead>
+                          <TableHead className="text-center">Novos</TableHead>
+                          <TableHead className="text-center">Urgência</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {summaryData.updates.map((update, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell className="font-medium text-sm">{update.patientName}</TableCell>
+                            <TableCell className="text-center">
+                              {update.isUpdate ? (
+                                <Badge variant="outline" className="text-xs">
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Atualização
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-green-600 text-xs">Novo</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center font-mono text-sm">
+                              {update.previousDays || "-"}
+                            </TableCell>
+                            <TableCell className="text-center font-mono text-sm">
+                              {update.newDays}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {update.addedDays > 0 ? (
+                                <Badge className="bg-blue-600 text-xs">+{update.addedDays}</Badge>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {update.urgencyLevel === "critical" ? (
+                                <Badge variant="destructive" className="text-xs">Crítico</Badge>
+                              ) : update.urgencyLevel === "warning" ? (
+                                <Badge className="bg-amber-500 text-xs">Atenção</Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-xs">Info</Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t">
+                  <Button variant="outline" onClick={() => setShowSummary(false)}>
+                    Fechar
+                  </Button>
+                  <Button onClick={() => { setShowSummary(false); exportToExcel(); }}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar Excel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
