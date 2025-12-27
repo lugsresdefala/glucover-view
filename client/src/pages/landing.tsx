@@ -18,7 +18,7 @@ export default function Landing() {
               data-testid="img-logo"
             />
             <div className="hidden sm:block border-l border-border pl-4">
-              <h1 className="text-xl font-semibold tracking-tight">GlucoVer</h1>
+              <h1 className="text-xl font-semibold tracking-tight">GluCover</h1>
               <p className="text-sm text-muted-foreground">Apoio à Decisão Clínica</p>
             </div>
           </div>
@@ -268,7 +268,7 @@ export default function Landing() {
                 className="h-8 w-auto opacity-70"
               />
               <span className="text-sm text-muted-foreground">
-                GlucoVer - Sistema de Apoio à Decisão Clínica
+                GluCover - Sistema de Apoio à Decisão Clínica
               </span>
             </div>
             <p className="text-sm text-muted-foreground">

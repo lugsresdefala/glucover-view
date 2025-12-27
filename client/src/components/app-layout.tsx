@@ -111,7 +111,7 @@ export function AppLayout({ children, onNavigate, activeSection = "dashboard", s
                 className="h-8 w-auto"
               />
               <div className="flex-1 min-w-0">
-                <h1 className="text-base font-semibold text-sidebar-foreground truncate">GlucoVer</h1>
+                <h1 className="text-base font-semibold text-sidebar-foreground truncate">GluCover</h1>
                 <p className="text-xs text-sidebar-foreground/60 truncate">Apoio à Decisão Clínica</p>
               </div>
             </div>

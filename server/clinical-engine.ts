@@ -59,7 +59,7 @@ export interface ClinicalRule {
 export type InsulinAdjustmentType = "NPH_NOTURNA" | "NPH_MANHA" | "NPH_ALMOCO" | "NPH_JANTAR" | 
                                      "RAPIDA_CAFE" | "RAPIDA_ALMOCO" | "RAPIDA_JANTAR";
 
-export type AdjustmentDirection = "AUMENTAR" | "REDUZIR" | "MANTER" | "SOLICITAR_DADOS";
+export type AdjustmentDirection = "AUMENTAR" | "REDUZIR" | "MANTER" | "SOLICITAR_DADOS" | "AVALIAR";
 
 /**
  * Resultado de análise para um período específico
@@ -93,12 +93,14 @@ export interface InsulinAdjustmentAnalysis {
 const ADJUSTMENT_THRESHOLDS = {
   DIAS_MINIMOS_PADRAO: 3,        // Mínimo de dias com problema para considerar padrão
   DIAS_MINIMOS_HIPO: 2,         // Mínimo de episódios de hipoglicemia para reduzir
+  DIAS_MINIMOS_SOMOGYI: 1,     // Mínimo de pares madrugada-jejum para detectar Somogyi
   DELTA_POS_PRE_LIMITE: 40,     // Delta pós-pré acima do qual indica problema na rápida
   JEJUM_LIMITE: 95,             // Limite superior para jejum
   PRE_PRANDIAL_LIMITE: 100,     // Limite superior para pré-prandial
   POS_PRANDIAL_LIMITE: 140,     // Limite superior para pós-prandial 1h
   MADRUGADA_LIMITE: 100,        // Limite superior para madrugada
-  HIPO_LIMITE: 65,              // Limite inferior (hipoglicemia)
+  HIPO_LIMITE: 70,              // Limite inferior (hipoglicemia) - SBD/FEBRASGO 2025
+  HIPO_NOTURNA_LIMITE: 70,     // Hipoglicemia noturna para detecção de Somogyi
 };
 
 /**
@@ -164,11 +166,18 @@ function countDaysBelowLimit(values: number[], limit: number): number {
 }
 
 /**
- * Analisa jejum elevado considerando madrugada (Efeito Somogyi)
+ * Analisa jejum elevado considerando madrugada (Efeito Somogyi vs Fenômeno do Alvorecer)
+ * 
+ * LÓGICA CLÍNICA CORRIGIDA (SBD 2025, FEBRASGO 2019):
+ * - Efeito Somogyi: Hipoglicemia noturna (<70 mg/dL) SEGUIDA de hiperglicemia matinal (>95 mg/dL)
+ *   → Detectado por correlação PAR-A-PAR no MESMO DIA
+ *   → Conduta: REDUZIR NPH noturna
+ * 
+ * - Fenômeno do Alvorecer: Madrugada normal/alta com jejum alto
+ *   → Conduta: AUMENTAR NPH noturna ou ajustar horário
  */
 function analyzeJejumWithMadrugada(readings: GlucoseReading[]): PeriodAdjustmentResult | null {
   const jejumValues = extractPeriodValues(readings, "jejum");
-  const madrugadaValues = extractPeriodValues(readings, "madrugada");
   
   if (jejumValues.length < ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
     return null;
@@ -180,7 +189,9 @@ function analyzeJejumWithMadrugada(readings: GlucoseReading[]): PeriodAdjustment
     return null; // Não há padrão de jejum elevado
   }
   
-  // Jejum elevado em ≥3 dias - verificar madrugada
+  // Verificar se há dados de madrugada disponíveis
+  const madrugadaValues = extractPeriodValues(readings, "madrugada");
+  
   if (madrugadaValues.length === 0) {
     return {
       periodo: PERIOD_LABELS.jejum,
@@ -193,32 +204,96 @@ function analyzeJejumWithMadrugada(readings: GlucoseReading[]): PeriodAdjustment
     };
   }
   
-  // Analisar correlação jejum alto com madrugada
-  const diasMadrugadaAlta = countDaysAboveLimit(madrugadaValues, ADJUSTMENT_THRESHOLDS.MADRUGADA_LIMITE);
-  const diasMadrugadaBaixa = countDaysBelowLimit(madrugadaValues, ADJUSTMENT_THRESHOLDS.HIPO_LIMITE);
+  // ANÁLISE PAR-A-PAR: Correlacionar madrugada e jejum do MESMO DIA
+  let paresSomogyi = 0;           // Madrugada baixa (<70) + Jejum alto (>95) = Somogyi
+  let paresFenomenoAlvorecer = 0; // Madrugada normal/alta + Jejum alto = Dawn phenomenon
+  let diasComAmbos = 0;
+  const valoresMadrugadaSomogyi: number[] = [];
+  const valoresMadrugadaDawn: number[] = [];
+  
+  for (const reading of readings) {
+    const madrugada = reading.madrugada;
+    const jejum = reading.jejum;
+    
+    // Só analisar dias que têm ambos os valores
+    if (typeof madrugada !== "number" || madrugada <= 0 || typeof jejum !== "number" || jejum <= 0) {
+      continue;
+    }
+    
+    diasComAmbos++;
+    
+    const jejumAlto = jejum > ADJUSTMENT_THRESHOLDS.JEJUM_LIMITE;
+    const madrugadaBaixa = madrugada < ADJUSTMENT_THRESHOLDS.HIPO_NOTURNA_LIMITE; // <70 mg/dL
+    const madrugadaAlta = madrugada > ADJUSTMENT_THRESHOLDS.MADRUGADA_LIMITE;      // >100 mg/dL
+    
+    if (jejumAlto && madrugadaBaixa) {
+      // EFEITO SOMOGYI: Hipoglicemia noturna causou rebote matinal
+      paresSomogyi++;
+      valoresMadrugadaSomogyi.push(madrugada);
+    } else if (jejumAlto && !madrugadaBaixa) {
+      // FENÔMENO DO ALVORECER ou NPH insuficiente
+      paresFenomenoAlvorecer++;
+      valoresMadrugadaDawn.push(madrugada);
+    }
+  }
+  
   const avgMadrugada = madrugadaValues.reduce((a, b) => a + b, 0) / madrugadaValues.length;
   
-  if (diasMadrugadaBaixa >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_HIPO) {
-    // EFEITO SOMOGYI - hipoglicemia noturna causando hiperglicemia de rebote
+  // PRIORIDADE 1: Se há QUALQUER par Somogyi confirmado, NÃO aumentar insulina
+  // (aumentar pioraria a hipoglicemia noturna)
+  if (paresSomogyi >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_SOMOGYI) {
+    const avgSomogyi = valoresMadrugadaSomogyi.reduce((a, b) => a + b, 0) / valoresMadrugadaSomogyi.length;
     return {
       periodo: PERIOD_LABELS.jejum,
       insulinaAfetada: "NPH_NOTURNA",
       direcao: "REDUZIR",
-      justificativa: `Jejum >95 mg/dL em ${diasJejumAlto} dias com hipoglicemia na madrugada (<65 mg/dL) em ${diasMadrugadaBaixa} dias. Padrão compatível com Efeito Somogyi (hiperglicemia de rebote). Opção: reduzir NPH noturna.`,
-      diasComProblema: diasJejumAlto,
-      totalDiasAnalisados: jejumValues.length,
+      justificativa: `EFEITO SOMOGYI DETECTADO: Em ${paresSomogyi}/${diasComAmbos} dias com dados completos, houve hipoglicemia noturna (<70 mg/dL, média ${Math.round(avgSomogyi)} mg/dL) seguida de hiperglicemia de rebote no jejum. A conduta é REDUZIR NPH noturna (não aumentar). Referência: SBD 2025 R12.`,
+      diasComProblema: paresSomogyi,
+      totalDiasAnalisados: diasComAmbos,
+      valoresObservados: jejumValues,
+      valorReferencia: Math.round(avgSomogyi),
+    };
+  }
+  
+  // Se há hipoglicemia noturna isolada (sem correlação com jejum alto), também não aumentar
+  const diasMadrugadaBaixa = countDaysBelowLimit(madrugadaValues, ADJUSTMENT_THRESHOLDS.HIPO_NOTURNA_LIMITE);
+  if (diasMadrugadaBaixa >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_HIPO) {
+    return {
+      periodo: PERIOD_LABELS.jejum,
+      insulinaAfetada: "NPH_NOTURNA",
+      direcao: "REDUZIR",
+      justificativa: `Hipoglicemia noturna (<70 mg/dL) em ${diasMadrugadaBaixa}/${madrugadaValues.length} dias. CONTRAINDICADO aumentar NPH. Opção: reduzir NPH noturna ou realocar para mais cedo.`,
+      diasComProblema: diasMadrugadaBaixa,
+      totalDiasAnalisados: madrugadaValues.length,
       valoresObservados: jejumValues,
       valorReferencia: Math.round(avgMadrugada),
     };
   }
   
-  if (diasMadrugadaAlta >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
-    // Madrugada alta = NPH noturna insuficiente
+  // PRIORIDADE 2: Fenômeno do Alvorecer ou NPH insuficiente (madrugada normal/alta, sem hipoglicemia)
+  if (paresFenomenoAlvorecer >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
+    const diasMadrugadaAlta = countDaysAboveLimit(madrugadaValues, ADJUSTMENT_THRESHOLDS.MADRUGADA_LIMITE);
+    
+    if (diasMadrugadaAlta >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
+      // Madrugada já alta = NPH claramente insuficiente
+      return {
+        periodo: PERIOD_LABELS.jejum,
+        insulinaAfetada: "NPH_NOTURNA",
+        direcao: "AUMENTAR",
+        justificativa: `Jejum >95 mg/dL em ${diasJejumAlto} dias com madrugada elevada (>100 mg/dL) em ${diasMadrugadaAlta} dias. Madrugada sem hipoglicemia (média ${Math.round(avgMadrugada)} mg/dL). NPH noturna insuficiente. Opção: aumentar NPH ao deitar.`,
+        diasComProblema: diasJejumAlto,
+        totalDiasAnalisados: jejumValues.length,
+        valoresObservados: jejumValues,
+        valorReferencia: Math.round(avgMadrugada),
+      };
+    }
+    
+    // Madrugada normal mas jejum alto = fenômeno do alvorecer
     return {
       periodo: PERIOD_LABELS.jejum,
       insulinaAfetada: "NPH_NOTURNA",
       direcao: "AUMENTAR",
-      justificativa: `Jejum >95 mg/dL em ${diasJejumAlto} dias com madrugada elevada (>100 mg/dL) em ${diasMadrugadaAlta} dias (média ${Math.round(avgMadrugada)} mg/dL). NPH noturna insuficiente. Opção: aumentar NPH ao deitar.`,
+      justificativa: `Fenômeno do Alvorecer: Jejum >95 mg/dL em ${diasJejumAlto} dias com madrugada normal (média ${Math.round(avgMadrugada)} mg/dL, sem hipoglicemia). Opção: aumentar NPH noturna ou ajustar horário de aplicação para mais tarde.`,
       diasComProblema: diasJejumAlto,
       totalDiasAnalisados: jejumValues.length,
       valoresObservados: jejumValues,
@@ -226,12 +301,12 @@ function analyzeJejumWithMadrugada(readings: GlucoseReading[]): PeriodAdjustment
     };
   }
   
-  // Madrugada normal mas jejum alto - fenômeno do alvorecer ou ajuste fino
+  // Fallback: Jejum elevado sem dados suficientes de correlação
   return {
     periodo: PERIOD_LABELS.jejum,
     insulinaAfetada: "NPH_NOTURNA",
-    direcao: "AUMENTAR",
-    justificativa: `Jejum >95 mg/dL em ${diasJejumAlto} dias com madrugada normal (média ${Math.round(avgMadrugada)} mg/dL). Possível fenômeno do alvorecer. Opção: ajuste fino de NPH noturna ou avaliar horário de aplicação.`,
+    direcao: "AVALIAR",
+    justificativa: `Jejum >95 mg/dL em ${diasJejumAlto} dias. Dados insuficientes de madrugada para correlação (${diasComAmbos} dias com ambos os valores). Aumentar frequência de monitorização às 3h para definir conduta.`,
     diasComProblema: diasJejumAlto,
     totalDiasAnalisados: jejumValues.length,
     valoresObservados: jejumValues,
@@ -262,7 +337,7 @@ function analyzePrePrandial(
       periodo: PERIOD_LABELS[prePeriod],
       insulinaAfetada: nphResponsavel,
       direcao: "REDUZIR",
-      justificativa: `Hipoglicemia (<65 mg/dL) em ${diasBaixo}/${values.length} dias no período ${PERIOD_LABELS[prePeriod]}. Opção: reduzir ${INSULIN_LABELS[nphResponsavel]}.`,
+      justificativa: `Hipoglicemia (<70 mg/dL) em ${diasBaixo}/${values.length} dias no período ${PERIOD_LABELS[prePeriod]}. Opção: reduzir ${INSULIN_LABELS[nphResponsavel]}.`,
       diasComProblema: diasBaixo,
       totalDiasAnalisados: values.length,
       valoresObservados: values,
@@ -311,7 +386,7 @@ function analyzePosPrandial(
       periodo: PERIOD_LABELS[posPeriod],
       insulinaAfetada: rapidaResponsavel,
       direcao: "REDUZIR",
-      justificativa: `Hipoglicemia (<65 mg/dL) em ${diasHipoPOS}/${posValues.length} dias no ${PERIOD_LABELS[posPeriod]}. Opção: reduzir ${INSULIN_LABELS[rapidaResponsavel]}.`,
+      justificativa: `Hipoglicemia (<70 mg/dL) em ${diasHipoPOS}/${posValues.length} dias no ${PERIOD_LABELS[posPeriod]}. Opção: reduzir ${INSULIN_LABELS[rapidaResponsavel]}.`,
       diasComProblema: diasHipoPOS,
       totalDiasAnalisados: posValues.length,
       valoresObservados: posValues,
@@ -404,7 +479,7 @@ function analyzeMadrugada(readings: GlucoseReading[]): PeriodAdjustmentResult | 
       periodo: PERIOD_LABELS.madrugada,
       insulinaAfetada: "NPH_JANTAR",
       direcao: "REDUZIR",
-      justificativa: `Hipoglicemia na madrugada (<65 mg/dL) em ${diasBaixo}/${values.length} dias. Opção: reduzir NPH do jantar ou realocar para ao deitar.`,
+      justificativa: `Hipoglicemia na madrugada (<70 mg/dL) em ${diasBaixo}/${values.length} dias. Opção: reduzir NPH do jantar ou realocar para ao deitar.`,
       diasComProblema: diasBaixo,
       totalDiasAnalisados: values.length,
       valoresObservados: values,

@@ -1,8 +1,8 @@
-# GlucoVer - Clinical Decision Support for Diabetes in Pregnancy
+# GluCover - Clinical Decision Support for Diabetes in Pregnancy
 
 ## Overview
 
-GlucoVer is a full-stack clinical decision support system designed for healthcare professionals managing patients with Diabetes Mellitus during pregnancy (DM1, DM2, and Gestational Diabetes - DMG). The application enables glucose monitoring, clinical analysis, and AI-powered treatment recommendations based on Brazilian and international medical guidelines (SBD 2025, FEBRASGO 2019, WHO 2025).
+GluCover is a full-stack clinical decision support system designed for healthcare professionals managing patients with Diabetes Mellitus during pregnancy (DM1, DM2, and Gestational Diabetes - DMG). The application enables glucose monitoring, clinical analysis, and AI-powered treatment recommendations based on Brazilian and international medical guidelines (SBD 2025, FEBRASGO 2019, WHO 2025).
 
 Key capabilities:
 - Patient glucose data entry (manual and Excel import)

@@ -83,7 +83,7 @@ export default function PatientDashboard() {
               <Activity className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold">GlucoVer</h1>
+              <h1 className="text-lg font-semibold">GluCover</h1>
               <p className="text-xs text-muted-foreground">Portal da Paciente</p>
             </div>
           </div>

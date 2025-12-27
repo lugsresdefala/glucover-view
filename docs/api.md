@@ -1,8 +1,8 @@
-# GlucoVer API Documentation
+# GluCover API Documentation
 
 ## Overview
 
-GlucoVer is a clinical decision support system for diabetes mellitus in pregnancy. This document describes the REST API endpoints.
+GluCover is a clinical decision support system for diabetes mellitus in pregnancy. This document describes the REST API endpoints.
 
 **Base URL:** `/api`
 
