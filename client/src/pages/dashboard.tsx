@@ -170,9 +170,15 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
     }
   }, [location, form]);
 
-  const { data: evaluations = [], isLoading: isLoadingHistory } = useQuery<StoredEvaluation[]>({
+  const { data: rawEvaluations = [], isLoading: isLoadingHistory } = useQuery<StoredEvaluation[]>({
     queryKey: ["/api/evaluations"],
   });
+
+  // Deduplicate evaluations by ID to prevent cache duplication issues
+  const evaluations = useMemo(() => {
+    const uniqueMap = new Map(rawEvaluations.map(e => [e.id, e]));
+    return Array.from(uniqueMap.values());
+  }, [rawEvaluations]);
 
   const dashboardMetrics = useMemo(() => {
     const now = new Date();
