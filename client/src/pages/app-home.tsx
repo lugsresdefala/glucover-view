@@ -112,9 +112,9 @@ export default function AppHome() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 min-h-full bg-gradient-to-br from-blue-950 via-indigo-900 to-slate-900">
+    <div className="p-6 max-w-7xl mx-auto space-y-6 min-h-full dark:bg-gradient-to-br dark:from-blue-950 dark:via-indigo-900 dark:to-slate-900">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-white/20" data-testid="metric-patients">
+        <Card className="dark:bg-slate-800/90 dark:backdrop-blur-sm dark:border-white/20" data-testid="metric-patients">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
@@ -128,7 +128,7 @@ export default function AppHome() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-white/20" data-testid="metric-evaluations">
+        <Card className="dark:bg-slate-800/90 dark:backdrop-blur-sm dark:border-white/20" data-testid="metric-evaluations">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
@@ -142,7 +142,7 @@ export default function AppHome() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-white/20" data-testid="metric-recent">
+        <Card className="dark:bg-slate-800/90 dark:backdrop-blur-sm dark:border-white/20" data-testid="metric-recent">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
@@ -156,7 +156,7 @@ export default function AppHome() {
           </CardContent>
         </Card>
 
-        <Card className={`bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-white/20 ${dashboardMetrics.criticalAlerts > 0 ? "border-red-500/30" : ""}`} data-testid="metric-alerts">
+        <Card className={`dark:bg-slate-800/90 dark:backdrop-blur-sm dark:border-white/20 ${dashboardMetrics.criticalAlerts > 0 ? "border-red-500/30" : ""}`} data-testid="metric-alerts">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="min-w-0">
@@ -172,7 +172,7 @@ export default function AppHome() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-white/20">
+        <Card className="lg:col-span-2 dark:bg-slate-800/90 dark:backdrop-blur-sm dark:border-white/20">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between gap-4">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -227,7 +227,7 @@ export default function AppHome() {
         </Card>
 
         <div className="space-y-4">
-          <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-white/20">
+          <Card className="dark:bg-slate-800/90 dark:backdrop-blur-sm dark:border-white/20">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Acesso Rápido</CardTitle>
             </CardHeader>
@@ -271,22 +271,22 @@ export default function AppHome() {
           </Card>
 
           {dashboardMetrics.criticalAlerts > 0 && (
-            <Card className="bg-red-100/95 dark:bg-red-900/90 backdrop-blur-sm border-red-300 dark:border-red-700">
+            <Card className="border-red-500/30 bg-red-500/5 dark:bg-red-900/30 dark:backdrop-blur-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base text-red-800 dark:text-red-200">
+                <CardTitle className="flex items-center gap-2 text-base text-red-700 dark:text-red-300">
                   <AlertTriangle className="h-4 w-4" />
                   Atenção Necessária
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <p className="text-sm text-red-700 dark:text-red-300">
+                <p className="text-sm text-muted-foreground dark:text-red-200/80">
                   <strong>{dashboardMetrics.criticalAlerts}</strong> avaliações com valores glicêmicos críticos.
                 </p>
               </CardContent>
             </Card>
           )}
 
-          <Card className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-white/20">
+          <Card className="dark:bg-slate-800/90 dark:backdrop-blur-sm dark:border-white/20">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <Clock className="h-5 w-5 text-muted-foreground" />
