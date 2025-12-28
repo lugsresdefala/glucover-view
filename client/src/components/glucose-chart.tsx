@@ -37,7 +37,7 @@ export function GlucoseChart({ readings }: GlucoseChartProps) {
 
   if (readings.length === 0) {
     return (
-      <Card>
+      <Card className="glass-panel border-white/20 dark:border-white/10 bg-transparent">
         <CardHeader>
           <CardTitle className="text-lg font-semibold">Evolução Glicêmica</CardTitle>
         </CardHeader>
@@ -83,7 +83,7 @@ export function GlucoseChart({ readings }: GlucoseChartProps) {
   };
 
   return (
-    <Card>
+    <Card className="glass-panel border-white/20 dark:border-white/10 bg-transparent">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <CardTitle className="text-lg font-semibold">Evolução Glicêmica</CardTitle>
