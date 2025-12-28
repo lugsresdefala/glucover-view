@@ -27,7 +27,8 @@ import {
   Activity,
   Stethoscope,
   Shield,
-  X
+  X,
+  UserPlus
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -197,6 +198,7 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
     if (location.includes("/history")) return "history";
     if (location.includes("/import")) return "import";
     if (location.includes("/patients")) return "patients";
+    if (location.includes("/approvals")) return "approvals";
     return "dashboard";
   };
 
@@ -245,6 +247,15 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
       label: "Pacientes", 
       icon: Users, 
       href: "/app/patients" 
+    });
+  }
+
+  if (userRole === "coordinator") {
+    menuItems.push({ 
+      id: "approvals", 
+      label: "Aprovações", 
+      icon: UserPlus, 
+      href: "/app/approvals" 
     });
   }
 
@@ -313,18 +324,21 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
                 {activeSection === "history" && <ClipboardList className="h-5 w-5 text-primary" />}
                 {activeSection === "import" && <FileStack className="h-5 w-5 text-primary" />}
                 {activeSection === "patients" && <Users className="h-5 w-5 text-primary" />}
+                {activeSection === "approvals" && <UserPlus className="h-5 w-5 text-primary" />}
                 <div>
                   <h2 className="type-title text-foreground">
                     {activeSection === "dashboard" && "Painel Principal"}
                     {activeSection === "history" && "Histórico de Avaliações"}
                     {activeSection === "import" && "Importar Planilhas"}
                     {activeSection === "patients" && "Lista de Pacientes"}
+                    {activeSection === "approvals" && "Aprovação de Usuários"}
                   </h2>
                   <p className="type-caption">
                     {activeSection === "dashboard" && "Resumo de avaliações e acesso rápido"}
                     {activeSection === "history" && "Consulte avaliações anteriores"}
                     {activeSection === "import" && "Importação de dados em lote"}
                     {activeSection === "patients" && "Gestão de pacientes vinculados"}
+                    {activeSection === "approvals" && "Gerencie cadastros pendentes"}
                   </p>
                 </div>
               </div>

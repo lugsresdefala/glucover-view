@@ -6,6 +6,7 @@ interface AuthUser {
   firstName: string;
   lastName?: string;
   role: string;
+  isApproved?: boolean;
 }
 
 interface AuthResponse {
@@ -41,5 +42,6 @@ export function useAuth() {
     user,
     isLoading,
     isAuthenticated: !!user,
+    isCoordinator: user?.role === "coordinator",
   };
 }

@@ -16,6 +16,7 @@ import ProfessionalAuth from "@/pages/professional-auth";
 import AppHome from "@/pages/app-home";
 import AppPatients from "@/pages/app-patients";
 import AppImport from "@/pages/app-import";
+import UserApprovals from "@/pages/user-approvals";
 import { FullPageLoading } from "@/components/loading-spinner";
 
 function PatientRoutes() {
@@ -75,6 +76,9 @@ function AuthenticatedApp() {
     }
     if (location.includes("/app/history")) {
       return <Dashboard section="history" />;
+    }
+    if (location.includes("/app/approvals")) {
+      return <UserApprovals />;
     }
     return <AppHome />;
   };
