@@ -809,8 +809,8 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
         )}
 
         {showHistory && (
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+        <div className={section === "history" ? "space-y-6" : "grid lg:grid-cols-3 gap-6"}>
+          <div className={section === "history" ? "space-y-6" : "lg:col-span-2 space-y-6"}>
             <Card>
               <CardHeader>
                 <div className="flex flex-wrap items-center justify-between gap-2">
