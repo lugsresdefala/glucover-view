@@ -500,15 +500,19 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         
         let debugRowCount = 0;
         let consecutiveEmptyRows = 0;
+        let firstReadingFound = false; // Only start counting empty rows after finding first data
         const MAX_EMPTY_ROWS = 10; // Stop after 10 consecutive rows without glucose data (to handle gaps in data)
         
         for (let i = headerRowIndex + 1; i < rawData.length; i++) {
           const row = rawData[i];
           if (!row || row.length === 0) {
-            consecutiveEmptyRows++;
-            if (consecutiveEmptyRows >= MAX_EMPTY_ROWS) {
-              console.log(`[DEBUG ${patientName}] Stopping at row ${i}: ${MAX_EMPTY_ROWS} consecutive empty rows`);
-              break;
+            // Only count empty rows if we've already found some glucose data
+            if (firstReadingFound) {
+              consecutiveEmptyRows++;
+              if (consecutiveEmptyRows >= MAX_EMPTY_ROWS) {
+                console.log(`[DEBUG ${patientName}] Stopping at row ${i}: ${MAX_EMPTY_ROWS} consecutive empty rows after data`);
+                break;
+              }
             }
             continue;
           }
@@ -565,17 +569,20 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
             glucoseReadings.push(reading);
             debugRowCount++;
             consecutiveEmptyRows = 0; // Reset counter when we find valid data
+            firstReadingFound = true; // Mark that we've found at least one reading
             // Track the gestational age of the last row with actual glucose data
             if (currentRowAge > 0) {
               lastGestationalAgeWithGlucose = currentRowAge;
               lastSourceWithGlucose = currentSource;
             }
           } else {
-            // Row exists but has no valid glucose data - count as "empty" for stopping purposes
-            consecutiveEmptyRows++;
-            if (consecutiveEmptyRows >= MAX_EMPTY_ROWS) {
-              console.log(`[DEBUG ${patientName}] Stopping at row ${i}: ${MAX_EMPTY_ROWS} consecutive rows without glucose data`);
-              break;
+            // Row exists but has no valid glucose data - only count as "empty" if we've already found data
+            if (firstReadingFound) {
+              consecutiveEmptyRows++;
+              if (consecutiveEmptyRows >= MAX_EMPTY_ROWS) {
+                console.log(`[DEBUG ${patientName}] Stopping at row ${i}: ${MAX_EMPTY_ROWS} consecutive rows without glucose data after finding data`);
+                break;
+              }
             }
           }
         }
