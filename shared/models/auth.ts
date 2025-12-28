@@ -38,6 +38,9 @@ export const users = pgTable("users", {
   licenseNumber: varchar("license_number", { length: 50 }),
   department: varchar("department", { length: 100 }),
   isActive: boolean("is_active").default(true),
+  isApproved: boolean("is_approved").default(false),
+  approvedBy: varchar("approved_by"),
+  approvedAt: timestamp("approved_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

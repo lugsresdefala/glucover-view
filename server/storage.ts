@@ -51,6 +51,11 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserById(id: string): Promise<User | undefined>;
   validateUserPassword(email: string, password: string): Promise<User | null>;
+  
+  // User approval operations
+  getPendingApprovalUsers(): Promise<User[]>;
+  approveUser(userId: string, approvedByUserId: string): Promise<User | undefined>;
+  rejectUser(userId: string): Promise<boolean>;
 }
 
 // Transform database record to StoredEvaluation
@@ -372,8 +377,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Professional user authentication
-  async createUser(email: string, password: string, firstName: string, lastName?: string, role: string = "doctor"): Promise<User> {
+  async createUser(email: string, password: string, firstName: string, lastName?: string, role: string = "medico"): Promise<User> {
     const passwordHash = await bcrypt.hash(password, 10);
+    // Auto-approve coordinators
+    const isApproved = role === "coordinator";
     const [user] = await db
       .insert(users)
       .values({
@@ -382,6 +389,8 @@ export class DatabaseStorage implements IStorage {
         firstName,
         lastName: lastName || null,
         role,
+        isApproved,
+        approvedAt: isApproved ? new Date() : null,
       })
       .returning();
     return user;
@@ -406,6 +415,34 @@ export class DatabaseStorage implements IStorage {
     
     const isValid = await bcrypt.compare(password, user.passwordHash);
     return isValid ? user : null;
+  }
+  
+  // User approval operations
+  async getPendingApprovalUsers(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(eq(users.isApproved, false))
+      .orderBy(desc(users.createdAt));
+  }
+  
+  async approveUser(userId: string, approvedByUserId: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({
+        isApproved: true,
+        approvedBy: approvedByUserId,
+        approvedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+  
+  async rejectUser(userId: string): Promise<boolean> {
+    const result = await db.delete(users).where(eq(users.id, userId)).returning();
+    return result.length > 0;
   }
 }
 
