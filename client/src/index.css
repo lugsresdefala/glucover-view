@@ -655,21 +655,14 @@
     @apply cursor-pointer;
     @apply transition-all duration-150;
     @apply overflow-hidden;
-    background: hsl(var(--glass-surface));
-    backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-    border: 1px solid hsl(var(--glass-edge));
-    box-shadow: 
-      0 4px 20px hsl(var(--glass-shadow)),
-      inset 0 1px 0 hsl(0 0% 100% / 0.08);
+    @apply bg-card;
+    border: 1px solid hsl(var(--border));
+    box-shadow: 0 1px 3px hsl(var(--glass-shadow));
   }
 
   .triage-item:hover {
-    @apply border-border;
-    background: hsl(var(--glass-surface) / 0.85);
-    box-shadow: 
-      0 6px 28px hsl(var(--glass-shadow)),
-      inset 0 1px 0 hsl(0 0% 100% / 0.1);
+    @apply border-border bg-accent/30;
+    box-shadow: 0 2px 6px hsl(var(--glass-shadow));
   }
 
   .triage-item-critical {
