@@ -7,8 +7,8 @@ import hapvidaLogo from "@assets/layout_set_logo_1766044185087.png";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-100 to-slate-200 dark:from-blue-950 dark:via-indigo-900 dark:to-slate-900">
-      <header className="border-b border-border/50 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-br from-blue-400/30 via-indigo-300/20 to-slate-200/70 dark:from-blue-950 dark:via-indigo-900 dark:to-slate-900">
+      <header className="border-b border-border/70 bg-white/40 dark:bg-slate-900/60 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <img 
@@ -63,7 +63,7 @@ export default function Landing() {
         </section>
 
         <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-white/80 backdrop-blur-sm border-white/20 dark:bg-slate-800/80">
+          <Card className="bg-white/90 backdrop-blur-md border-white/30 dark:bg-slate-800/80">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 flex items-center justify-center bg-primary/10 text-primary">
