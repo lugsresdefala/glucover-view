@@ -386,18 +386,18 @@
 
 @layer components {
   .clinical-module {
-    @apply relative p-6 rounded-2xl;
+    @apply relative p-6 rounded-none;
     @apply glass-panel;
     @apply transition-all duration-300 ease-out;
   }
 
   .clinical-module:hover {
     @apply shadow-elevated;
-    transform: translateY(-4px);
+    transform: translateY(-2px);
   }
 
   .clinical-module-icon {
-    @apply w-12 h-12 rounded-xl flex items-center justify-center;
+    @apply w-12 h-12 rounded-none flex items-center justify-center;
     @apply bg-gradient-to-br from-primary/10 to-primary/5;
   }
 
@@ -410,7 +410,7 @@
   }
 
   .metric-item {
-    @apply p-4 rounded-xl;
+    @apply p-4 rounded-none;
     @apply glass-subtle;
     @apply flex items-center justify-between;
   }
@@ -489,7 +489,7 @@
   }
 
   .kpi-card {
-    @apply p-5 rounded-2xl;
+    @apply p-5 rounded-none;
     @apply bg-card border border-border/50;
     @apply transition-all duration-200;
   }
@@ -561,14 +561,14 @@
   }
 
   .guideline-card {
-    @apply relative p-6 rounded-2xl;
+    @apply relative p-6 rounded-none;
     @apply bg-card border border-border/50;
     @apply transition-all duration-300;
   }
 
   .guideline-card:hover {
     @apply shadow-soft border-primary/20;
-    transform: translateY(-2px);
+    transform: translateY(-1px);
   }
 
   .guideline-card-badge {

@@ -66,7 +66,7 @@ export default function Landing() {
           <Card className="bg-white/90 backdrop-blur-md border-white/30 dark:bg-slate-800/80">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 flex items-center justify-center bg-primary/10 text-primary">
+                <div className="h-10 w-10 flex items-center justify-center bg-primary/10 text-primary rounded-none">
                   <FileText className="h-5 w-5" />
                 </div>
                 <div>
@@ -80,7 +80,7 @@ export default function Landing() {
           <Card className="bg-white/80 backdrop-blur-sm border-white/20 dark:bg-slate-800/80">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 flex items-center justify-center bg-primary/10 text-primary">
+                <div className="h-10 w-10 flex items-center justify-center bg-primary/10 text-primary rounded-none">
                   <Target className="h-5 w-5" />
                 </div>
                 <div>
@@ -94,7 +94,7 @@ export default function Landing() {
           <Card className="bg-white/80 backdrop-blur-sm border-white/20 dark:bg-slate-800/80">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 flex items-center justify-center bg-primary/10 text-primary">
+                <div className="h-10 w-10 flex items-center justify-center bg-primary/10 text-primary rounded-none">
                   <Clock className="h-5 w-5" />
                 </div>
                 <div>
@@ -108,7 +108,7 @@ export default function Landing() {
           <Card className="bg-white/80 backdrop-blur-sm border-white/20 dark:bg-slate-800/80">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 flex items-center justify-center bg-primary/10 text-primary">
+                <div className="h-10 w-10 flex items-center justify-center bg-primary/10 text-primary rounded-none">
                   <Shield className="h-5 w-5" />
                 </div>
                 <div>
