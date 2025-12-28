@@ -8,7 +8,7 @@ import hapvidaLogo from "@assets/layout_set_logo_1766044185087.png";
 export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400/30 via-indigo-300/20 to-slate-200/70 dark:from-blue-950 dark:via-indigo-900 dark:to-slate-900">
-      <header className="border-b border-border/70 bg-white/40 dark:bg-slate-900/60 backdrop-blur-sm">
+      <header className="sticky top-0 z-50 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl shadow-lg border-b border-white/50 dark:border-slate-700/50">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <img 
