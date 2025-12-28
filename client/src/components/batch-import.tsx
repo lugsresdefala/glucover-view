@@ -404,6 +404,25 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         let gestationalAgeColIndex = -1;
         let dateColIndex = -1;
         let bestHeaderScore = 0;
+        let hasInsulinColumn = false;
+        let insulinMentionedInSheet = false;
+        
+        // Scan entire sheet for insulin mentions
+        for (let i = 0; i < rawData.length; i++) {
+          const row = rawData[i];
+          if (!row) continue;
+          const rowText = row.map(c => String(c || "")).join(" ").toLowerCase();
+          if (rowText.includes("insulina") || rowText.includes("nph") || 
+              rowText.includes("regular") || rowText.includes("asparte") ||
+              rowText.includes("lispro") || rowText.includes("glargina") ||
+              rowText.includes("lantus") || rowText.includes("novorapid") ||
+              rowText.includes("humalog") || rowText.includes("ui") ||
+              rowText.match(/\d+\s*u\b/) || rowText.match(/\d+\s*unidades/)) {
+            insulinMentionedInSheet = true;
+            console.log(`[DEBUG ${patientName}] Insulin detected in row ${i}: "${rowText.substring(0, 100)}..."`);
+            break;
+          }
+        }
         
         for (let i = 0; i < Math.min(20, rawData.length); i++) {
           const row = rawData[i];
@@ -433,6 +452,12 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
             if (normalized === "data" || normalized === "dia" || normalized === "date" ||
                 normalized.includes("data da") || normalized.includes("data do")) {
               tempDateCol = j;
+            }
+            
+            // Detect insulin column
+            if (normalized.includes("insulina") || normalized.includes("nph") ||
+                normalized.includes("regular") || normalized.includes("doses")) {
+              hasInsulinColumn = true;
             }
             
             const mapped = mapColumn(cellStr);
@@ -475,7 +500,7 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         
         let debugRowCount = 0;
         let consecutiveEmptyRows = 0;
-        const MAX_EMPTY_ROWS = 3; // Stop after 3 consecutive rows without glucose data
+        const MAX_EMPTY_ROWS = 10; // Stop after 10 consecutive rows without glucose data (to handle gaps in data)
         
         for (let i = headerRowIndex + 1; i < rawData.length; i++) {
           const row = rawData[i];
@@ -599,10 +624,15 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           throw new Error("Nenhum dado de glicemia encontrado na planilha. Verifique se os valores numéricos estão nas colunas corretas.");
         }
         
+        // Determine insulin usage - prioritize explicit detection from sheet content
         const insulinFieldsCount = glucoseReadings.filter(r => 
           r.preAlmoco !== undefined || r.preJantar !== undefined || r.madrugada !== undefined
         ).length;
-        const usesInsulin = insulinFieldsCount >= 3 || insulinFieldsCount >= glucoseReadings.length * 0.3;
+        const inferredFromFields = insulinFieldsCount >= 3 || insulinFieldsCount >= glucoseReadings.length * 0.3;
+        
+        // Use insulin if: mentioned anywhere in sheet, or has insulin column, or inferred from pre-meal fields
+        const usesInsulin = insulinMentionedInSheet || hasInsulinColumn || inferredFromFields;
+        console.log(`[DEBUG ${patientName}] Insulin detection: mentioned=${insulinMentionedInSheet}, column=${hasInsulinColumn}, inferred=${inferredFromFields}, final=${usesInsulin}`);
         
         
         resolve({
