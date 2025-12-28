@@ -381,53 +381,41 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
 
   return (
     <div className="min-h-full">
-      {/* Census Header - Patient Context Bar */}
-      <div className="census-header mx-4 mt-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <div className="metric-item">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="metric-label">Pacientes:</span>
-              <span className="metric-value" data-testid="text-total-patients">
-                {isLoadingPatients ? "..." : dashboardMetrics.totalPatients}
-              </span>
-            </div>
-            <div className="metric-item">
-              <ClipboardList className="h-4 w-4 text-muted-foreground" />
-              <span className="metric-label">Avaliações:</span>
-              <span className="metric-value" data-testid="text-total-evaluations">
-                {isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}
-              </span>
-            </div>
-            <div className="metric-item">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <span className="metric-label">7 dias:</span>
-              <span className="metric-value" data-testid="text-recent-evaluations">
-                {isLoadingHistory ? "..." : dashboardMetrics.recentEvaluations}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {dashboardMetrics.criticalAlerts > 0 && (
-              <span className="clinical-badge-critical" data-testid="text-critical-alerts">
-                <AlertTriangle className="h-3 w-3 inline mr-1" />
-                {dashboardMetrics.criticalAlerts} alertas críticos
-              </span>
-            )}
-            {user && (
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="hidden sm:flex gap-1">
-                  {isAdmin ? <Shield className="h-3 w-3" /> : <Stethoscope className="h-3 w-3" />}
-                  {roleDisplayNames[userRole] || userRole}
-                </Badge>
-                <span className="text-sm text-muted-foreground hidden sm:inline">
-                  {user.firstName || user.email}
+      {/* Header contextual - diferente para cada seção */}
+      {section === "dashboard" && (
+        <div className="glass-panel mx-4 mt-4 p-4 border border-white/20 dark:border-white/10">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="grid grid-cols-3 gap-6">
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground uppercase tracking-wide">Pacientes</span>
+                <span className="text-2xl font-semibold tabular-nums" data-testid="text-total-patients">
+                  {isLoadingPatients ? "..." : dashboardMetrics.totalPatients}
                 </span>
               </div>
-            )}
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground uppercase tracking-wide">Avaliações</span>
+                <span className="text-2xl font-semibold tabular-nums" data-testid="text-total-evaluations">
+                  {isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground uppercase tracking-wide">Últimos 7 dias</span>
+                <span className="text-2xl font-semibold tabular-nums" data-testid="text-recent-evaluations">
+                  {isLoadingHistory ? "..." : dashboardMetrics.recentEvaluations}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {dashboardMetrics.criticalAlerts > 0 && (
+                <Badge variant="destructive" data-testid="text-critical-alerts">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  {dashboardMetrics.criticalAlerts} alertas
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <main className="p-4">
         <div className="flex flex-wrap gap-3 mb-6">
