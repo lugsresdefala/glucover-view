@@ -38,7 +38,7 @@ export default function AppHome() {
   });
 
   const { data: evaluations = [] } = useQuery<StoredEvaluation[]>({
-    queryKey: ["/api/evaluations"],
+    queryKey: ["/api/doctor/evaluations"],
   });
 
   const dashboardMetrics = useMemo(() => {

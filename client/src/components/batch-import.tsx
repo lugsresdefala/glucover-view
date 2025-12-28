@@ -731,7 +731,7 @@ export function BatchImport() {
     // Fetch existing evaluations to compare
     let existingEvaluations: StoredEvaluation[] = [];
     try {
-      const existingResponse = await fetch("/api/evaluations", { credentials: "include" });
+      const existingResponse = await fetch("/api/doctor/evaluations", { credentials: "include" });
       if (existingResponse.ok) {
         existingEvaluations = await existingResponse.json();
       }
@@ -803,7 +803,7 @@ export function BatchImport() {
     }
 
     setIsGenerating(false);
-    queryClient.invalidateQueries({ queryKey: ["/api/evaluations"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/doctor/evaluations"] });
     
     const successCount = updatedPatients.filter(p => p.status === "success").length;
     const errorCount = updatedPatients.filter(p => p.status === "error").length;

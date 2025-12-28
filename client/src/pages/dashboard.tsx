@@ -171,7 +171,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
   }, [location, form]);
 
   const { data: rawEvaluations = [], isLoading: isLoadingHistory } = useQuery<StoredEvaluation[]>({
-    queryKey: ["/api/evaluations"],
+    queryKey: ["/api/doctor/evaluations"],
   });
 
   // Deduplicate evaluations by ID to prevent cache duplication issues
@@ -246,7 +246,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
     },
     onSuccess: (data) => {
       setCurrentRecommendation(data.evaluation);
-      queryClient.invalidateQueries({ queryKey: ["/api/evaluations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctor/evaluations"] });
       setShowEvaluationForm(false);
       setShowRecommendationModal(true);
       toast({
@@ -283,7 +283,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/evaluations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/doctor/evaluations"] });
       setSelectedIds(new Set());
       setSelectionMode(false);
       setCurrentRecommendation(null);

@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, LogOut, Plus, FileText, AlertTriangle, Info, AlertCircle, User } from "lucide-react";
+import { Activity, LogOut, Plus, FileText, AlertTriangle, Info, AlertCircle, User, Stethoscope, X, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLocation } from "wouter";
@@ -12,6 +12,14 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { StoredEvaluation, ClinicalRecommendation } from "@shared/schema";
 import { PatientEvaluationForm } from "@/components/patient-evaluation-form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface Professional {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
 
 interface PatientInfo {
   id: number;
@@ -24,6 +32,7 @@ export default function PatientDashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [showNewEntry, setShowNewEntry] = useState(false);
+  const [selectedProfessional, setSelectedProfessional] = useState<string>("");
 
   const { data: patientData, isLoading: isLoadingPatient } = useQuery<{ patient: PatientInfo | null }>({
     queryKey: ["/api/patient/me"],
@@ -32,6 +41,43 @@ export default function PatientDashboard() {
   const { data: evaluations, isLoading: isLoadingEvaluations } = useQuery<StoredEvaluation[]>({
     queryKey: ["/api/patient/evaluations"],
     enabled: !!patientData?.patient,
+  });
+
+  const { data: myDoctors } = useQuery<Professional[]>({
+    queryKey: ["/api/patient/doctors"],
+    enabled: !!patientData?.patient,
+  });
+
+  const { data: availableProfessionals } = useQuery<Professional[]>({
+    queryKey: ["/api/patient/available-professionals"],
+    enabled: !!patientData?.patient,
+  });
+
+  const linkMutation = useMutation({
+    mutationFn: async (professionalId: string) => {
+      await apiRequest("POST", "/api/patient/link-professional", { professionalId });
+    },
+    onSuccess: () => {
+      toast({ title: "Profissional vinculado com sucesso" });
+      queryClient.invalidateQueries({ queryKey: ["/api/patient/doctors"] });
+      setSelectedProfessional("");
+    },
+    onError: () => {
+      toast({ title: "Erro ao vincular profissional", variant: "destructive" });
+    },
+  });
+
+  const unlinkMutation = useMutation({
+    mutationFn: async (professionalId: string) => {
+      await apiRequest("DELETE", `/api/patient/unlink-professional/${professionalId}`, {});
+    },
+    onSuccess: () => {
+      toast({ title: "Vínculo removido" });
+      queryClient.invalidateQueries({ queryKey: ["/api/patient/doctors"] });
+    },
+    onError: () => {
+      toast({ title: "Erro ao remover vínculo", variant: "destructive" });
+    },
   });
 
   const logoutMutation = useMutation({
@@ -107,6 +153,73 @@ export default function PatientDashboard() {
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {!showNewEntry ? (
           <>
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <Stethoscope className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Meus Profissionais de Saúde</CardTitle>
+                </div>
+                <CardDescription>Vincule seu médico para compartilhar suas glicemias</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {myDoctors && myDoctors.length > 0 ? (
+                  <div className="space-y-2">
+                    {myDoctors.map((doctor) => (
+                      <div 
+                        key={doctor.id} 
+                        className="flex items-center justify-between p-3 bg-muted/50 rounded-md"
+                        data-testid={`doctor-${doctor.id}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Stethoscope className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{doctor.name}</p>
+                            <p className="text-xs text-muted-foreground">{doctor.email}</p>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => unlinkMutation.mutate(doctor.id)}
+                          disabled={unlinkMutation.isPending}
+                          data-testid={`button-unlink-${doctor.id}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nenhum profissional vinculado ainda.</p>
+                )}
+                
+                <div className="flex items-center gap-2 pt-2 border-t">
+                  <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
+                    <SelectTrigger className="flex-1" data-testid="select-professional">
+                      <SelectValue placeholder="Selecione um profissional..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableProfessionals?.filter(p => !myDoctors?.some(d => d.id === p.id)).map((prof) => (
+                        <SelectItem key={prof.id} value={prof.id} data-testid={`option-${prof.id}`}>
+                          {prof.name} ({prof.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    onClick={() => selectedProfessional && linkMutation.mutate(selectedProfessional)}
+                    disabled={!selectedProfessional || linkMutation.isPending}
+                    data-testid="button-link-professional"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Vincular
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold">Minhas Glicemias</h2>

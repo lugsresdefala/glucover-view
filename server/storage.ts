@@ -44,6 +44,7 @@ export interface IStorage {
   // User role operations
   updateUserRole(userId: string, role: string): Promise<User | undefined>;
   getUsersByRole(role: string): Promise<User[]>;
+  getAllProfessionals(): Promise<User[]>;
   
   // Professional user authentication
   createUser(email: string, password: string, firstName: string, lastName?: string, role?: string): Promise<User>;
@@ -359,6 +360,15 @@ export class DatabaseStorage implements IStorage {
 
   async getUsersByRole(role: string): Promise<User[]> {
     return await db.select().from(users).where(eq(users.role, role));
+  }
+
+  async getAllProfessionals(): Promise<User[]> {
+    const clinicalRoles = ["medico", "enfermeira", "nutricionista", "coordinator"];
+    return await db
+      .select()
+      .from(users)
+      .where(inArray(users.role, clinicalRoles))
+      .orderBy(desc(users.createdAt));
   }
 
   // Professional user authentication

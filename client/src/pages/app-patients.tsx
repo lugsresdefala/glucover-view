@@ -37,7 +37,7 @@ export default function AppPatients() {
   });
 
   const { data: evaluations = [] } = useQuery<StoredEvaluation[]>({
-    queryKey: ["/api/evaluations"],
+    queryKey: ["/api/doctor/evaluations"],
   });
 
   const getPatientStatus = (patientName: string) => {

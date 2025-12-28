@@ -451,9 +451,66 @@ export async function registerRoutes(
         id: d.id,
         name: `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.email,
         email: d.email,
+        role: d.role,
       })));
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar médicos" });
+    }
+  });
+
+  // Patient: Get available professionals to link
+  app.get("/api/patient/available-professionals", isPatientAuthenticated, async (req, res) => {
+    try {
+      const professionals = await storage.getAllProfessionals();
+      res.json(professionals.map(p => ({
+        id: p.id,
+        name: `${p.firstName || ''} ${p.lastName || ''}`.trim() || p.email,
+        email: p.email,
+        role: p.role,
+      })));
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar profissionais" });
+    }
+  });
+
+  // Patient: Link to a professional
+  app.post("/api/patient/link-professional", isPatientAuthenticated, async (req, res) => {
+    try {
+      const patientId = (req.session as any).patientId;
+      const { professionalId } = req.body;
+      
+      if (!professionalId) {
+        return res.status(400).json({ message: "ID do profissional é obrigatório" });
+      }
+      
+      // Validate that the professional exists and has a clinical role
+      const professional = await storage.getUserById(professionalId);
+      if (!professional) {
+        return res.status(404).json({ message: "Profissional não encontrado" });
+      }
+      
+      const clinicalRoles = ["medico", "enfermeira", "nutricionista", "coordinator"];
+      if (!professional.role || !clinicalRoles.includes(professional.role)) {
+        return res.status(400).json({ message: "Usuário não é um profissional de saúde" });
+      }
+      
+      await storage.assignPatientToDoctor(professionalId, patientId);
+      res.json({ message: "Profissional vinculado com sucesso" });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao vincular profissional" });
+    }
+  });
+
+  // Patient: Unlink from a professional
+  app.delete("/api/patient/unlink-professional/:professionalId", isPatientAuthenticated, async (req, res) => {
+    try {
+      const patientId = (req.session as any).patientId;
+      const professionalId = req.params.professionalId;
+      
+      await storage.removePatientFromDoctor(professionalId, patientId);
+      res.json({ message: "Vínculo removido com sucesso" });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao remover vínculo" });
     }
   });
 
@@ -636,9 +693,20 @@ export async function registerRoutes(
         return res.json(allEvaluations);
       }
       
-      // Doctors see evaluations for their patients
-      const evaluations = await storage.getEvaluationsForDoctor(userId);
-      res.json(evaluations);
+      // Get evaluations created by this professional
+      const ownEvaluations = await storage.getAllEvaluations(userId);
+      
+      // Get evaluations for linked patients
+      const patientEvaluations = await storage.getEvaluationsForDoctor(userId);
+      
+      // Combine and deduplicate by ID
+      const allEvaluations = [...ownEvaluations, ...patientEvaluations];
+      const uniqueMap = new Map(allEvaluations.map(e => [e.id, e]));
+      const combined = Array.from(uniqueMap.values()).sort((a, b) => 
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      );
+      
+      res.json(combined);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar avaliações" });
     }
