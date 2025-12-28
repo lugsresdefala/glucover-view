@@ -30,7 +30,7 @@ import {
   X
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { roleDisplayNames, type UserRole } from "@shared/schema";
 import hapvidaLogo from "@assets/layout_set_logo_1766044185087.png";
 
@@ -204,10 +204,12 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
 
   const handleLogout = async () => {
     try {
-      await apiRequest("POST", "/api/logout");
+      await apiRequest("POST", "/api/user/logout");
+      await queryClient.invalidateQueries({ queryKey: ["/api/user/me"] });
       window.location.href = "/";
     } catch (error) {
       console.error("Logout failed:", error);
+      window.location.href = "/";
     }
   };
 
