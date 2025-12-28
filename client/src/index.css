@@ -55,10 +55,10 @@
     --clinical-success: 160 84% 39%;
     --clinical-info: 217 91% 60%;
 
-    --glass-surface: 0 0% 100% / 0.72;
-    --glass-edge: 0 0% 100% / 0.18;
+    --glass-surface: 0 0% 100% / 0.35;
+    --glass-edge: 0 0% 100% / 0.12;
     --glass-blur: 20px;
-    --glass-shadow: 220 40% 10% / 0.04;
+    --glass-shadow: 220 40% 10% / 0.08;
 
     --gradient-start: 217 91% 60%;
     --gradient-mid: 199 89% 48%;
@@ -132,10 +132,10 @@
     --clinical-success: 160 70% 45%;
     --clinical-info: 217 85% 65%;
 
-    --glass-surface: 222 47% 8% / 0.8;
-    --glass-edge: 217 33% 25% / 0.3;
+    --glass-surface: 222 47% 12% / 0.45;
+    --glass-edge: 217 33% 35% / 0.15;
     --glass-blur: 20px;
-    --glass-shadow: 0 0% 0% / 0.4;
+    --glass-shadow: 0 0% 0% / 0.25;
 
     --gradient-start: 217 91% 65%;
     --gradient-mid: 199 80% 55%;
