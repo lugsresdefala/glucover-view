@@ -334,8 +334,15 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
             </div>
           </header>
 
-          <main className="flex-1 overflow-auto bg-gradient-to-br from-blue-100 via-indigo-100 to-slate-200 dark:from-blue-950 dark:via-indigo-900 dark:to-slate-900">
-            {children}
+          <main className="flex-1 overflow-auto bg-gradient-to-br from-blue-100 via-indigo-100 to-slate-200 dark:from-blue-950 dark:via-indigo-900 dark:to-slate-900 flex flex-col">
+            <div className="flex-1">
+              {children}
+            </div>
+            <footer className="py-3 px-6 text-center border-t border-border/30 bg-white/40 dark:bg-slate-900/40">
+              <p className="text-xs text-muted-foreground">
+                Responsável Técnico: Dr. Tiago José de Oliveira Gomes - CRM-SP 164375
+              </p>
+            </footer>
           </main>
         </div>
       </div>
