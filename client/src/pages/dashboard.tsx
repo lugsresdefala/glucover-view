@@ -757,7 +757,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
                   {patients.map((patient) => (
                     <div 
                       key={patient.id} 
-                      className="flex items-center gap-3 p-3 rounded-md border hover-elevate cursor-pointer"
+                      className="flex items-center gap-3 p-3 border hover-elevate cursor-pointer"
                       onClick={() => {
                         form.setValue("patientName", patient.name);
                         setShowEvaluationForm(true);
