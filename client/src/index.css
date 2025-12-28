@@ -39,7 +39,7 @@
     --destructive-foreground: 0 0% 100%;
 
     --ring: 217 91% 60%;
-    --radius: 0.75rem;
+    --radius: 0;
 
     --sidebar: 222 47% 11%;
     --sidebar-foreground: 213 31% 91%;
@@ -55,10 +55,10 @@
     --clinical-success: 160 84% 39%;
     --clinical-info: 217 91% 60%;
 
-    --glass-surface: 0 0% 100% / 0.65;
-    --glass-edge: 0 0% 100% / 0.22;
-    --glass-blur: 16px;
-    --glass-shadow: 220 40% 10% / 0.06;
+    --glass-surface: 210 100% 98% / 0.7;
+    --glass-edge: 210 30% 80% / 0.5;
+    --glass-blur: 12px;
+    --glass-shadow: 220 40% 10% / 0.1;
 
     --gradient-start: 217 91% 60%;
     --gradient-mid: 199 89% 48%;
@@ -132,10 +132,10 @@
     --clinical-success: 160 70% 45%;
     --clinical-info: 217 85% 65%;
 
-    --glass-surface: 222 47% 12% / 0.7;
-    --glass-edge: 217 33% 35% / 0.25;
-    --glass-blur: 16px;
-    --glass-shadow: 0 0% 0% / 0.3;
+    --glass-surface: 220 40% 15% / 0.75;
+    --glass-edge: 217 40% 45% / 0.5;
+    --glass-blur: 12px;
+    --glass-shadow: 0 0% 0% / 0.35;
 
     --gradient-start: 217 91% 65%;
     --gradient-mid: 199 80% 55%;
@@ -651,18 +651,21 @@
   }
 
   .triage-item {
-    @apply flex items-center gap-3 p-3 rounded-none border;
+    @apply flex items-center gap-3 p-3 rounded-none;
     @apply cursor-pointer;
     @apply transition-all duration-150;
     @apply overflow-hidden;
-    @apply bg-card;
-    border: 1px solid hsl(var(--border));
-    box-shadow: 0 1px 3px hsl(var(--glass-shadow));
+    background: hsl(var(--glass-surface));
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid hsl(var(--glass-edge));
+    box-shadow: 0 2px 8px hsl(var(--glass-shadow));
   }
 
   .triage-item:hover {
-    @apply border-border bg-accent/30;
-    box-shadow: 0 2px 6px hsl(var(--glass-shadow));
+    background: hsl(var(--glass-surface) / 0.9);
+    border-color: hsl(var(--glass-edge) / 0.7);
+    box-shadow: 0 4px 12px hsl(var(--glass-shadow));
   }
 
   .triage-item-critical {
