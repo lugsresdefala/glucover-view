@@ -297,7 +297,7 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
         </Sidebar>
 
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-          <header className="sticky top-0 z-40 flex items-center justify-between gap-4 px-6 py-4 glass border-b border-border/30">
+          <header className="sticky top-0 z-40 flex items-center justify-between gap-4 px-6 py-4 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md shadow-md border-b border-white/50 dark:border-slate-700/50">
             <div className="flex items-center gap-4">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <div className="md:hidden flex items-center gap-2">
