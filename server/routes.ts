@@ -536,18 +536,28 @@ export async function registerRoutes(
       
       const user = await storage.createUser(email, password, firstName, lastName, role);
       
-      (req.session as any).userId = user.id;
-      (req.session as any).userEmail = user.email;
-      
-      req.session.save((err) => {
-        if (err) {
-          return res.status(500).json({ message: "Erro ao salvar sessão" });
-        }
-        res.json({
-          message: "Cadastro realizado com sucesso",
-          user: { id: user.id, email: user.email, firstName: user.firstName, role: user.role },
+      // Only auto-login if user is approved (coordinators are auto-approved)
+      if (user.isApproved) {
+        (req.session as any).userId = user.id;
+        (req.session as any).userEmail = user.email;
+        
+        req.session.save((err) => {
+          if (err) {
+            return res.status(500).json({ message: "Erro ao salvar sessão" });
+          }
+          res.json({
+            message: "Cadastro realizado com sucesso",
+            user: { id: user.id, email: user.email, firstName: user.firstName, role: user.role, isApproved: user.isApproved },
+          });
         });
-      });
+      } else {
+        // User needs approval - don't log them in
+        res.json({
+          message: "Cadastro realizado! Aguarde a aprovação do coordenador para acessar o sistema.",
+          user: { id: user.id, email: user.email, firstName: user.firstName, role: user.role, isApproved: false },
+          pendingApproval: true,
+        });
+      }
     } catch (error) {
       console.error("Error registering user:", error);
       res.status(500).json({ message: "Erro ao realizar cadastro" });
@@ -572,6 +582,14 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Email ou senha incorretos" });
       }
       
+      // Check if user is approved
+      if (!user.isApproved) {
+        return res.status(403).json({ 
+          message: "Seu cadastro ainda não foi aprovado. Aguarde a aprovação do coordenador.",
+          pendingApproval: true 
+        });
+      }
+      
       (req.session as any).userId = user.id;
       (req.session as any).userEmail = user.email;
       
@@ -581,7 +599,7 @@ export async function registerRoutes(
         }
         res.json({
           message: "Login realizado com sucesso",
-          user: { id: user.id, email: user.email, firstName: user.firstName, role: user.role },
+          user: { id: user.id, email: user.email, firstName: user.firstName, role: user.role, isApproved: user.isApproved },
         });
       });
     } catch (error) {
@@ -617,10 +635,79 @@ export async function registerRoutes(
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role || "medico",
+          isApproved: user.isApproved,
         },
       });
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar dados do usuário" });
+    }
+  });
+
+  // ========== User Approval Management (Coordinator only) ==========
+  
+  // Get pending approval users
+  app.get("/api/admin/pending-users", isAuthenticated, requireRole("coordinator"), async (req: AuthenticatedRequest, res) => {
+    try {
+      const pendingUsers = await storage.getPendingApprovalUsers();
+      res.json(pendingUsers.map(u => ({
+        id: u.id,
+        email: u.email,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        role: u.role,
+        createdAt: u.createdAt,
+      })));
+    } catch (error) {
+      logger.error("Error fetching pending users", error as Error);
+      res.status(500).json({ message: "Erro ao buscar usuários pendentes" });
+    }
+  });
+  
+  // Approve user
+  app.post("/api/admin/approve-user/:userId", isAuthenticated, requireRole("coordinator"), async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.params.userId;
+      const coordinatorId = req.userId;
+      
+      if (!coordinatorId) {
+        return res.status(401).json({ message: "Não autenticado" });
+      }
+      
+      const approvedUser = await storage.approveUser(userId, coordinatorId);
+      if (!approvedUser) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      res.json({ 
+        message: "Usuário aprovado com sucesso",
+        user: {
+          id: approvedUser.id,
+          email: approvedUser.email,
+          firstName: approvedUser.firstName,
+          role: approvedUser.role,
+          isApproved: approvedUser.isApproved,
+        }
+      });
+    } catch (error) {
+      logger.error("Error approving user", error as Error);
+      res.status(500).json({ message: "Erro ao aprovar usuário" });
+    }
+  });
+  
+  // Reject user (delete)
+  app.delete("/api/admin/reject-user/:userId", isAuthenticated, requireRole("coordinator"), async (req: AuthenticatedRequest, res) => {
+    try {
+      const userId = req.params.userId;
+      
+      const deleted = await storage.rejectUser(userId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Usuário não encontrado" });
+      }
+      
+      res.json({ message: "Usuário rejeitado e removido" });
+    } catch (error) {
+      logger.error("Error rejecting user", error as Error);
+      res.status(500).json({ message: "Erro ao rejeitar usuário" });
     }
   });
 
