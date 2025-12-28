@@ -20,14 +20,14 @@ interface GlucoseChartProps {
 }
 
 const glucoseSeries = [
-  { key: "jejum", label: "Jejum", color: "hsl(210, 70%, 62%)", target: 95, dashed: false },
-  { key: "preCafe", label: "Pré-café", color: "hsl(168, 70%, 68%)", target: 95, dashed: false },
-  { key: "posCafe1h", label: "Pós-café 1h", color: "hsl(168, 70%, 44%)", target: 140, dashed: true },
-  { key: "preAlmoco", label: "Pré-almoço", color: "hsl(134, 65%, 60%)", target: 100, dashed: false },
-  { key: "posAlmoco1h", label: "Pós-almoço 1h", color: "hsl(134, 65%, 38%)", target: 140, dashed: true },
-  { key: "preJantar", label: "Pré-jantar", color: "hsl(276, 60%, 64%)", target: 100, dashed: false },
-  { key: "posJantar1h", label: "Pós-jantar 1h", color: "hsl(276, 60%, 42%)", target: 140, dashed: true },
-  { key: "madrugada", label: "Madrugada", color: "hsl(318, 55%, 54%)", target: 95, dashed: false },
+  { key: "jejum", label: "Jejum", color: "hsl(210, 80%, 55%)", target: 95, dashed: false },
+  { key: "preCafe", label: "Pré-café", color: "hsl(25, 85%, 60%)", target: 95, dashed: false },
+  { key: "posCafe1h", label: "Pós-café 1h", color: "hsl(25, 85%, 42%)", target: 140, dashed: true },
+  { key: "preAlmoco", label: "Pré-almoço", color: "hsl(145, 70%, 50%)", target: 100, dashed: false },
+  { key: "posAlmoco1h", label: "Pós-almoço 1h", color: "hsl(145, 70%, 32%)", target: 140, dashed: true },
+  { key: "preJantar", label: "Pré-jantar", color: "hsl(280, 65%, 60%)", target: 100, dashed: false },
+  { key: "posJantar1h", label: "Pós-jantar 1h", color: "hsl(280, 65%, 40%)", target: 140, dashed: true },
+  { key: "madrugada", label: "Madrugada", color: "hsl(340, 70%, 55%)", target: 95, dashed: false },
 ] as const;
 
 export function GlucoseChart({ readings }: GlucoseChartProps) {
