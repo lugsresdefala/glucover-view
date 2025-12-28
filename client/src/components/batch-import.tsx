@@ -57,6 +57,8 @@ const COLUMN_MAPPINGS: Record<string, keyof GlucoseReading> = {
   jejum: "jejum",
   "glicemia jejum": "jejum",
   "em jejum": "jejum",
+  "glicemia de jejum": "jejum",
+  "glic jejum": "jejum",
   "cafe manha": "posCafe1h",
   "cafe da manha": "posCafe1h",
   "pos cafe": "posCafe1h",
@@ -67,6 +69,8 @@ const COLUMN_MAPPINGS: Record<string, keyof GlucoseReading> = {
   "1h pós cafe": "posCafe1h",
   "apos cafe": "posCafe1h",
   "depois cafe": "posCafe1h",
+  "2h cafe": "posCafe2h",
+  "2h pos cafe": "posCafe2h",
   "antes do almoco": "preAlmoco",
   "antes do almoço": "preAlmoco",
   "pre almoco": "preAlmoco",
@@ -81,6 +85,8 @@ const COLUMN_MAPPINGS: Record<string, keyof GlucoseReading> = {
   "apos almoco": "posAlmoco1h",
   "depois almoco": "posAlmoco1h",
   almoco: "posAlmoco1h",
+  "2h almoco": "posAlmoco2h",
+  "2h pos almoco": "posAlmoco2h",
   "antes do jantar": "preJantar",
   "pre jantar": "preJantar",
   "pre-jantar": "preJantar",
@@ -94,6 +100,8 @@ const COLUMN_MAPPINGS: Record<string, keyof GlucoseReading> = {
   "apos jantar": "posJantar1h",
   "depois jantar": "posJantar1h",
   jantar: "posJantar1h",
+  "2h jantar": "posJantar2h",
+  "2h pos jantar": "posJantar2h",
   madrugada: "madrugada",
   "3h da manha": "madrugada",
   "3h da manhã": "madrugada",
@@ -101,6 +109,80 @@ const COLUMN_MAPPINGS: Record<string, keyof GlucoseReading> = {
   "3h": "madrugada",
   "3 horas": "madrugada",
 };
+
+function detectMergedHeaderFormat(rawData: unknown[][]): { headerRowIndex: number; columnMap: Record<number, keyof GlucoseReading> } | null {
+  for (let i = 0; i < Math.min(15, rawData.length); i++) {
+    const row = rawData[i];
+    if (!row) continue;
+    
+    const rowText = row.map(c => String(c || "")).join(" ").toLowerCase();
+    
+    const hasMergedMealHeaders = 
+      (rowText.includes("cafe da manha") || rowText.includes("café da manhã") || rowText.includes("desjejum")) &&
+      (rowText.includes("almoco") || rowText.includes("almoço")) &&
+      (rowText.includes("jantar") || rowText.includes("ceia"));
+    
+    if (hasMergedMealHeaders) {
+      const mealPositions: { meal: string; startCol: number; field: keyof GlucoseReading }[] = [];
+      
+      for (let j = 0; j < row.length; j++) {
+        const cell = String(row[j] || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (cell.includes("jejum") && !cell.includes("des")) {
+          mealPositions.push({ meal: "jejum", startCol: j, field: "jejum" });
+        } else if (cell.includes("cafe da manha") || cell.includes("desjejum") || cell === "cafe") {
+          mealPositions.push({ meal: "cafe", startCol: j, field: "posCafe1h" });
+        } else if (cell.includes("almoco") || cell === "almoco") {
+          mealPositions.push({ meal: "almoco", startCol: j, field: "posAlmoco1h" });
+        } else if (cell.includes("jantar") || cell === "jantar") {
+          mealPositions.push({ meal: "jantar", startCol: j, field: "posJantar1h" });
+        } else if (cell.includes("ceia") || cell.includes("madrugada") || cell.includes("noite")) {
+          mealPositions.push({ meal: "ceia", startCol: j, field: "madrugada" });
+        }
+      }
+      
+      if (mealPositions.length >= 2) {
+        const columnMap: Record<number, keyof GlucoseReading> = {};
+        
+        for (let k = 0; k < mealPositions.length; k++) {
+          const current = mealPositions[k];
+          const nextStart = k + 1 < mealPositions.length ? mealPositions[k + 1].startCol : row.length;
+          
+          for (let col = current.startCol; col < nextStart; col++) {
+            const subHeaderRow = rawData[i + 1];
+            if (subHeaderRow) {
+              const subCell = String(subHeaderRow[col] || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+              if (subCell.includes("refeicao") || subCell.includes("valor") || subCell.includes("glicemia") ||
+                  subCell.includes("mg") || subCell.includes("resultado") || subCell === "1h" || subCell === "2h" ||
+                  subCell.includes("pos") || subCell.includes("pre")) {
+                columnMap[col] = current.field;
+              }
+            }
+            
+            if (!columnMap[col]) {
+              for (let dataRow = i + 2; dataRow < Math.min(i + 5, rawData.length); dataRow++) {
+                const testRow = rawData[dataRow];
+                if (testRow && testRow[col] !== undefined && testRow[col] !== null && testRow[col] !== "") {
+                  const testVal = parseGlucoseValue(testRow[col]);
+                  if (testVal !== undefined) {
+                    columnMap[col] = current.field;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        if (Object.keys(columnMap).length >= 2) {
+          const dataStartRow = i + 2;
+          console.log(`[MERGED HEADER] Found merged format at row ${i}, data starts at ${dataStartRow}, columns:`, columnMap);
+          return { headerRowIndex: dataStartRow - 1, columnMap };
+        }
+      }
+    }
+  }
+  return null;
+}
 
 function normalizeHeader(header: string): string {
   return header
@@ -480,7 +562,14 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         
         
         if (headerRowIndex === -1 || Object.keys(columnMap).length === 0) {
-          throw new Error("Cabeçalho da planilha não encontrado. Verifique se a planilha contém colunas como 'Jejum', 'Pós Café', 'Pós Almoço', etc.");
+          const mergedResult = detectMergedHeaderFormat(rawData);
+          if (mergedResult) {
+            headerRowIndex = mergedResult.headerRowIndex;
+            columnMap = mergedResult.columnMap;
+            console.log(`[DEBUG ${patientName}] Using merged header format, header at row ${headerRowIndex}`);
+          } else {
+            throw new Error("Cabeçalho da planilha não encontrado. Verifique se a planilha contém colunas como 'Jejum', 'Pós Café', 'Pós Almoço', etc.");
+          }
         }
         
         const glucoseReadings: GlucoseReading[] = [];
