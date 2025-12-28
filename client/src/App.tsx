@@ -21,15 +21,16 @@ import { FullPageLoading } from "@/components/loading-spinner";
 function PatientRoutes() {
   const [location] = useLocation();
   
-  if (location === "/paciente/login") {
-    return <PatientAuth />;
-  }
-  
   const { data: patientData, isLoading } = useQuery<{ patient: { id: number; name: string } | null }>({
     queryKey: ["/api/patient/me"],
     retry: false,
     staleTime: 5 * 60 * 1000,
+    enabled: location !== "/paciente/login",
   });
+
+  if (location === "/paciente/login") {
+    return <PatientAuth />;
+  }
 
   if (isLoading) {
     return <FullPageLoading text="Verificando autenticação..." />;
