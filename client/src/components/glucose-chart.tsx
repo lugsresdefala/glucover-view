@@ -20,14 +20,14 @@ interface GlucoseChartProps {
 }
 
 const glucoseSeries = [
-  { key: "jejum", label: "Jejum", color: "hsl(210, 70%, 50%)", target: 95 },
-  { key: "preCafe", label: "Pré-café", color: "hsl(190, 60%, 45%)", target: 95 },
-  { key: "posCafe1h", label: "Pós-café 1h", color: "hsl(25, 70%, 50%)", target: 140 },
-  { key: "preAlmoco", label: "Pré-almoço", color: "hsl(140, 50%, 40%)", target: 100 },
-  { key: "posAlmoco1h", label: "Pós-almoço 1h", color: "hsl(160, 60%, 40%)", target: 140 },
-  { key: "preJantar", label: "Pré-jantar", color: "hsl(260, 50%, 50%)", target: 100 },
-  { key: "posJantar1h", label: "Pós-jantar 1h", color: "hsl(280, 60%, 50%)", target: 140 },
-  { key: "madrugada", label: "Madrugada", color: "hsl(320, 50%, 45%)", target: 95 },
+  { key: "jejum", label: "Jejum", color: "hsl(210, 70%, 62%)", target: 95, dashed: false },
+  { key: "preCafe", label: "Pré-café", color: "hsl(168, 70%, 68%)", target: 95, dashed: false },
+  { key: "posCafe1h", label: "Pós-café 1h", color: "hsl(168, 70%, 44%)", target: 140, dashed: true },
+  { key: "preAlmoco", label: "Pré-almoço", color: "hsl(134, 65%, 60%)", target: 100, dashed: false },
+  { key: "posAlmoco1h", label: "Pós-almoço 1h", color: "hsl(134, 65%, 38%)", target: 140, dashed: true },
+  { key: "preJantar", label: "Pré-jantar", color: "hsl(276, 60%, 64%)", target: 100, dashed: false },
+  { key: "posJantar1h", label: "Pós-jantar 1h", color: "hsl(276, 60%, 42%)", target: 140, dashed: true },
+  { key: "madrugada", label: "Madrugada", color: "hsl(318, 55%, 54%)", target: 95, dashed: false },
 ] as const;
 
 export function GlucoseChart({ readings }: GlucoseChartProps) {
@@ -181,7 +181,8 @@ export function GlucoseChart({ readings }: GlucoseChartProps) {
                     dataKey={series.key}
                     stroke={series.color}
                     strokeWidth={2}
-                    dot={{ r: 3, strokeWidth: 1 }}
+                    strokeDasharray={series.dashed ? "5 3" : undefined}
+                    dot={{ r: 3, strokeWidth: 1, fill: series.color }}
                     activeDot={{ r: 5 }}
                     connectNulls
                   />
