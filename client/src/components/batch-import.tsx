@@ -502,6 +502,8 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
         let consecutiveEmptyRows = 0;
         let firstReadingFound = false; // Only start counting empty rows after finding first data
         const MAX_EMPTY_ROWS = 10; // Stop after 10 consecutive rows without glucose data (to handle gaps in data)
+        const MAX_ROWS_WITHOUT_DATA = 200; // Maximum rows to scan before giving up if no data found
+        let rowsScannedWithoutData = 0;
         
         for (let i = headerRowIndex + 1; i < rawData.length; i++) {
           const row = rawData[i];
@@ -576,11 +578,19 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
               lastSourceWithGlucose = currentSource;
             }
           } else {
-            // Row exists but has no valid glucose data - only count as "empty" if we've already found data
+            // Row exists but has no valid glucose data
             if (firstReadingFound) {
+              // After finding data, count consecutive empty rows to stop at trailing blanks
               consecutiveEmptyRows++;
               if (consecutiveEmptyRows >= MAX_EMPTY_ROWS) {
                 console.log(`[DEBUG ${patientName}] Stopping at row ${i}: ${MAX_EMPTY_ROWS} consecutive rows without glucose data after finding data`);
+                break;
+              }
+            } else {
+              // Before finding any data, limit how far we scan
+              rowsScannedWithoutData++;
+              if (rowsScannedWithoutData >= MAX_ROWS_WITHOUT_DATA) {
+                console.log(`[DEBUG ${patientName}] Stopping at row ${i}: scanned ${MAX_ROWS_WITHOUT_DATA} rows without finding glucose data`);
                 break;
               }
             }
