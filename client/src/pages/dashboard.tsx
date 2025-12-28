@@ -417,6 +417,47 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
         </div>
       )}
 
+      {section === "history" && (
+        <div className="glass-panel mx-4 mt-4 p-5 border border-white/20 dark:border-white/10">
+          <div className="flex flex-wrap items-start justify-between gap-6">
+            <div className="flex flex-col gap-1">
+              <h2 className="text-lg font-semibold text-foreground">Histórico de Avaliações</h2>
+              <p className="text-sm text-muted-foreground">
+                {isLoadingHistory ? "Carregando..." : `${dashboardMetrics.totalEvaluations} avaliações realizadas`}
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              {dashboardMetrics.criticalAlerts > 0 && (
+                <Badge variant="destructive" data-testid="text-critical-alerts-history">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  {dashboardMetrics.criticalAlerts} alertas críticos
+                </Badge>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-white/10">
+            <div className="glass-subtle p-3 flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground uppercase tracking-wide">Total</span>
+              <span className="text-xl font-semibold tabular-nums">
+                {isLoadingHistory ? "..." : dashboardMetrics.totalEvaluations}
+              </span>
+            </div>
+            <div className="glass-subtle p-3 flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground uppercase tracking-wide">Pacientes</span>
+              <span className="text-xl font-semibold tabular-nums">
+                {isLoadingPatients ? "..." : dashboardMetrics.totalPatients}
+              </span>
+            </div>
+            <div className="glass-subtle p-3 flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground uppercase tracking-wide">Últimos 7 dias</span>
+              <span className="text-xl font-semibold tabular-nums">
+                {isLoadingHistory ? "..." : dashboardMetrics.recentEvaluations}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className="p-4">
         <div className="flex flex-wrap gap-3 mb-6">
           <Dialog open={showEvaluationForm} onOpenChange={setShowEvaluationForm}>
