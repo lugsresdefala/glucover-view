@@ -380,7 +380,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-full">
       {/* Census Header - Patient Context Bar */}
       <div className="census-header mx-4 mt-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
