@@ -55,8 +55,10 @@ import {
   CheckSquare,
   Square,
   X,
-  FileText
+  FileText,
+  Download
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -379,6 +381,67 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
     });
   };
 
+  const exportAllToExcel = () => {
+    const evaluationsWithRec = evaluations.filter(e => e.recommendation);
+    
+    if (evaluationsWithRec.length === 0) {
+      toast({
+        title: "Nenhuma recomendação para exportar",
+        description: "Não há avaliações com recomendações no histórico.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const sortedEvaluations = [...evaluationsWithRec].sort((a, b) => 
+      a.patientName.localeCompare(b.patientName, 'pt-BR')
+    );
+
+    const exportData = sortedEvaluations.map(evaluation => {
+      const rec = evaluation.recommendation;
+      
+      let recomendacao = "";
+      
+      if (rec?.mainRecommendation) {
+        recomendacao = rec.mainRecommendation;
+      }
+      
+      if (rec?.justification) {
+        recomendacao += `\n\nJUSTIFICATIVA: ${rec.justification}`;
+      }
+      
+      if (rec?.nextSteps && rec.nextSteps.length > 0) {
+        recomendacao += `\n\nPRÓXIMOS PASSOS:\n${rec.nextSteps.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
+      }
+      
+      return {
+        "Nome": evaluation.patientName,
+        "Recomendação": recomendacao.trim() || "Sem recomendação"
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    
+    ws['!cols'] = [
+      { wch: 40 },
+      { wch: 100 },
+    ];
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Recomendações");
+
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const fileName = `recomendacoes_${dateStr}.xlsx`;
+
+    XLSX.writeFile(wb, fileName);
+
+    toast({
+      title: "Exportação concluída",
+      description: `${sortedEvaluations.length} recomendações exportadas para ${fileName}`,
+    });
+  };
+
   return (
     <div className="min-h-full">
       {/* Header contextual - diferente para cada seção */}
@@ -427,6 +490,17 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
               </p>
             </div>
             <div className="flex items-center gap-4">
+              {evaluations.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportAllToExcel}
+                  data-testid="button-export-all-excel"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar Excel
+                </Button>
+              )}
               {dashboardMetrics.criticalAlerts > 0 && (
                 <Badge variant="destructive" data-testid="text-critical-alerts-history">
                   <AlertTriangle className="h-3 w-3 mr-1" />
