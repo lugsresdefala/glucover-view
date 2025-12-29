@@ -105,10 +105,28 @@ export default function AppHome() {
     setShowRecommendationModal(true);
   };
 
-  const urgencyColors = {
-    critical: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
-    warning: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-    info: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
+  const urgencyStyles = {
+    critical: {
+      container: "bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800",
+      text: "text-red-700 dark:text-red-300",
+      dot: "bg-red-500",
+    },
+    warning: {
+      container: "bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800",
+      text: "text-amber-700 dark:text-amber-300",
+      dot: "bg-amber-500",
+    },
+    info: {
+      container: "bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800",
+      text: "text-emerald-700 dark:text-emerald-300",
+      dot: "bg-emerald-500",
+    },
+  };
+
+  const urgencyLabels = {
+    critical: "Alerta",
+    warning: "Vigilância", 
+    info: "Adequado",
   };
 
   return (
@@ -203,12 +221,12 @@ export default function AppHome() {
                       data-testid={`task-${task.id}`}
                     >
                       <div className="flex items-start gap-3">
-                        <Badge 
-                          variant="outline" 
-                          className={`shrink-0 text-xs ${urgencyColors[task.urgency]}`}
+                        <div 
+                          className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${urgencyStyles[task.urgency].container} ${urgencyStyles[task.urgency].text}`}
                         >
-                          {task.urgency === "critical" ? "Alerta" : task.urgency === "warning" ? "Vigilância" : "Adequado"}
-                        </Badge>
+                          <span className={`w-1.5 h-1.5 rounded-full ${urgencyStyles[task.urgency].dot}`} />
+                          {urgencyLabels[task.urgency]}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{task.patientName}</p>
                           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{task.summary}</p>
