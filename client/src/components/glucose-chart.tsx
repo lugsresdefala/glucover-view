@@ -31,7 +31,7 @@ const glucoseSeries = [
 
 export function GlucoseChart({ readings }: GlucoseChartProps) {
   const [visibleSeries, setVisibleSeries] = useState<Set<string>>(
-    new Set(["jejum", "posCafe1h", "posAlmoco1h", "posJantar1h"])
+    new Set(glucoseSeries.map((s) => s.key))
   );
 
   if (readings.length === 0) {
@@ -72,38 +72,10 @@ export function GlucoseChart({ readings }: GlucoseChartProps) {
     });
   };
 
-  const showAll = () => {
-    setVisibleSeries(new Set(glucoseSeries.map((s) => s.key)));
-  };
-
-  const showMain = () => {
-    setVisibleSeries(new Set(["jejum", "posCafe1h", "posAlmoco1h", "posJantar1h"]));
-  };
-
   return (
     <Card className="glass-panel border-white/20 dark:border-white/10 bg-transparent">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-lg font-semibold">Evolução Glicêmica</CardTitle>
-          <div className="flex gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={showMain}
-              data-testid="button-chart-main"
-            >
-              Principais
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={showAll}
-              data-testid="button-chart-all"
-            >
-              Todas
-            </Button>
-          </div>
-        </div>
+        <CardTitle className="text-lg font-semibold">Evolução Glicêmica</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-4">
