@@ -21,13 +21,9 @@ interface GlucoseChartProps {
 
 const glucoseSeries = [
   { key: "jejum", label: "Jejum", color: "hsl(210, 80%, 55%)", target: 95, dashed: false },
-  { key: "preCafe", label: "Pré-café", color: "hsl(25, 85%, 60%)", target: 95, dashed: false },
-  { key: "posCafe1h", label: "Pós-café 1h", color: "hsl(25, 85%, 42%)", target: 140, dashed: true },
-  { key: "preAlmoco", label: "Pré-almoço", color: "hsl(145, 70%, 50%)", target: 100, dashed: false },
-  { key: "posAlmoco1h", label: "Pós-almoço 1h", color: "hsl(145, 70%, 32%)", target: 140, dashed: true },
-  { key: "preJantar", label: "Pré-jantar", color: "hsl(280, 65%, 60%)", target: 100, dashed: false },
-  { key: "posJantar1h", label: "Pós-jantar 1h", color: "hsl(280, 65%, 40%)", target: 140, dashed: true },
-  { key: "madrugada", label: "Madrugada", color: "hsl(340, 70%, 55%)", target: 95, dashed: false },
+  { key: "posCafe1h", label: "Pós-café 1h", color: "hsl(25, 85%, 50%)", target: 140, dashed: false },
+  { key: "posAlmoco1h", label: "Pós-almoço 1h", color: "hsl(145, 70%, 45%)", target: 140, dashed: false },
+  { key: "posJantar1h", label: "Pós-jantar 1h", color: "hsl(280, 65%, 50%)", target: 140, dashed: false },
 ] as const;
 
 export function GlucoseChart({ readings }: GlucoseChartProps) {
@@ -53,13 +49,9 @@ export function GlucoseChart({ readings }: GlucoseChartProps) {
   const chartData = readings.map((reading, index) => ({
     day: `D${index + 1}`,
     jejum: reading.jejum ?? null,
-    preCafe: reading.preCafe ?? null,
     posCafe1h: reading.posCafe1h ?? null,
-    preAlmoco: reading.preAlmoco ?? null,
     posAlmoco1h: reading.posAlmoco1h ?? null,
-    preJantar: reading.preJantar ?? null,
     posJantar1h: reading.posJantar1h ?? null,
-    madrugada: reading.madrugada ?? null,
   }));
 
   const toggleSeries = (key: string) => {
@@ -74,38 +66,10 @@ export function GlucoseChart({ readings }: GlucoseChartProps) {
     });
   };
 
-  const showAll = () => {
-    setVisibleSeries(new Set(glucoseSeries.map((s) => s.key)));
-  };
-
-  const showMain = () => {
-    setVisibleSeries(new Set(["jejum", "posCafe1h", "posAlmoco1h", "posJantar1h"]));
-  };
-
   return (
     <Card className="glass-panel border-white/20 dark:border-white/10 bg-transparent">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-lg font-semibold">Evolução Glicêmica</CardTitle>
-          <div className="flex gap-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={showMain}
-              data-testid="button-chart-main"
-            >
-              Principais
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={showAll}
-              data-testid="button-chart-all"
-            >
-              Todas
-            </Button>
-          </div>
-        </div>
+        <CardTitle className="text-lg font-semibold">Evolução Glicêmica</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-4">
