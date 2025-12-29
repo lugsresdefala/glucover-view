@@ -3,11 +3,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertCircle, CheckCircle, AlertTriangle, FileText, ArrowRight, User } from "lucide-react";
+import { AlertCircle, CheckCircle, AlertTriangle, X } from "lucide-react";
 import type { ClinicalRecommendation } from "@shared/schema";
 
 interface RecommendationModalProps {
@@ -22,17 +22,17 @@ const urgencyConfig = {
   info: {
     icon: CheckCircle,
     label: "Adequado",
-    badgeClass: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800",
+    className: "text-emerald-600 dark:text-emerald-400",
   },
   warning: {
     icon: AlertTriangle,
     label: "Vigilância",
-    badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200 border-amber-200 dark:border-amber-800",
+    className: "text-amber-600 dark:text-amber-400",
   },
   critical: {
     icon: AlertCircle,
     label: "Alerta",
-    badgeClass: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 border-red-200 dark:border-red-800",
+    className: "text-red-600 dark:text-red-400",
   },
 };
 
@@ -50,54 +50,51 @@ export function RecommendationModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col" data-testid="modal-recommendation">
-        <DialogHeader className="space-y-3 pb-4 border-b">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <DialogTitle className="text-lg font-semibold flex items-center gap-2">
-                <FileText className="h-5 w-5 text-muted-foreground" />
-                Conduta Clínica Sugerida
-              </DialogTitle>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <User className="h-4 w-4" />
-                <span className="font-medium text-foreground">{patientName}</span>
-                {gestationalAge && (
-                  <>
-                    <span className="text-muted-foreground/50">•</span>
-                    <span>{gestationalAge}</span>
-                  </>
-                )}
-              </div>
-            </div>
-            <Badge variant="outline" className={`shrink-0 ${urgency.badgeClass}`}>
-              <UrgencyIcon className="mr-1.5 h-3.5 w-3.5" />
-              {urgency.label}
-            </Badge>
+      <DialogContent 
+        hideCloseButton 
+        className="max-w-2xl max-h-[85vh] p-0 flex flex-col overflow-hidden" 
+        data-testid="modal-recommendation"
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b bg-muted/30">
+          <div>
+            <DialogTitle className="text-base font-semibold">
+              Conduta Clínica
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              <span className="font-medium text-foreground">{patientName}</span>
+              {gestationalAge && <span> · {gestationalAge}</span>}
+            </p>
           </div>
-        </DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className={`flex items-center gap-1.5 text-sm font-medium ${urgency.className}`}>
+              <UrgencyIcon className="h-4 w-4" />
+              <span>{urgency.label}</span>
+            </div>
+            <DialogClose className="p-1.5 rounded border border-border bg-background hover:bg-muted transition-colors">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Fechar</span>
+            </DialogClose>
+          </div>
+        </div>
         
-        <ScrollArea className="flex-1 -mx-6 px-6">
-          <div className="py-5 space-y-5">
+        <ScrollArea className="flex-1">
+          <div className="px-6 py-5 space-y-5">
             <section>
-              <h3 className="text-sm font-semibold text-foreground mb-2">
-                Conduta Terapêutica
-              </h3>
-              <div className="bg-muted/50 rounded-lg p-4 border">
-                <p className="text-base leading-relaxed whitespace-pre-line" data-testid="text-modal-recommendation">
-                  {recommendation.mainRecommendation}
-                </p>
-              </div>
+              <h3 className="font-semibold text-foreground mb-2">Conduta Terapêutica</h3>
+              <p className="leading-relaxed whitespace-pre-line" data-testid="text-modal-recommendation">
+                {recommendation.mainRecommendation}
+              </p>
             </section>
 
+            <Separator />
+
             <section>
-              <h3 className="text-sm font-semibold text-foreground mb-2">
-                Próximos Passos
-              </h3>
+              <h3 className="font-semibold text-foreground mb-2">Próximos Passos</h3>
               <ul className="space-y-2">
                 {recommendation.nextSteps.map((step, index) => (
-                  <li key={index} className="flex items-start gap-3" data-testid={`text-modal-step-${index}`}>
-                    <ArrowRight className="h-4 w-4 mt-1 text-primary shrink-0" />
-                    <span className="text-sm leading-relaxed">{step}</span>
+                  <li key={index} className="flex gap-2 leading-relaxed" data-testid={`text-modal-step-${index}`}>
+                    <span className="text-muted-foreground shrink-0">{index + 1}.</span>
+                    <span>{step}</span>
                   </li>
                 ))}
               </ul>
@@ -106,10 +103,8 @@ export function RecommendationModal({
             <Separator />
 
             <section>
-              <h3 className="text-sm font-semibold text-foreground mb-2">
-                Análise Clínica
-              </h3>
-              <div className="text-sm text-muted-foreground leading-relaxed space-y-2" data-testid="text-modal-analysis">
+              <h3 className="font-semibold text-foreground mb-2">Análise</h3>
+              <div className="text-muted-foreground leading-relaxed space-y-2" data-testid="text-modal-analysis">
                 {recommendation.analysis.split("\n\n").map((paragraph, index) => (
                   <p key={index} className="whitespace-pre-line">{paragraph}</p>
                 ))}
@@ -117,37 +112,26 @@ export function RecommendationModal({
             </section>
 
             <section>
-              <h3 className="text-sm font-semibold text-foreground mb-2">
-                Fundamentação
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed" data-testid="text-modal-justification">
+              <h3 className="font-semibold text-foreground mb-2">Fundamentação</h3>
+              <p className="text-muted-foreground leading-relaxed" data-testid="text-modal-justification">
                 {recommendation.justification}
               </p>
             </section>
 
             {recommendation.guidelineReferences.length > 0 && (
-              <>
-                <Separator />
-                <section>
-                  <h3 className="text-sm font-semibold text-foreground mb-2">
-                    Referências
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {recommendation.guidelineReferences.map((ref, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs font-normal">
-                        {ref}
-                      </Badge>
-                    ))}
-                  </div>
-                </section>
-              </>
+              <section>
+                <h3 className="font-semibold text-foreground mb-2">Referências</h3>
+                <p className="text-sm text-muted-foreground">
+                  {recommendation.guidelineReferences.join(" · ")}
+                </p>
+              </section>
             )}
 
-            <div className="pt-4 border-t">
-              <p className="text-xs text-muted-foreground/80 leading-relaxed">
-                Sistema de suporte à decisão clínica. As decisões finais devem ser tomadas por profissional de saúde qualificado, considerando o contexto individual de cada paciente. Baseado nas Diretrizes SBD 2025, FEBRASGO 2019 e OMS 2025.
-              </p>
-            </div>
+            <Separator />
+
+            <p className="text-xs text-muted-foreground/70 leading-relaxed">
+              Sistema de suporte à decisão clínica. Decisões finais devem ser tomadas pelo profissional de saúde considerando o contexto individual. Baseado em SBD 2025, FEBRASGO 2019, OMS 2025.
+            </p>
           </div>
         </ScrollArea>
       </DialogContent>
