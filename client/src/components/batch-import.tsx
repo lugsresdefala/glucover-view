@@ -1265,11 +1265,11 @@ export function BatchImport() {
                               </TableCell>
                               <TableCell className="text-center">
                                 {update.urgencyLevel === "critical" ? (
-                                  <Badge variant="destructive" className="text-xs">Crítico</Badge>
+                                  <Badge variant="destructive" className="text-xs">Alerta</Badge>
                                 ) : update.urgencyLevel === "warning" ? (
-                                  <Badge className="bg-amber-500 text-xs">Atenção</Badge>
+                                  <Badge className="bg-amber-500 text-xs">Vigilância</Badge>
                                 ) : (
-                                  <Badge variant="secondary" className="text-xs">Info</Badge>
+                                  <Badge className="bg-green-400 dark:bg-green-600 text-green-900 dark:text-green-100 text-xs">Adequado</Badge>
                                 )}
                               </TableCell>
                             </TableRow>

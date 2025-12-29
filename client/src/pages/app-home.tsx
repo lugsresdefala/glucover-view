@@ -108,7 +108,7 @@ export default function AppHome() {
   const urgencyColors = {
     critical: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
     warning: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-    info: "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20",
+    info: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
   };
 
   return (
@@ -207,7 +207,7 @@ export default function AppHome() {
                           variant="outline" 
                           className={`shrink-0 text-xs ${urgencyColors[task.urgency]}`}
                         >
-                          {task.urgency === "critical" ? "Urgente" : task.urgency === "warning" ? "Atenção" : "Info"}
+                          {task.urgency === "critical" ? "Alerta" : task.urgency === "warning" ? "Vigilância" : "Adequado"}
                         </Badge>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{task.patientName}</p>

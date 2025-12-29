@@ -12,19 +12,19 @@ interface RecommendationPanelProps {
 const urgencyConfig = {
   info: {
     icon: CheckCircle,
-    label: "Informativo",
-    badgeClass: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-    headerBg: "bg-blue-50 dark:bg-blue-950/30",
+    label: "Adequado",
+    badgeClass: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    headerBg: "bg-green-50 dark:bg-green-950/30",
   },
   warning: {
     icon: AlertTriangle,
-    label: "Atenção Necessária",
+    label: "Vigilância",
     badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
     headerBg: "bg-amber-50 dark:bg-amber-950/30",
   },
   critical: {
     icon: AlertCircle,
-    label: "Urgente",
+    label: "Alerta",
     badgeClass: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
     headerBg: "bg-red-50 dark:bg-red-950/30",
   },

@@ -161,7 +161,7 @@ export default function AppPatients() {
                             )}
                             {status?.hasCritical && (
                               <Badge variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20 text-xs">
-                                Atenção
+                                Alerta
                               </Badge>
                             )}
                             {status?.hasWarning && !status?.hasCritical && (
