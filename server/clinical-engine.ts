@@ -497,8 +497,14 @@ function analyzeMadrugada(readings: GlucoseReading[]): PeriodAdjustmentResult | 
 
 /**
  * Função principal: Analisa todos os períodos e retorna recomendações de ajuste
+ * IMPORTANTE: Usa APENAS os últimos 7 dias de dados (reavaliações ocorrem a cada 7 dias)
  */
-export function analyzeInsulinAdjustments(readings: GlucoseReading[]): InsulinAdjustmentAnalysis {
+export function analyzeInsulinAdjustments(allReadings: GlucoseReading[]): InsulinAdjustmentAnalysis {
+  // CRITICAL: Use only the last 7 days for recommendations
+  // Each entry in glucoseReadings represents ONE DAY with multiple period measurements
+  // Re-evaluations happen every 7 days per clinical protocol
+  const readings = allReadings.length <= 7 ? allReadings : allReadings.slice(-7);
+  
   const ajustes: PeriodAdjustmentResult[] = [];
   const periodosSemDados: string[] = [];
   
