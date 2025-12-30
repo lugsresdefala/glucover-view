@@ -68,6 +68,9 @@ export const glucoseReadingSchema = z.object({
   preJantar: z.number().min(0).max(500).optional(),
   posJantar1h: z.number().min(0).max(500).optional(),
   madrugada: z.number().min(0).max(500).optional(),
+  // Data da medição para detecção de gaps cronológicos
+  measurementDate: z.string().optional(), // ISO date string (YYYY-MM-DD)
+  gestationalAge: z.number().optional(),  // Idade gestacional em semanas decimais
 }).passthrough();
 
 export type GlucoseReading = z.infer<typeof glucoseReadingSchema>;
