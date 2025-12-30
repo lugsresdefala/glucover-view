@@ -13,6 +13,10 @@ import { users, patients } from "./models/auth";
 export const gestationalAgeSources = ["explicit", "calculated", "propagated"] as const;
 export type GestationalAgeSource = typeof gestationalAgeSources[number];
 
+// Evaluation status types
+export const evaluationStatuses = ["active", "resolved"] as const;
+export type EvaluationStatus = typeof evaluationStatuses[number];
+
 // Evaluations table - now links to patients
 export const evaluations = pgTable("evaluations", {
   id: serial("id").primaryKey(),
@@ -32,6 +36,8 @@ export const evaluations = pgTable("evaluations", {
   abdominalCircumferencePercentile: real("abdominal_circumference_percentile"),
   recommendation: jsonb("recommendation"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  // Automatic resolution tracking: "resolved" when gestationalWeeks >= 40
+  status: text("status").default("active").notNull(),
 });
 
 export const evaluationsRelations = relations(evaluations, ({ one }) => ({
