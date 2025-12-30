@@ -123,6 +123,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
   const [showRecommendationModal, setShowRecommendationModal] = useState(false);
   const [patientFromUrl, setPatientFromUrl] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "resolved">("all");
   
   const showBatchImport = section === "import";
   const showPatientList = section === "patients";
@@ -183,7 +184,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
     return Array.from(uniqueMap.values());
   }, [rawEvaluations]);
 
-  // Filter by date and sort alphabetically
+  // Filter by date, status and sort alphabetically
   const filteredEvaluations = useMemo(() => {
     let filtered = [...evaluations];
     
@@ -197,11 +198,16 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
       });
     }
     
+    // Filter by status (active/resolved)
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(e => e.status === statusFilter);
+    }
+    
     // Sort alphabetically by patient name
     return filtered.sort((a, b) => 
       a.patientName.localeCompare(b.patientName, 'pt-BR')
     );
-  }, [evaluations, dateFilter]);
+  }, [evaluations, dateFilter, statusFilter]);
 
   // Get unique dates for the filter
   const availableDates = useMemo(() => {
@@ -275,15 +281,8 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
   };
 
   const isEvaluationResolved = (evaluation: StoredEvaluation) => {
-    if (!evaluation.createdAt) return false;
-    
-    const createdDate = new Date(evaluation.createdAt);
-    const now = new Date();
-    const daysSinceEvaluation = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    const currentWeeks = evaluation.gestationalWeeks + Math.floor((evaluation.gestationalDays + daysSinceEvaluation) / 7);
-    
-    return currentWeeks > 40;
+    // Use database status field (automatically set when gestationalWeeks >= 40)
+    return evaluation.status === "resolved";
   };
 
   const getResolvedGestationalAge = (evaluation: StoredEvaluation) => {
@@ -625,10 +624,21 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
             <div className="flex flex-col gap-1">
               <h2 className="text-lg font-semibold text-foreground">Histórico de Avaliações</h2>
               <p className="text-sm text-muted-foreground">
-                {isLoadingHistory ? "Carregando..." : `${filteredEvaluations.length} de ${dashboardMetrics.totalEvaluations} avaliações${dateFilter ? " (filtrado)" : ""}`}
+                {isLoadingHistory ? "Carregando..." : `${filteredEvaluations.length} de ${dashboardMetrics.totalEvaluations} avaliações${(dateFilter || statusFilter !== "all") ? " (filtrado)" : ""}`}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | "active" | "resolved")}>
+                <SelectTrigger className="w-[160px]" data-testid="select-status-filter">
+                  <User className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="active">Ativas</SelectItem>
+                  <SelectItem value="resolved">Resolvidas (40+ sem)</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={dateFilter} onValueChange={setDateFilter}>
                 <SelectTrigger className="w-[180px]" data-testid="select-date-filter">
                   <Calendar className="h-4 w-4 mr-2" />
@@ -643,17 +653,17 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
                   ))}
                 </SelectContent>
               </Select>
-              {dateFilter && dateFilter !== "all" && (
+              {(dateFilter && dateFilter !== "all") || statusFilter !== "all" ? (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setDateFilter("")}
-                  data-testid="button-clear-date-filter"
+                  onClick={() => { setDateFilter(""); setStatusFilter("all"); }}
+                  data-testid="button-clear-filters"
                 >
                   <X className="h-4 w-4 mr-1" />
-                  Limpar
+                  Limpar filtros
                 </Button>
-              )}
+              ) : null}
               {evaluations.length > 0 && (
                 <Button
                   variant="outline"

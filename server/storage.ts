@@ -77,12 +77,21 @@ function toStoredEvaluation(record: EvaluationRecord): StoredEvaluation {
     recommendation: (record.recommendation as ClinicalRecommendation | null) || undefined,
     userId: record.userId || undefined,
     createdAt: record.createdAt.toISOString(),
+    status: (record.status as "active" | "resolved") || "active",
   };
+}
+
+// Determine evaluation status based on gestational age
+function determineEvaluationStatus(gestationalWeeks: number): "active" | "resolved" {
+  return gestationalWeeks >= 40 ? "resolved" : "active";
 }
 
 export class DatabaseStorage implements IStorage {
   // Evaluation operations
   async createEvaluation(evaluation: PatientEvaluation, userId?: string, patientId?: number): Promise<StoredEvaluation> {
+    // Automatically set status to "resolved" if gestational age >= 40 weeks
+    const status = determineEvaluationStatus(evaluation.gestationalWeeks);
+    
     const [record] = await db
       .insert(evaluations)
       .values({
@@ -100,6 +109,7 @@ export class DatabaseStorage implements IStorage {
         glucoseReadings: evaluation.glucoseReadings,
         abdominalCircumference: evaluation.abdominalCircumference || null,
         abdominalCircumferencePercentile: evaluation.abdominalCircumferencePercentile || null,
+        status,
       })
       .returning();
 
@@ -136,6 +146,9 @@ export class DatabaseStorage implements IStorage {
     
     if (existing) {
       // Update existing evaluation
+      // Automatically set status to "resolved" if gestational age >= 40 weeks
+      const status = determineEvaluationStatus(evaluation.gestationalWeeks);
+      
       const [record] = await db
         .update(evaluations)
         .set({
@@ -153,6 +166,7 @@ export class DatabaseStorage implements IStorage {
           abdominalCircumferencePercentile: evaluation.abdominalCircumferencePercentile || null,
           recommendation: null, // Clear recommendation so new one is generated
           createdAt: new Date(), // Update timestamp
+          status,
         })
         .where(eq(evaluations.id, existing.id))
         .returning();
