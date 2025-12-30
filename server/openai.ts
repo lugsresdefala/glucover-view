@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import type { PatientEvaluation, ClinicalRecommendation, GlucoseReading, CriticalAlert } from "@shared/schema";
 import { glucoseTargets, calculateGlucosePercentageInTarget, calculateAverageGlucose, checkCriticalGlucose, criticalGlucoseThresholds } from "@shared/schema";
-import { generateClinicalAnalysis, formatAnalysisForAI, analyzeInsulinAdjustments, type ClinicalAnalysis, type InsulinAdjustmentAnalysis } from "./clinical-engine";
+import { generateClinicalAnalysis, formatAnalysisForAI, type ClinicalAnalysis, type InsulinAdjustmentAnalysis } from "./clinical-engine";
 
 const openaiApiKey =
   process.env.OPENAI_API_KEY ?? process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
@@ -187,7 +187,8 @@ function generateDeterministicRecommendation(
   analysis: ClinicalAnalysis, 
   evaluation: PatientEvaluation
 ): ClinicalRecommendation {
-  const criticalAlerts = checkCriticalGlucose(evaluation.glucoseReadings);
+  // CRITICAL: Use pre-computed alerts from last 7 days (already in analysis.criticalAlerts)
+  const criticalAlerts = analysis.criticalAlerts;
   const hasHypo = criticalAlerts.some(a => a.type === "hypoglycemia");
   const hasSevereHyper = criticalAlerts.some(a => a.type === "severe_hyperglycemia");
   
@@ -195,7 +196,8 @@ function generateDeterministicRecommendation(
   let urgency: "info" | "warning" | "critical" = analysis.urgencyLevel;
   
   const igText = `${evaluation.gestationalWeeks} semanas e ${evaluation.gestationalDays} dias`;
-  const diasAnalise = evaluation.glucoseReadings.length;
+  // Use the 7-day count from analysis, not full history
+  const diasAnalise = analysis.totalDaysAnalyzed;
   const s7 = analysis.sevenDayAnalysis;
   
   // ============== PANORAMA GERAL ==============
@@ -332,37 +334,31 @@ function generateDeterministicRecommendation(
   const shouldIgnoreHistoricalAlerts = recentControlIsGood && !hasRecentCriticalIssues && s7 !== null;
   
   if ((hasHypo || hasSevereHyper) && !shouldIgnoreHistoricalAlerts) {
-    // Usar algoritmo de ajuste para obter recomendações baseadas em evidências
-    const insulinAnalysis = analyzeInsulinAdjustments(evaluation.glucoseReadings);
-    const insulinAdjust = generateInsulinAdjustmentRecommendation(analysis, evaluation);
+    // Use pre-computed insulin adjustments from analysis
+    const insulinAdjust = generateInsulinAdjustmentRecommendation(analysis);
+    const insulinAnalysis = analysis.insulinAdjustments;
     
     if (hasHypo && hasSevereHyper) {
       condutaImediata = `Perfil glicêmico instável com variabilidade significativa. ${insulinAdjust || "Revisão individualizada do esquema insulínico indicada."}`;
-      condutaContinuada = `Reavaliação programada para 3-5 dias. Abordagem por período para redução da oscilação glicêmica.`;
-      nextSteps.push("Mapeamento de horários específicos de hipo e hiperglicemia");
+      condutaContinuada = `Reavaliação programada para 3-5 dias.`;
       nextSteps.push("Ajuste de insulina por período conforme análise");
-      nextSteps.push("Verificação de técnica de aplicação e armazenamento");
       nextSteps.push("Orientação sobre tratamento de hipoglicemia (15g carboidrato)");
       nextSteps.push("Reavaliação em 3-5 dias");
     } else if (hasHypo) {
       // Hipoglicemia: usar análise estruturada
-      const reducoes = insulinAnalysis.ajustesRecomendados.filter(a => a.direcao === "REDUZIR");
+      const reducoes = insulinAnalysis?.ajustesRecomendados?.filter(a => a.direcao === "REDUZIR") || [];
       if (reducoes.length > 0 && evaluation.usesInsulin) {
         condutaImediata = reducoes.map(r => r.justificativa).join(" ");
-        condutaContinuada = `Monitoramento intensificado indicado. Verificação de intervalo insulina-refeição e adequação de carboidratos recomendada.`;
+        condutaContinuada = `Monitoramento intensificado indicado.`;
         nextSteps.push("Implementação de redução de dose conforme indicado");
-        nextSteps.push("Verificação de horário de aplicação da insulina");
         nextSteps.push("Orientação sobre tratamento de hipoglicemia (15g carboidrato)");
         nextSteps.push("Reavaliação em 5-7 dias");
       } else {
-        // Episódio isolado ou padrão não identificado
         condutaImediata = evaluation.usesInsulin 
-          ? `Manutenção do esquema insulínico atual indicada. Episódio isolado de hipoglicemia não justifica alteração de dose. Investigação de causa recomendada: jejum prolongado, atividade física ou inadequação alimentar.`
-          : `Investigação de causa da hipoglicemia indicada: jejum prolongado, atividade física ou padrão alimentar inadequado.`;
-        condutaContinuada = `Manutenção do monitoramento. Orientação sobre reconhecimento precoce de sintomas e tratamento adequado (15g carboidrato).`;
+          ? `Manutenção do esquema insulínico atual indicada. Episódio isolado de hipoglicemia não justifica alteração de dose.`
+          : `Investigação de causa da hipoglicemia indicada.`;
+        condutaContinuada = `Manutenção do monitoramento.`;
         nextSteps.push("Investigação de causa do episódio");
-        nextSteps.push("Orientação sobre tratamento de hipoglicemia");
-        nextSteps.push("Continuidade da monitorização para identificar padrão");
         nextSteps.push("Reavaliação em 7-14 dias");
       }
     } else {
@@ -404,7 +400,7 @@ function generateDeterministicRecommendation(
     const urgencyNote = isRecentWorsening ? " Tendência de piora detectada nos últimos 7 dias." : "";
     
     if (evaluation.usesInsulin) {
-      const insulinAdjust = generateInsulinAdjustmentRecommendation(analysis, evaluation);
+      const insulinAdjust = generateInsulinAdjustmentRecommendation(analysis);
       condutaImediata = `Otimização do esquema insulínico indicada.${urgencyNote} ${insulinAdjust || "Ajuste conforme perfil glicêmico."} ${sevenDayAdjustments}`;
       condutaContinuada = isRecentWorsening 
         ? `Reavaliação em 5-7 dias recomendada. Vigilância fetal intensificada.`
@@ -430,7 +426,7 @@ function generateDeterministicRecommendation(
         : "";
     
     if (evaluation.usesInsulin) {
-      const insulinAdjust = generateInsulinAdjustmentRecommendation(analysis, evaluation);
+      const insulinAdjust = generateInsulinAdjustmentRecommendation(analysis);
       condutaImediata = `Intensificação do esquema insulínico indicada (+20-30%). ${insulinAdjust || "Ajuste em todos os períodos recomendado."} ${sevenDayAdjustments}${trendNote}`;
       condutaContinuada = isRecentWorsening 
         ? `Internação pode ser considerada. Vigilância fetal intensificada indicada.`
@@ -486,11 +482,14 @@ function generateDeterministicRecommendation(
     `Estratégia Continuada: ${condutaContinuada}`,
   ].join("\n");
   
+  // Deduplicate nextSteps to avoid repetition
+  const uniqueNextSteps = Array.from(new Set(nextSteps));
+  
   return {
     analysis: fullAnalysis,
     mainRecommendation: mainRec,
     justification: fundamentacao,
-    nextSteps,
+    nextSteps: uniqueNextSteps,
     urgencyLevel: urgency,
     guidelineReferences: ruleIds,
   };
@@ -535,40 +534,16 @@ const INSULIN_PERIOD_MAP: Record<string, { insulinType: string; timing: string; 
  * 
  * PRIORIDADE DE SEGURANÇA: Redução > Solicitação de dados > Aumento
  */
-function generateInsulinAdjustmentRecommendation(analysis: ClinicalAnalysis, evaluation: PatientEvaluation): string {
-  // Usar novo algoritmo de análise de ajustes
-  const insulinAnalysis = analyzeInsulinAdjustments(evaluation.glucoseReadings);
+function generateInsulinAdjustmentRecommendation(analysis: ClinicalAnalysis): string {
+  // Use pre-computed insulin adjustments from analysis (already uses last 7 days)
+  const insulinAnalysis = analysis.insulinAdjustments;
   
-  if (insulinAnalysis.ajustesRecomendados.length === 0) {
+  if (!insulinAnalysis || insulinAnalysis.ajustesRecomendados.length === 0) {
     return "";
   }
   
-  // ORDEM DE SEGURANÇA: Reduções primeiro, depois solicitação de dados, por último aumentos
-  const reducoes = insulinAnalysis.ajustesRecomendados.filter(a => a.direcao === "REDUZIR");
-  const solicitarDados = insulinAnalysis.ajustesRecomendados.filter(a => a.direcao === "SOLICITAR_DADOS");
-  const aumentos = insulinAnalysis.ajustesRecomendados.filter(a => a.direcao === "AUMENTAR");
-  
-  const partes: string[] = [];
-  
-  // 1. PRIMEIRO: reduções por hipoglicemia (segurança prioritária)
-  reducoes.forEach(ajuste => {
-    partes.push(ajuste.justificativa);
-  });
-  
-  // 2. SEGUNDO: solicitação de dados (antes de aumentar, garantir que temos informação)
-  solicitarDados.forEach(ajuste => {
-    partes.push(ajuste.justificativa);
-  });
-  
-  // 3. TERCEIRO: aumentos baseados em padrões (apenas se não houver reduções pendentes)
-  // Se há reduções, não adicionar aumentos (prioridade de segurança)
-  if (reducoes.length === 0) {
-    aumentos.forEach(ajuste => {
-      partes.push(ajuste.justificativa);
-    });
-  }
-  
-  return partes.join(" ");
+  // Return the consolidated summary - already contains ordered recommendations
+  return insulinAnalysis.resumoGeral || "";
 }
 
 // Normaliza nome do período para alinhar com INSULIN_PERIOD_MAP
