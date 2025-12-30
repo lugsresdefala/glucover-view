@@ -351,12 +351,47 @@ function extractPatientNameFromFileName(fileName: string): string {
     .join(" ");
 }
 
-function parseExcelFile(file: File): Promise<ParsedPatientData> {
+function parseExcelFile(file: File, retryCount = 0): Promise<ParsedPatientData> {
+  const MAX_RETRIES = 2;
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  
   return new Promise((resolve, reject) => {
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      reject(new Error(`Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Limite: 10MB.`));
+      return;
+    }
+    
+    // Check file extension
+    const ext = file.name.toLowerCase().split('.').pop();
+    if (ext !== 'xlsx' && ext !== 'xls') {
+      reject(new Error(`Formato de arquivo inválido (.${ext}). Use arquivos .xlsx ou .xls`));
+      return;
+    }
+    
     const reader = new FileReader();
+    
+    // Add timeout for slow reads
+    const timeout = setTimeout(() => {
+      reader.abort();
+      if (retryCount < MAX_RETRIES) {
+        parseExcelFile(file, retryCount + 1).then(resolve).catch(reject);
+      } else {
+        reject(new Error(`Timeout ao ler arquivo após ${MAX_RETRIES + 1} tentativas.`));
+      }
+    }, 30000); // 30 second timeout
+    
     reader.onload = (e) => {
+      clearTimeout(timeout);
       try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const result = e.target?.result;
+        if (!result || !(result instanceof ArrayBuffer)) {
+          throw new Error("Falha ao carregar conteúdo do arquivo.");
+        }
+        const data = new Uint8Array(result);
+        if (data.length === 0) {
+          throw new Error("Arquivo vazio ou corrompido.");
+        }
         const workbook = XLSX.read(data, { type: "array", cellDates: true });
         
         const sheetName = workbook.SheetNames.find(n => 
@@ -665,10 +700,45 @@ function parseExcelFile(file: File): Promise<ParsedPatientData> {
           status: "pending",
         });
       } catch (error) {
+        clearTimeout(timeout);
         reject(error);
       }
     };
-    reader.onerror = () => reject(new Error("Erro ao ler o arquivo."));
+    reader.onerror = (event) => {
+      clearTimeout(timeout);
+      const error = event.target?.error;
+      let errorMessage = "Erro ao ler o arquivo.";
+      
+      if (error) {
+        if (error.name === "NotReadableError") {
+          errorMessage = "Arquivo corrompido ou protegido. Verifique se o arquivo não está aberto em outro programa.";
+        } else if (error.name === "NotFoundError") {
+          errorMessage = "Arquivo não encontrado. Tente selecionar novamente.";
+        } else if (error.name === "SecurityError") {
+          errorMessage = "Acesso ao arquivo negado por restrições de segurança.";
+        } else if (error.name === "AbortError") {
+          if (retryCount < MAX_RETRIES) {
+            parseExcelFile(file, retryCount + 1).then(resolve).catch(reject);
+            return;
+          }
+          errorMessage = "Leitura do arquivo cancelada após múltiplas tentativas.";
+        } else {
+          errorMessage = `Erro ao ler: ${error.name || "desconhecido"} - ${error.message || ""}`;
+        }
+      }
+      
+      reject(new Error(errorMessage));
+    };
+    
+    reader.onabort = () => {
+      clearTimeout(timeout);
+      if (retryCount < MAX_RETRIES) {
+        parseExcelFile(file, retryCount + 1).then(resolve).catch(reject);
+      } else {
+        reject(new Error("Leitura do arquivo abortada após múltiplas tentativas."));
+      }
+    };
+    
     reader.readAsArrayBuffer(file);
   });
 }
@@ -727,19 +797,40 @@ export function BatchImport() {
     setImportErrors([]);
     const newPatients: ParsedPatientData[] = [];
     const errors: ImportError[] = [];
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      try {
-        const patientData = await parseExcelFile(file);
-        newPatients.push(patientData);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Erro desconhecido";
-        errors.push({
-          fileName: file.name,
-          message,
-          type: categorizeError(message),
-        });
+    
+    // Process files in batches to avoid overwhelming the browser
+    const BATCH_SIZE = 10;
+    const filesArray = Array.from(files);
+    
+    for (let batchStart = 0; batchStart < filesArray.length; batchStart += BATCH_SIZE) {
+      const batch = filesArray.slice(batchStart, batchStart + BATCH_SIZE);
+      
+      // Process batch in parallel
+      const batchResults = await Promise.allSettled(
+        batch.map(file => parseExcelFile(file))
+      );
+      
+      for (let j = 0; j < batchResults.length; j++) {
+        const result = batchResults[j];
+        const file = batch[j];
+        
+        if (result.status === "fulfilled") {
+          newPatients.push(result.value);
+        } else {
+          const message = result.reason instanceof Error 
+            ? result.reason.message 
+            : "Erro desconhecido";
+          errors.push({
+            fileName: file.name,
+            message,
+            type: categorizeError(message),
+          });
+        }
+      }
+      
+      // Small delay between batches to let browser breathe
+      if (batchStart + BATCH_SIZE < filesArray.length) {
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
     }
 
@@ -757,7 +848,7 @@ export function BatchImport() {
     if (newPatients.length > 0) {
       toast({
         title: "Arquivos carregados",
-        description: `${newPatients.length} planilha(s) processada(s) com sucesso.`,
+        description: `${newPatients.length} planilha(s) processada(s) com sucesso.${errors.length > 0 ? ` ${errors.length} com erros.` : ""}`,
       });
     }
   };
