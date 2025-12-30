@@ -10,7 +10,8 @@ export function getCookieSecurity() {
   const secureCookies =
     (process.env.SESSION_COOKIE_SECURE || "").toLowerCase() === "true" ||
     isProduction;
-  const sameSite: "none" | "lax" = secureCookies ? "none" : "lax";
+  // Use "strict" in production for better CSRF protection, "lax" in development for easier testing
+  const sameSite: "strict" | "lax" = isProduction ? "strict" : "lax";
   return { isProduction, secureCookies, sameSite };
 }
 

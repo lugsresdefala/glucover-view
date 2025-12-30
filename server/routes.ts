@@ -898,9 +898,10 @@ export async function registerRoutes(
   });
 
   // ========== Legacy Routes (kept for backward compatibility) ==========
+  // Note: All evaluation routes require clinical roles for PHI protection
 
   // Get all evaluations for the authenticated user
-  app.get("/api/evaluations", isAuthenticated, async (req: AuthenticatedRequest, res) => {
+  app.get("/api/evaluations", isAuthenticated, requireRole("medico", "enfermeira", "nutricionista", "coordinator"), async (req: AuthenticatedRequest, res) => {
     try {
       const userId = req.userId;
       const evaluations = await storage.getAllEvaluations(userId);
@@ -912,7 +913,7 @@ export async function registerRoutes(
   });
 
   // Get single evaluation
-  app.get("/api/evaluations/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/evaluations/:id", isAuthenticated, requireRole("medico", "enfermeira", "nutricionista", "coordinator"), async (req, res) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
@@ -930,7 +931,7 @@ export async function registerRoutes(
   });
 
   // Delete single evaluation
-  app.delete("/api/evaluations/:id", isAuthenticated, async (req: AuthenticatedRequest, res) => {
+  app.delete("/api/evaluations/:id", isAuthenticated, requireRole("medico", "enfermeira", "nutricionista", "coordinator"), async (req: AuthenticatedRequest, res) => {
     try {
       const id = parseInt(req.params.id, 10);
       if (isNaN(id)) {
@@ -949,7 +950,7 @@ export async function registerRoutes(
   });
 
   // Delete multiple evaluations
-  app.delete("/api/evaluations", isAuthenticated, async (req: AuthenticatedRequest, res) => {
+  app.delete("/api/evaluations", isAuthenticated, requireRole("medico", "enfermeira", "nutricionista", "coordinator"), async (req: AuthenticatedRequest, res) => {
     try {
       const { ids, deleteAll } = req.body;
       const userId = req.userId;
@@ -973,7 +974,7 @@ export async function registerRoutes(
   });
 
   // Search evaluations by patient name
-  app.get("/api/evaluations/search", isAuthenticated, async (req: AuthenticatedRequest, res) => {
+  app.get("/api/evaluations/search", isAuthenticated, requireRole("medico", "enfermeira", "nutricionista", "coordinator"), async (req: AuthenticatedRequest, res) => {
     try {
       const { name } = req.query;
       if (!name || typeof name !== "string") {
@@ -1000,7 +1001,7 @@ export async function registerRoutes(
   });
 
   // Batch create evaluations with AI recommendations
-  app.post("/api/evaluations/batch", isAuthenticated, async (req: AuthenticatedRequest, res) => {
+  app.post("/api/evaluations/batch", isAuthenticated, requireRole("medico", "enfermeira", "nutricionista", "coordinator"), async (req: AuthenticatedRequest, res) => {
     try {
       const { evaluations: evaluationsData } = req.body;
 
@@ -1106,7 +1107,7 @@ export async function registerRoutes(
   });
 
   // Analyze patient data and generate recommendation
-  app.post("/api/analyze", isAuthenticated, async (req: AuthenticatedRequest, res) => {
+  app.post("/api/analyze", isAuthenticated, requireRole("medico", "enfermeira", "nutricionista", "coordinator"), async (req: AuthenticatedRequest, res) => {
     try {
       // Validate request body
       const validationResult = patientEvaluationSchema.safeParse(req.body);
