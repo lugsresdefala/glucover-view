@@ -74,6 +74,8 @@ export interface PeriodAdjustmentResult {
   valoresObservados: number[];
   valorReferencia?: number; // Para análises que dependem de outro período (ex: madrugada para jejum)
   deltaCalculado?: number;  // Para análises pré/pós
+  suspended?: boolean; // True if this adjustment was suspended due to safety conflict (e.g., hypo detected while recommending increase)
+  originalDirecao?: AdjustmentDirection; // Original direction before suspension
 }
 
 /**
@@ -545,8 +547,48 @@ export function analyzeInsulinAdjustments(readings: GlucoseReading[]): InsulinAd
     periodosSemDados.push(PERIOD_LABELS.madrugada);
   }
   
-  // Determinar prioridade máxima
+  // HIERARCHICAL PRIORITY ANALYSIS (Safety First)
+  // Priority 0: Critical hypoglycemia (<60 mg/dL) - IMMEDIATE action
+  // Priority 1: Any hypoglycemia (<70 mg/dL) - REDUCE insulin first
+  // Priority 2: Severe hyperglycemia (>200 mg/dL) - Urgent increase
+  // Priority 3: Persistent hyperglycemia with NO hypo - Increase insulin
+  // Priority 4: Stable - Maintain regimen
+  
+  // Detect conflicting patterns (hypo + hyper at same period)
+  const conflictingPeriods: string[] = [];
+  const periodStats: Record<string, { hypoCount: number; hyperCount: number; values: number[] }> = {};
+  
+  const periodKeys = ["jejum", "posCafe1h", "preAlmoco", "posAlmoco1h", "preJantar", "posJantar1h", "madrugada"] as const;
+  const periodTargets: Record<string, { min: number; max: number }> = {
+    jejum: { min: 70, max: 95 },
+    posCafe1h: { min: 70, max: 140 },
+    preAlmoco: { min: 70, max: 100 },
+    posAlmoco1h: { min: 70, max: 140 },
+    preJantar: { min: 70, max: 100 },
+    posJantar1h: { min: 70, max: 140 },
+    madrugada: { min: 70, max: 100 },
+  };
+  
+  for (const period of periodKeys) {
+    const values = extractPeriodValues(readings, period);
+    if (values.length === 0) continue;
+    
+    const target = periodTargets[period];
+    const hypoCount = values.filter(v => v < target.min).length;
+    const hyperCount = values.filter(v => v > target.max).length;
+    
+    periodStats[period] = { hypoCount, hyperCount, values };
+    
+    // Detect conflict: both hypo AND hyper at same period
+    if (hypoCount >= 2 && hyperCount >= 2) {
+      conflictingPeriods.push(PERIOD_LABELS[period]);
+    }
+  }
+  
+  // Determinar prioridade máxima com hierarquia clara
   let prioridadeMaxima: AdjustmentDirection = "MANTER";
+  
+  // SAFETY FIRST: Any hypoglycemia takes precedence
   if (ajustes.some(a => a.direcao === "REDUZIR")) {
     prioridadeMaxima = "REDUZIR"; // Segurança primeiro - hipoglicemia
   } else if (ajustes.some(a => a.direcao === "SOLICITAR_DADOS")) {
@@ -555,22 +597,33 @@ export function analyzeInsulinAdjustments(readings: GlucoseReading[]): InsulinAd
     prioridadeMaxima = "AUMENTAR";
   }
   
-  // Gerar resumo
+  // Filter adjustments by type (for conflict resolution and summary)
+  const aumentar = ajustes.filter(a => a.direcao === "AUMENTAR");
+  const reduzir = ajustes.filter(a => a.direcao === "REDUZIR");
+  const solicitar = ajustes.filter(a => a.direcao === "SOLICITAR_DADOS");
+  
+  // Gerar resumo com tratamento de conflitos
   let resumoGeral = "";
   if (ajustes.length === 0) {
     resumoGeral = "Perfil glicêmico sem padrões que indiquem necessidade de ajuste de doses no momento. Manter esquema atual e continuar monitorização.";
   } else {
-    const aumentar = ajustes.filter(a => a.direcao === "AUMENTAR");
-    const reduzir = ajustes.filter(a => a.direcao === "REDUZIR");
-    const solicitar = ajustes.filter(a => a.direcao === "SOLICITAR_DADOS");
     
     const partes: string[] = [];
     
-    if (reduzir.length > 0) {
-      partes.push(`Opção de redução em ${reduzir.map(a => INSULIN_LABELS[a.insulinaAfetada]).join(", ")} devido a hipoglicemia`);
+    // Handle conflicting patterns explicitly
+    if (conflictingPeriods.length > 0) {
+      partes.push(`PADRÃO CONFLITANTE DETECTADO em ${conflictingPeriods.join(", ")}: hipoglicemia E hiperglicemia no mesmo horário. CONDUTA: SEGURANÇA PRIMEIRO - tratar hipoglicemia reduzindo dose; investigar variabilidade alimentar e padrão de atividade física`);
     }
-    if (aumentar.length > 0) {
+    
+    if (reduzir.length > 0) {
+      partes.push(`Opção de redução em ${reduzir.map(a => INSULIN_LABELS[a.insulinaAfetada]).join(", ")} devido a hipoglicemia (PRIORIDADE MÁXIMA)`);
+    }
+    if (aumentar.length > 0 && reduzir.length === 0) {
+      // Only recommend increase if NO hypoglycemia detected
       partes.push(`Opção de aumento em ${aumentar.map(a => INSULIN_LABELS[a.insulinaAfetada]).join(", ")}`);
+    } else if (aumentar.length > 0 && reduzir.length > 0) {
+      // Document but don't recommend increase when there's hypo
+      partes.push(`Hiperglicemia também presente - NÃO aumentar insulina enquanto houver hipoglicemia. Estabilizar primeiro`);
     }
     if (solicitar.length > 0) {
       partes.push(`Dados adicionais necessários para ${solicitar.map(a => a.periodo).join(", ")}`);
@@ -579,8 +632,27 @@ export function analyzeInsulinAdjustments(readings: GlucoseReading[]): InsulinAd
     resumoGeral = partes.join(". ") + ".";
   }
   
+  // HARMONIZE CONFLICT RESOLUTION: If hypoglycemia is present, suppress increase recommendations
+  // to prevent contradictory guidance to downstream consumers
+  let filteredAjustes = ajustes;
+  if (reduzir.length > 0 && aumentar.length > 0) {
+    // Mark increases as "MANTER" with explicit suspension flags
+    filteredAjustes = ajustes.map(a => {
+      if (a.direcao === "AUMENTAR") {
+        return {
+          ...a,
+          direcao: "MANTER" as AdjustmentDirection,
+          originalDirecao: "AUMENTAR" as AdjustmentDirection, // Structured field for original direction
+          suspended: true, // Explicit flag for downstream consumers
+          justificativa: `[SUSPENSO - HIPOGLICEMIA DETECTADA] ${a.justificativa}. Não aumentar dose enquanto houver hipoglicemia em outro período.`
+        };
+      }
+      return a;
+    });
+  }
+  
   return {
-    ajustesRecomendados: ajustes,
+    ajustesRecomendados: filteredAjustes,
     resumoGeral,
     prioridadeMaxima,
     temDadosInsuficientes: periodosSemDados.length > 0 || ajustes.some(a => a.direcao === "SOLICITAR_DADOS"),
@@ -1329,10 +1401,20 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   const diabetesType = (evaluation.diabetesType as "DMG" | "DM1" | "DM2") || "DMG";
   
   const gestationalAge = `${gestationalWeeks} semanas e ${gestationalDays} dias`;
-  const totalDaysAnalyzed = glucoseReadings.length;
   
-  const analysisByPeriod = analyzeByPeriod(glucoseReadings);
-  const criticalAlerts = checkCriticalGlucose(glucoseReadings);
+  // CRITICAL: Use only the last 7 DAYS (not 7 entries) for clinical recommendations
+  // Each entry in glucoseReadings represents one day with multiple periods
+  // Re-evaluations happen every 7 days, so recommendations must be based on recent data
+  const totalDays = glucoseReadings.length;
+  const last7DaysReadings = totalDays <= 7 ? glucoseReadings : glucoseReadings.slice(-7);
+  const totalDaysAnalyzed = last7DaysReadings.length;
+  
+  // Minimum 3 days of data required for reliable pattern detection
+  const hasMinimumData = totalDaysAnalyzed >= 3;
+  
+  // Analysis based on last 7 days only (for recommendation)
+  const analysisByPeriod = analyzeByPeriod(last7DaysReadings);
+  const criticalAlerts = checkCriticalGlucose(last7DaysReadings);
   
   let totalReadings = 0;
   let totalInTarget = 0;
@@ -1353,7 +1435,8 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   const hasCAFPercentile75 = (evaluation.abdominalCircumferencePercentile || 0) >= 75;
   const currentTotalInsulinDose = calculateCurrentTotalInsulinDose(insulinRegimens || []);
   
-  const rulesTriggered = determineTriggeredRules(
+  // Only trigger clinical rules if we have minimum 3 days of data
+  const rulesTriggered = hasMinimumData ? determineTriggeredRules(
     percentAboveTarget,
     usesInsulin,
     gestationalWeeks,
@@ -1362,7 +1445,7 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
     currentTotalInsulinDose,
     weight ?? null,
     diabetesType
-  );
+  ) : [];
   
   let urgencyLevel: "info" | "warning" | "critical" = "info";
   if (criticalAlerts.length > 0) {
@@ -1373,7 +1456,8 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
     urgencyLevel = "warning";
   }
   
-  const insulinCalculation = calculateInsulinDose(weight ?? null, glucoseReadings, insulinRegimens || []);
+  // Use last 7 days for insulin adjustment recommendations
+  const insulinCalculation = calculateInsulinDose(weight ?? null, last7DaysReadings, insulinRegimens || []);
   
   const diabetesTypeLabel = diabetesType === "DMG" ? "Diabetes Mellitus Gestacional" : 
                             diabetesType === "DM1" ? "Diabetes Mellitus tipo 1" : "Diabetes Mellitus tipo 2";
@@ -1383,7 +1467,10 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
     technicalSummary += `, peso ${weight} kg`;
   }
   technicalSummary += `. Diagnóstico: ${diabetesTypeLabel}. `;
-  technicalSummary += `Análise de ${totalDaysAnalyzed} dias com ${totalReadings} medidas glicêmicas. `;
+  technicalSummary += `ANÁLISE BASEADA NOS ÚLTIMOS 7 DIAS: ${totalDaysAnalyzed} dias analisados com ${totalReadings} medidas glicêmicas. `;
+  if (!hasMinimumData) {
+    technicalSummary += `ATENÇÃO: Dados insuficientes (mínimo 3 dias requeridos para recomendações confiáveis). `;
+  }
   technicalSummary += `Percentual dentro da meta: ${percentInTarget}%. `;
   technicalSummary += `Percentual acima da meta: ${percentAboveTarget}%. `;
   technicalSummary += `Média glicêmica: ${averageGlucose} mg/dL. `;
