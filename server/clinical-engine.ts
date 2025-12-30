@@ -1048,6 +1048,9 @@ export interface ClinicalAnalysis {
   recommendedActions: string[];
   insulinRecommendation: string;
   guidelineSources: string[];
+  
+  // Structured insulin adjustment analysis
+  insulinAdjustments: InsulinAdjustmentAnalysis | null;
 }
 
 function analyzeByPeriod(readings: GlucoseReading[]): GlucoseAnalysisByPeriod[] {
@@ -1583,6 +1586,9 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   
   const sevenDayAnalysis = generateSevenDayAnalysis(glucoseReadings, analysisByPeriod);
   
+  // Generate structured insulin adjustment analysis for patients using insulin
+  const insulinAdjustments = usesInsulin && hasMinimumData ? analyzeInsulinAdjustments(last7DaysReadings) : null;
+  
   return {
     patientName,
     gestationalAge,
@@ -1605,6 +1611,7 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
     recommendedActions,
     insulinRecommendation,
     guidelineSources,
+    insulinAdjustments,
   };
 }
 
