@@ -158,11 +158,12 @@ export interface AnalyzeResponse {
 
 // Glucose targets according to SBD 2025 / FEBRASGO 2019 / OMS 2025
 // Metas glicêmicas para diabetes na gestação
+// IMPORTANTE: "max" representa "MENOR QUE" (ex: jejum < 95), não "menor ou igual"
 export const glucoseTargets = {
-  jejum: { min: 65, max: 95 },           // Jejum: 65-95 mg/dL
-  prePrandial: { min: 65, max: 100 },    // Pré-prandial (pré-almoço, pré-jantar): <100 mg/dL
-  madrugada: { min: 65, max: 100 },      // Madrugada (3h): <100 mg/dL
-  posPrandial1h: { min: 65, max: 140 },  // 1h pós-prandial: <140 mg/dL (medição padrão)
+  jejum: { min: 65, max: 95 },           // Jejum: ≥65 e <95 mg/dL
+  prePrandial: { min: 65, max: 100 },    // Pré-prandial (pré-almoço, pré-jantar): ≥65 e <100 mg/dL
+  madrugada: { min: 65, max: 100 },      // Madrugada (3h): ≥65 e <100 mg/dL
+  posPrandial1h: { min: 65, max: 140 },  // 1h pós-prandial: ≥65 e <140 mg/dL
 } as const;
 
 // Critical thresholds for alerts
@@ -184,7 +185,8 @@ export type GlucoseTargetType = "jejum" | "prePrandial" | "madrugada" | "posPran
 
 export function isGlucoseWithinTarget(value: number, type: GlucoseTargetType): boolean {
   const target = glucoseTargets[type];
-  return value >= target.min && value <= target.max;
+  // SBD 2025: meta é "< valor" não "<= valor" (ex: jejum < 95, não <= 95)
+  return value >= target.min && value < target.max;
 }
 
 // Check for critical glucose values

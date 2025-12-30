@@ -155,9 +155,10 @@ function extractPeriodValues(readings: GlucoseReading[], period: keyof GlucoseRe
 
 /**
  * Conta dias com valor acima do limite
+ * SBD 2025: meta é "< valor", portanto >= limite = acima da meta
  */
 function countDaysAboveLimit(values: number[], limit: number): number {
-  return values.filter(v => v > limit).length;
+  return values.filter(v => v >= limit).length;
 }
 
 /**
@@ -171,7 +172,7 @@ function countDaysBelowLimit(values: number[], limit: number): number {
  * Analisa jejum elevado considerando madrugada (Efeito Somogyi vs Fenômeno do Alvorecer)
  * 
  * LÓGICA CLÍNICA CORRIGIDA (SBD 2025, FEBRASGO 2019):
- * - Efeito Somogyi: Hipoglicemia noturna (<70 mg/dL) SEGUIDA de hiperglicemia matinal (>95 mg/dL)
+ * - Efeito Somogyi: Hipoglicemia noturna (<70 mg/dL) SEGUIDA de hiperglicemia matinal (≥95 mg/dL)
  *   → Detectado por correlação PAR-A-PAR no MESMO DIA
  *   → Conduta: REDUZIR NPH noturna
  * 
@@ -199,7 +200,7 @@ function analyzeJejumWithMadrugada(readings: GlucoseReading[]): PeriodAdjustment
       periodo: PERIOD_LABELS.jejum,
       insulinaAfetada: "NPH_NOTURNA",
       direcao: "SOLICITAR_DADOS",
-      justificativa: `Jejum >95 mg/dL em ${diasJejumAlto}/${jejumValues.length} dias. Necessário monitorizar glicemia da madrugada (3h) para diferenciar dose insuficiente de NPH vs Efeito Somogyi.`,
+      justificativa: `Jejum ≥95 mg/dL em ${diasJejumAlto}/${jejumValues.length} dias. Necessário monitorizar glicemia da madrugada (3h) para diferenciar dose insuficiente de NPH vs Efeito Somogyi.`,
       diasComProblema: diasJejumAlto,
       totalDiasAnalisados: jejumValues.length,
       valoresObservados: jejumValues,
@@ -207,7 +208,7 @@ function analyzeJejumWithMadrugada(readings: GlucoseReading[]): PeriodAdjustment
   }
   
   // ANÁLISE PAR-A-PAR: Correlacionar madrugada e jejum do MESMO DIA
-  let paresSomogyi = 0;           // Madrugada baixa (<70) + Jejum alto (>95) = Somogyi
+  let paresSomogyi = 0;           // Madrugada baixa (<70) + Jejum alto (≥95) = Somogyi
   let paresFenomenoAlvorecer = 0; // Madrugada normal/alta + Jejum alto = Dawn phenomenon
   let diasComAmbos = 0;
   const valoresMadrugadaSomogyi: number[] = [];
@@ -224,9 +225,10 @@ function analyzeJejumWithMadrugada(readings: GlucoseReading[]): PeriodAdjustment
     
     diasComAmbos++;
     
-    const jejumAlto = jejum > ADJUSTMENT_THRESHOLDS.JEJUM_LIMITE;
+    // SBD 2025: meta é "< valor", portanto >= limite = acima da meta
+    const jejumAlto = jejum >= ADJUSTMENT_THRESHOLDS.JEJUM_LIMITE;
     const madrugadaBaixa = madrugada < ADJUSTMENT_THRESHOLDS.HIPO_NOTURNA_LIMITE; // <70 mg/dL
-    const madrugadaAlta = madrugada > ADJUSTMENT_THRESHOLDS.MADRUGADA_LIMITE;      // >100 mg/dL
+    const madrugadaAlta = madrugada >= ADJUSTMENT_THRESHOLDS.MADRUGADA_LIMITE;      // >=100 mg/dL
     
     if (jejumAlto && madrugadaBaixa) {
       // EFEITO SOMOGYI: Hipoglicemia noturna causou rebote matinal
@@ -282,7 +284,7 @@ function analyzeJejumWithMadrugada(readings: GlucoseReading[]): PeriodAdjustment
         periodo: PERIOD_LABELS.jejum,
         insulinaAfetada: "NPH_NOTURNA",
         direcao: "AUMENTAR",
-        justificativa: `Jejum >95 mg/dL em ${diasJejumAlto} dias com madrugada elevada (>100 mg/dL) em ${diasMadrugadaAlta} dias. Madrugada sem hipoglicemia (média ${Math.round(avgMadrugada)} mg/dL). NPH noturna insuficiente. Opção: aumentar NPH ao deitar.`,
+        justificativa: `Jejum ≥95 mg/dL em ${diasJejumAlto} dias com madrugada elevada (≥100 mg/dL) em ${diasMadrugadaAlta} dias. Madrugada sem hipoglicemia (média ${Math.round(avgMadrugada)} mg/dL). NPH noturna insuficiente. Opção: aumentar NPH ao deitar.`,
         diasComProblema: diasJejumAlto,
         totalDiasAnalisados: jejumValues.length,
         valoresObservados: jejumValues,
@@ -295,7 +297,7 @@ function analyzeJejumWithMadrugada(readings: GlucoseReading[]): PeriodAdjustment
       periodo: PERIOD_LABELS.jejum,
       insulinaAfetada: "NPH_NOTURNA",
       direcao: "AUMENTAR",
-      justificativa: `Fenômeno do Alvorecer: Jejum >95 mg/dL em ${diasJejumAlto} dias com madrugada normal (média ${Math.round(avgMadrugada)} mg/dL, sem hipoglicemia). Opção: aumentar NPH noturna ou ajustar horário de aplicação para mais tarde.`,
+      justificativa: `Fenômeno do Alvorecer: Jejum ≥95 mg/dL em ${diasJejumAlto} dias com madrugada normal (média ${Math.round(avgMadrugada)} mg/dL, sem hipoglicemia). Opção: aumentar NPH noturna ou ajustar horário de aplicação para mais tarde.`,
       diasComProblema: diasJejumAlto,
       totalDiasAnalisados: jejumValues.length,
       valoresObservados: jejumValues,
@@ -308,7 +310,7 @@ function analyzeJejumWithMadrugada(readings: GlucoseReading[]): PeriodAdjustment
     periodo: PERIOD_LABELS.jejum,
     insulinaAfetada: "NPH_NOTURNA",
     direcao: "AVALIAR",
-    justificativa: `Jejum >95 mg/dL em ${diasJejumAlto} dias. Dados insuficientes de madrugada para correlação (${diasComAmbos} dias com ambos os valores). Aumentar frequência de monitorização às 3h para definir conduta.`,
+    justificativa: `Jejum ≥95 mg/dL em ${diasJejumAlto} dias. Dados insuficientes de madrugada para correlação (${diasComAmbos} dias com ambos os valores). Aumentar frequência de monitorização às 3h para definir conduta.`,
     diasComProblema: diasJejumAlto,
     totalDiasAnalisados: jejumValues.length,
     valoresObservados: jejumValues,
@@ -352,7 +354,7 @@ function analyzePrePrandial(
       periodo: PERIOD_LABELS[prePeriod],
       insulinaAfetada: nphResponsavel,
       direcao: "AUMENTAR",
-      justificativa: `${PERIOD_LABELS[prePeriod]} >100 mg/dL em ${diasAlto}/${values.length} dias (média ${avg} mg/dL). Indica ${INSULIN_LABELS[nphResponsavel]} insuficiente. Opção: aumentar dose.`,
+      justificativa: `${PERIOD_LABELS[prePeriod]} ≥100 mg/dL em ${diasAlto}/${values.length} dias (média ${avg} mg/dL). Indica ${INSULIN_LABELS[nphResponsavel]} insuficiente. Opção: aumentar dose.`,
       diasComProblema: diasAlto,
       totalDiasAnalisados: values.length,
       valoresObservados: values,
@@ -418,7 +420,7 @@ function analyzePosPrandial(
       periodo: PERIOD_LABELS[posPeriod],
       insulinaAfetada: rapidaResponsavel,
       direcao: "SOLICITAR_DADOS",
-      justificativa: `${PERIOD_LABELS[posPeriod]} >140 mg/dL em ${diasPosAlto} dias, porém sem dados de ${PERIOD_LABELS[prePeriod]} para calcular excursão glicêmica. Necessário monitorizar ${PERIOD_LABELS[prePeriod]} para diferenciar problema na rápida vs NPH.`,
+      justificativa: `${PERIOD_LABELS[posPeriod]} ≥140 mg/dL em ${diasPosAlto} dias, porém sem dados de ${PERIOD_LABELS[prePeriod]} para calcular excursão glicêmica. Necessário monitorizar ${PERIOD_LABELS[prePeriod]} para diferenciar problema na rápida vs NPH.`,
       diasComProblema: diasPosAlto,
       totalDiasAnalisados: posValues.length,
       valoresObservados: posValues,
@@ -426,8 +428,9 @@ function analyzePosPrandial(
   }
   
   // Analisar deltas
-  const diasDeltaAlto = deltas.filter(d => d.delta > ADJUSTMENT_THRESHOLDS.DELTA_POS_PRE_LIMITE).length;
-  const diasDeltaNormalMasPosAlto = deltas.filter(d => d.delta <= ADJUSTMENT_THRESHOLDS.DELTA_POS_PRE_LIMITE && d.pos > ADJUSTMENT_THRESHOLDS.POS_PRANDIAL_LIMITE).length;
+  // SBD 2025: meta é "< valor", portanto >= limite = acima da meta
+  const diasDeltaAlto = deltas.filter(d => d.delta >= ADJUSTMENT_THRESHOLDS.DELTA_POS_PRE_LIMITE).length;
+  const diasDeltaNormalMasPosAlto = deltas.filter(d => d.delta < ADJUSTMENT_THRESHOLDS.DELTA_POS_PRE_LIMITE && d.pos >= ADJUSTMENT_THRESHOLDS.POS_PRANDIAL_LIMITE).length;
   const avgDelta = deltas.length > 0 ? Math.round(deltas.reduce((a, b) => a + b.delta, 0) / deltas.length) : 0;
   const avgPos = Math.round(posValues.reduce((a, b) => a + b, 0) / posValues.length);
   
@@ -437,7 +440,7 @@ function analyzePosPrandial(
       periodo: PERIOD_LABELS[posPeriod],
       insulinaAfetada: rapidaResponsavel,
       direcao: "AUMENTAR",
-      justificativa: `Excursão glicêmica >40 mg/dL em ${diasDeltaAlto}/${deltas.length} dias (delta médio ${avgDelta} mg/dL). Indica ${INSULIN_LABELS[rapidaResponsavel]} insuficiente. Opção: aumentar dose.`,
+      justificativa: `Excursão glicêmica ≥40 mg/dL em ${diasDeltaAlto}/${deltas.length} dias (delta médio ${avgDelta} mg/dL). Indica ${INSULIN_LABELS[rapidaResponsavel]} insuficiente. Opção: aumentar dose.`,
       diasComProblema: diasDeltaAlto,
       totalDiasAnalisados: deltas.length,
       valoresObservados: posValues,
@@ -575,7 +578,8 @@ export function analyzeInsulinAdjustments(readings: GlucoseReading[]): InsulinAd
     
     const target = periodTargets[period];
     const hypoCount = values.filter(v => v < target.min).length;
-    const hyperCount = values.filter(v => v > target.max).length;
+    // SBD 2025: meta é "< valor" não "<= valor", então >= target.max = acima da meta
+    const hyperCount = values.filter(v => v >= target.max).length;
     
     periodStats[period] = { hypoCount, hyperCount, values };
     
@@ -1065,9 +1069,10 @@ function analyzeByPeriod(readings: GlucoseReading[]): GlucoseAnalysisByPeriod[] 
     if (values.length === 0) continue;
     
     const targetMax = glucoseTargets[period.targetType].max;
-    const aboveTarget = values.filter(v => v > targetMax).length;
+    // SBD 2025: meta é "< valor" não "<= valor" (ex: jejum < 95, não <= 95)
+    const aboveTarget = values.filter(v => v >= targetMax).length;
     const belowTarget = values.filter(v => v < criticalGlucoseThresholds.hypo).length;
-    const inTarget = values.filter(v => v <= targetMax && v >= criticalGlucoseThresholds.hypo).length;
+    const inTarget = values.filter(v => v < targetMax && v >= criticalGlucoseThresholds.hypo).length;
     
     results.push({
       period: period.name,
@@ -1129,7 +1134,8 @@ function generateSevenDayAnalysis(
         const pStr = String(p);
         const targetMax = p === "jejum" ? glucoseTargets.jejum.max : 
                          (pStr.includes("pos") ? glucoseTargets.posPrandial1h.max : glucoseTargets.prePrandial.max);
-        if (val <= targetMax && val >= criticalGlucoseThresholds.hypo) {
+        // SBD 2025: meta é "< valor" não "<= valor"
+        if (val < targetMax && val >= criticalGlucoseThresholds.hypo) {
           dayInTarget++;
         }
       }
