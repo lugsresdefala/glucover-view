@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, CheckCircle, AlertTriangle, FileText, ArrowRight } from "lucide-react";
+import { AlertCircle, CheckCircle, AlertTriangle, FileText, ArrowRight, Calendar, Info } from "lucide-react";
 import type { ClinicalRecommendation } from "@shared/schema";
 
 interface RecommendationPanelProps {
@@ -52,6 +52,31 @@ export function RecommendationPanel({ recommendation, patientName }: Recommendat
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Data Quality Indicator */}
+        {(recommendation.chronologyWarning || recommendation.dateRange) && (
+          <section className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+            <div className="flex items-start gap-2">
+              <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-800 dark:text-blue-200">
+                {recommendation.dateRange && (
+                  <div className="flex items-center gap-2 mb-1">
+                    <Calendar className="h-3 w-3" />
+                    <span className="font-medium">
+                      Período analisado: {recommendation.dateRange.start} a {recommendation.dateRange.end}
+                      {recommendation.totalDaysAnalyzed && ` (${recommendation.totalDaysAnalyzed} dias)`}
+                    </span>
+                  </div>
+                )}
+                {recommendation.chronologyWarning && (
+                  <p className="text-xs mt-1" data-testid="text-panel-chronology-warning">
+                    {recommendation.chronologyWarning}
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
         <section>
           <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-2">
             Análise Clínica

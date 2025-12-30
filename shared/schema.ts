@@ -151,6 +151,10 @@ export interface ClinicalRecommendation {
   nextSteps: string[];
   urgencyLevel: "info" | "warning" | "critical";
   guidelineReferences: string[];
+  // Data quality indicators
+  chronologyWarning?: string;  // Aviso sobre gaps nos dados ou dados sem datas
+  dateRange?: { start: string; end: string };  // Intervalo de datas analisado
+  totalDaysAnalyzed?: number;  // Número de dias incluídos na análise
 }
 
 // API response types

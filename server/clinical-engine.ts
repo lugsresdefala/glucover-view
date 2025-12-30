@@ -1210,6 +1210,10 @@ export interface ClinicalAnalysis {
   
   // Structured insulin adjustment analysis
   insulinAdjustments: InsulinAdjustmentAnalysis | null;
+  
+  // Data quality indicators (always populated)
+  chronologyWarning?: string;
+  dateRange?: { start: string; end: string };
 }
 
 function analyzeByPeriod(readings: GlucoseReading[]): GlucoseAnalysisByPeriod[] {
@@ -1774,6 +1778,9 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
     insulinRecommendation,
     guidelineSources,
     insulinAdjustments,
+    // Data quality indicators (always populated)
+    chronologyWarning: chronologyResult.warningMessage || undefined,
+    dateRange: chronologyResult.dateRange || undefined,
   };
 }
 

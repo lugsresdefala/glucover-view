@@ -161,6 +161,10 @@ function formatAIResponse(parsed: any, analysis: ClinicalAnalysis): ClinicalReco
     conduta = analysis.insulinRecommendation;
   }
   
+  // Extract chronology info - prefer main analysis, fallback to insulinAdjustments
+  const chronologyWarning = analysis.chronologyWarning || analysis.insulinAdjustments?.chronologyWarning;
+  const dateRange = analysis.dateRange || analysis.insulinAdjustments?.dateRange;
+  
   return {
     analysis: fullAnalysis || analysis.technicalSummary,
     mainRecommendation: conduta.trim(),
@@ -170,6 +174,9 @@ function formatAIResponse(parsed: any, analysis: ClinicalAnalysis): ClinicalReco
       : analysis.recommendedActions,
     urgencyLevel: validateUrgencyLevel(parsed.urgencyLevel, analysis.urgencyLevel),
     guidelineReferences: ruleIds.length > 0 ? ruleIds : [],
+    chronologyWarning,
+    dateRange,
+    totalDaysAnalyzed: analysis.totalDaysAnalyzed,
   };
 }
 
@@ -485,6 +492,10 @@ function generateDeterministicRecommendation(
   // Deduplicate nextSteps to avoid repetition
   const uniqueNextSteps = Array.from(new Set(nextSteps));
   
+  // Extract chronology info - prefer main analysis, fallback to insulinAdjustments
+  const chronologyWarning = analysis.chronologyWarning || analysis.insulinAdjustments?.chronologyWarning;
+  const dateRange = analysis.dateRange || analysis.insulinAdjustments?.dateRange;
+  
   return {
     analysis: fullAnalysis,
     mainRecommendation: mainRec,
@@ -492,6 +503,9 @@ function generateDeterministicRecommendation(
     nextSteps: uniqueNextSteps,
     urgencyLevel: urgency,
     guidelineReferences: ruleIds,
+    chronologyWarning,
+    dateRange,
+    totalDaysAnalyzed: analysis.totalDaysAnalyzed,
   };
 }
 
