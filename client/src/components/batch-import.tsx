@@ -680,33 +680,8 @@ function parseExcelFile(file: File, retryCount = 0): Promise<ParsedPatientData> 
           throw new Error("Nenhum dado de glicemia encontrado na planilha. Verifique se os valores numéricos estão nas colunas corretas.");
         }
         
-        // CRITICAL FIX: Detect and correct data order
-        // Most spreadsheets have newest data first (descending), but the analysis expects
-        // chronological order (oldest first) so that slice(-7) gets the most recent 7 days.
-        // We detect the order by checking the gestational ages of first and last readings.
-        if (glucoseReadings.length >= 2) {
-          const firstReading = glucoseReadings[0] as Record<string, unknown>;
-          const lastReading = glucoseReadings[glucoseReadings.length - 1] as Record<string, unknown>;
-          
-          // Check if first reading has higher gestational age than last (descending order)
-          // This indicates the spreadsheet has newest data first
-          const firstAge = typeof firstReading.gestationalAge === 'number' ? firstReading.gestationalAge : null;
-          const lastAge = typeof lastReading.gestationalAge === 'number' ? lastReading.gestationalAge : null;
-          
-          if (firstAge !== null && lastAge !== null) {
-            if (firstAge > lastAge) {
-              console.log(`[DEBUG ${patientName}] Data in descending order (newest first: ${firstAge.toFixed(2)} -> ${lastAge.toFixed(2)}). Reversing to chronological order.`);
-              glucoseReadings.reverse();
-            } else {
-              console.log(`[DEBUG ${patientName}] Data already in chronological order (oldest first: ${firstAge.toFixed(2)} -> ${lastAge.toFixed(2)}).`);
-            }
-          } else {
-            // Fallback: If no gestational age available, assume descending (most common format)
-            // and reverse to ensure newest data is at the end for slice(-7)
-            console.log(`[DEBUG ${patientName}] No gestational age in readings. Assuming descending order and reversing.`);
-            glucoseReadings.reverse();
-          }
-        }
+        // Data is already in chronological order (oldest first, newest last)
+        // slice(-7) in clinical-engine.ts will correctly get the most recent 7 days
         
         // Determine insulin usage - prioritize explicit detection from sheet content
         const insulinFieldsCount = glucoseReadings.filter(r => 
