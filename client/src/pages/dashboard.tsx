@@ -241,6 +241,22 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
     return "agora";
   };
 
+  const isEvaluationResolved = (evaluation: StoredEvaluation) => {
+    if (!evaluation.createdAt) return false;
+    
+    const createdDate = new Date(evaluation.createdAt);
+    const now = new Date();
+    const daysSinceEvaluation = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    const currentWeeks = evaluation.gestationalWeeks + Math.floor((evaluation.gestationalDays + daysSinceEvaluation) / 7);
+    
+    return currentWeeks > 40;
+  };
+
+  const getResolvedGestationalAge = (evaluation: StoredEvaluation) => {
+    return { weeks: evaluation.gestationalWeeks, days: evaluation.gestationalDays };
+  };
+
   const analyzeMutation = useMutation({
     mutationFn: async (data: PatientEvaluation) => {
       const response = await apiRequest("POST", "/api/analyze", data);
@@ -1014,17 +1030,21 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
                         new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
                       ).map((evaluation) => {
                         const urgency = evaluation.recommendation?.urgencyLevel || "info";
-                        const triageClass = urgency === "critical" 
-                          ? "triage-item-critical" 
-                          : urgency === "warning" 
-                            ? "triage-item-warning" 
-                            : "triage-item-info";
+                        const resolved = isEvaluationResolved(evaluation);
+                        const resolvedAge = getResolvedGestationalAge(evaluation);
+                        const triageClass = resolved 
+                          ? "" 
+                          : urgency === "critical" 
+                            ? "triage-item-critical" 
+                            : urgency === "warning" 
+                              ? "triage-item-warning" 
+                              : "triage-item-info";
                         return (
                         <div
                           key={evaluation.id}
                           className={`triage-item ${triageClass} ${
                             selectedIds.has(evaluation.id) ? "bg-muted/50 border-primary" : ""
-                          }`}
+                          } ${resolved ? "opacity-50 grayscale" : ""}`}
                           onClick={() => selectionMode ? toggleSelection(evaluation.id, { stopPropagation: () => {} } as React.MouseEvent) : handleViewEvaluation(evaluation)}
                           data-testid={`card-evaluation-${evaluation.id}`}
                         >
@@ -1047,12 +1067,20 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">
-                                {evaluation.patientName}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium truncate">
+                                  {evaluation.patientName}
+                                </p>
+                                {resolved && (
+                                  <Badge variant="secondary" className="text-xs shrink-0">
+                                    Resolvida
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground">
-                                {evaluation.gestationalWeeks}sem {evaluation.gestationalDays}d
+                                {resolvedAge.weeks}sem {resolvedAge.days}d
                                 {evaluation.usesInsulin && " • Insulina"}
+                                {resolved && " • IG final"}
                               </p>
                             </div>
                           </div>
