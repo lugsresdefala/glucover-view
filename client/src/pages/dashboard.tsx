@@ -446,48 +446,138 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
       a.patientName.localeCompare(b.patientName, 'pt-BR')
     );
 
-    const exportData = sortedEvaluations.map(evaluation => {
+    const formatDateExcel = (date: string | Date | undefined) => {
+      if (!date) return "-";
+      return new Date(date).toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    };
+
+    const getUrgencyLabel = (level: string) => {
+      switch (level) {
+        case "critical": return "ALERTA";
+        case "warning": return "ATENÇÃO";
+        default: return "ADEQUADO";
+      }
+    };
+
+    const summaryData = sortedEvaluations.map(evaluation => {
       const rec = evaluation.recommendation;
+      const readings = evaluation.glucoseReadings || [];
       
-      let recomendacao = "";
-      
-      if (rec?.mainRecommendation) {
-        recomendacao = rec.mainRecommendation;
-      }
-      
-      if (rec?.justification) {
-        recomendacao += `\n\nJUSTIFICATIVA: ${rec.justification}`;
-      }
-      
-      if (rec?.nextSteps && rec.nextSteps.length > 0) {
-        recomendacao += `\n\nPRÓXIMOS PASSOS:\n${rec.nextSteps.map((s, i) => `${i + 1}. ${s}`).join('\n')}`;
-      }
+      const allValues: number[] = [];
+      const inTargetValues: number[] = [];
+      const targets = {
+        jejum: { min: 65, max: 95 },
+        posCafe1h: { min: 70, max: 140 },
+        posAlmoco1h: { min: 70, max: 140 },
+        posJantar1h: { min: 70, max: 140 },
+        preAlmoco: { min: 65, max: 100 },
+        preJantar: { min: 65, max: 100 },
+        madrugada: { min: 65, max: 100 },
+      } as Record<string, { min: number; max: number }>;
+
+      readings.forEach(r => {
+        Object.entries(r).forEach(([key, val]) => {
+          if (typeof val === "number" && val > 0 && targets[key]) {
+            allValues.push(val);
+            if (val >= targets[key].min && val <= targets[key].max) {
+              inTargetValues.push(val);
+            }
+          }
+        });
+      });
+
+      const avgGlucose = allValues.length > 0 ? allValues.reduce((a, b) => a + b, 0) / allValues.length : 0;
+      const percentInTarget = allValues.length > 0 ? (inTargetValues.length / allValues.length) * 100 : 0;
       
       return {
-        "Nome": evaluation.patientName,
-        "Recomendação": recomendacao.trim() || "Sem recomendação"
+        "Paciente": evaluation.patientName,
+        "Data Avaliação": formatDateExcel(evaluation.createdAt),
+        "IG (semanas)": `${evaluation.gestationalWeeks || 0}s ${evaluation.gestationalDays || 0}d`,
+        "Peso (kg)": evaluation.weight ? String(evaluation.weight) : "-",
+        "Usa Insulina": evaluation.usesInsulin ? "Sim" : "Não",
+        "Adesão Dieta": evaluation.dietAdherence === "boa" ? "Boa" : 
+                        evaluation.dietAdherence === "regular" ? "Regular" : "Ruim",
+        "Nível": getUrgencyLabel(rec?.urgencyLevel || "info"),
+        "% no Alvo": allValues.length > 0 ? `${percentInTarget.toFixed(0)}%` : "-",
+        "Média Glicêmica": allValues.length > 0 ? `${avgGlucose.toFixed(0)} mg/dL` : "-",
+        "Leituras Analisadas": allValues.length,
+        "Recomendação Principal": rec?.mainRecommendation || "-",
       };
     });
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    
-    ws['!cols'] = [
-      { wch: 40 },
-      { wch: 100 },
-    ];
-    
+    const glucoseData: Array<Record<string, string | number>> = [];
+    sortedEvaluations.forEach(evaluation => {
+      const readings = evaluation.glucoseReadings || [];
+      readings.forEach((reading, idx) => {
+        if (reading && typeof reading === 'object') {
+          glucoseData.push({
+            "Paciente": evaluation.patientName,
+            "Data Avaliação": formatDateExcel(evaluation.createdAt),
+            "Dia": (reading as Record<string, unknown>).date ? String((reading as Record<string, unknown>).date) : `Dia ${idx + 1}`,
+            "Jejum": typeof reading.jejum === 'number' ? reading.jejum : "-",
+            "Pós-Café 1h": typeof reading.posCafe1h === 'number' ? reading.posCafe1h : "-",
+            "Pré-Almoço": typeof reading.preAlmoco === 'number' ? reading.preAlmoco : "-",
+            "Pós-Almoço 1h": typeof reading.posAlmoco1h === 'number' ? reading.posAlmoco1h : "-",
+            "Pré-Jantar": typeof reading.preJantar === 'number' ? reading.preJantar : "-",
+            "Pós-Jantar 1h": typeof reading.posJantar1h === 'number' ? reading.posJantar1h : "-",
+            "Madrugada": typeof reading.madrugada === 'number' ? reading.madrugada : "-",
+          });
+        }
+      });
+    });
+
+    const recommendationData = sortedEvaluations.map(evaluation => {
+      const rec = evaluation.recommendation;
+      
+      return {
+        "Paciente": evaluation.patientName,
+        "Data Avaliação": formatDateExcel(evaluation.createdAt),
+        "Nível de Urgência": getUrgencyLabel(rec?.urgencyLevel || "info"),
+        "Recomendação": rec?.mainRecommendation || "-",
+        "Justificativa": rec?.justification || "-",
+        "Próximos Passos": rec?.nextSteps?.join("; ") || "-",
+      };
+    });
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Recomendações");
+    
+    const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+    wsSummary['!cols'] = [
+      { wch: 45 }, { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
+      { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 60 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo");
+
+    if (glucoseData.length > 0) {
+      const wsGlucose = XLSX.utils.json_to_sheet(glucoseData);
+      wsGlucose['!cols'] = [
+        { wch: 45 }, { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
+        { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 12 }
+      ];
+      XLSX.utils.book_append_sheet(wb, wsGlucose, "Glicemias");
+    }
+
+    const wsRec = XLSX.utils.json_to_sheet(recommendationData);
+    wsRec['!cols'] = [
+      { wch: 45 }, { wch: 18 }, { wch: 18 }, { wch: 80 }, { wch: 60 }, { wch: 60 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsRec, "Recomendações");
 
     const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const fileName = `recomendacoes_${dateStr}.xlsx`;
+    const dateStr = now.toLocaleDateString("pt-BR").replace(/\//g, "-");
+    const fileName = `glucover_avaliacoes_${dateStr}.xlsx`;
 
     XLSX.writeFile(wb, fileName);
 
     toast({
       title: "Exportação concluída",
-      description: `${sortedEvaluations.length} recomendações exportadas para ${fileName}`,
+      description: `${sortedEvaluations.length} avaliações exportadas com ${glucoseData.length} leituras glicêmicas`,
     });
   };
 
