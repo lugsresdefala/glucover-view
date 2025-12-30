@@ -558,6 +558,7 @@ function parseExcelFile(file: File, retryCount = 0): Promise<ParsedPatientData> 
           let hasAnyValue = false;
           let currentRowAge = 0;
           let currentSource: "explicit" | "calculated" | "propagated" = "propagated";
+          let currentMeasurementDate: string | undefined = undefined;
           
           // PRIORIDADE 1: Usar IG explícita da coluna da planilha (mais confiável)
           if (gestationalAgeColIndex >= 0) {
@@ -575,19 +576,24 @@ function parseExcelFile(file: File, retryCount = 0): Promise<ParsedPatientData> 
           }
           
           // PRIORIDADE 2 (fallback): Calcular IG a partir da DUM + data da medição
-          if (currentRowAge === 0 && dumDate && dateColIndex >= 0) {
+          if (dateColIndex >= 0) {
             const dateValue = row[dateColIndex];
-            const measurementDate = parseExcelDate(dateValue);
-            if (measurementDate) {
-              const calculatedAge = calculateGestationalAgeFromDUM(measurementDate, dumDate);
-              if (debugRowCount < 3) {
-                console.log(`[DEBUG ${patientName}] Row ${i}: IG calculada da DUM: dateValue="${dateValue}", calculatedAge=${calculatedAge.toFixed(2)} semanas`);
-              }
-              if (calculatedAge > 0) {
-                currentRowAge = calculatedAge;
-                lastGestationalAge = calculatedAge;
-                currentSource = "calculated";
-                gestationalAgeSource = "calculated";
+            const parsedDate = parseExcelDate(dateValue);
+            if (parsedDate) {
+              // Salvar a data da medição em formato ISO (YYYY-MM-DD) para detecção de gaps
+              currentMeasurementDate = parsedDate.toISOString().split('T')[0];
+              
+              if (currentRowAge === 0 && dumDate) {
+                const calculatedAge = calculateGestationalAgeFromDUM(parsedDate, dumDate);
+                if (debugRowCount < 3) {
+                  console.log(`[DEBUG ${patientName}] Row ${i}: IG calculada da DUM: dateValue="${dateValue}", calculatedAge=${calculatedAge.toFixed(2)} semanas`);
+                }
+                if (calculatedAge > 0) {
+                  currentRowAge = calculatedAge;
+                  lastGestationalAge = calculatedAge;
+                  currentSource = "calculated";
+                  gestationalAgeSource = "calculated";
+                }
               }
             }
           }
@@ -606,6 +612,10 @@ function parseExcelFile(file: File, retryCount = 0): Promise<ParsedPatientData> 
             // Store gestational age in reading for ordering detection
             if (currentRowAge > 0) {
               (reading as Record<string, unknown>).gestationalAge = currentRowAge;
+            }
+            // Store measurement date for chronological gap detection
+            if (currentMeasurementDate) {
+              (reading as Record<string, unknown>).measurementDate = currentMeasurementDate;
             }
             glucoseReadings.push(reading);
             debugRowCount++;

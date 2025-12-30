@@ -87,6 +87,8 @@ export interface InsulinAdjustmentAnalysis {
   prioridadeMaxima: AdjustmentDirection;
   temDadosInsuficientes: boolean;
   periodosSemDados: string[];
+  chronologyWarning?: string;  // Aviso sobre gaps nos dados
+  dateRange?: { start: string; end: string };  // Intervalo de datas analisado
 }
 
 /**
@@ -143,6 +145,147 @@ const INSULIN_LABELS: Record<InsulinAdjustmentType, string> = {
   RAPIDA_ALMOCO: "Rápida almoço",
   RAPIDA_JANTAR: "Rápida jantar",
 };
+
+// =============================================================================
+// CHRONOLOGY UTILITIES - GAP DETECTION AND CONSECUTIVE DAY SELECTION
+// =============================================================================
+
+/**
+ * Resultado da análise cronológica
+ */
+export interface ChronologyResult {
+  readings: GlucoseReading[];           // Leituras consecutivas para análise
+  totalOriginal: number;                // Total de leituras originais
+  hasDateInfo: boolean;                 // Se as leituras têm informação de data
+  gapsDetected: GapInfo[];              // Gaps detectados nos dados
+  warningMessage: string | null;        // Mensagem de alerta sobre gaps
+  dateRange: { start: string; end: string } | null;  // Intervalo de datas analisado
+}
+
+export interface GapInfo {
+  afterDate: string;     // Data após a qual há gap
+  beforeDate: string;    // Data antes da qual há gap  
+  daysMissing: number;   // Dias sem dados
+}
+
+/**
+ * Calcula diferença em dias entre duas datas ISO
+ */
+function daysDifference(dateA: string, dateB: string): number {
+  const a = new Date(dateA);
+  const b = new Date(dateB);
+  return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Analisa cronologia dos dados e retorna apenas os dias recentes consecutivos.
+ * 
+ * REGRAS (baseado em SBD 2025, FEBRASGO 2019):
+ * 1. Se não há datas disponíveis: usa últimos 7 registros com aviso
+ * 2. Se há datas: ordena e seleciona o bloco mais recente de até 7 dias CONSECUTIVOS
+ * 3. Gap de >2 dias interrompe a consecutividade (paciente em insulina precisa monitorar diariamente)
+ * 4. Retorna avisos sobre gaps significativos
+ * 
+ * @param readings Todas as leituras de glicemia
+ * @param maxDays Máximo de dias a analisar (default: 7)
+ * @param maxGapDays Máximo de dias de gap permitido antes de considerar quebra (default: 2)
+ */
+export function analyzeChronology(
+  readings: GlucoseReading[], 
+  maxDays: number = 7,
+  maxGapDays: number = 2
+): ChronologyResult {
+  if (readings.length === 0) {
+    return {
+      readings: [],
+      totalOriginal: 0,
+      hasDateInfo: false,
+      gapsDetected: [],
+      warningMessage: "Nenhum dado de glicemia disponível.",
+      dateRange: null,
+    };
+  }
+  
+  // Verificar se as leituras têm informação de data
+  const readingsWithDates = readings.filter(r => r.measurementDate);
+  const hasDateInfo = readingsWithDates.length >= readings.length * 0.8; // 80% com datas
+  
+  if (!hasDateInfo) {
+    // Fallback: sem datas, usa últimos N registros com aviso
+    const recentReadings = readings.slice(-maxDays);
+    return {
+      readings: recentReadings,
+      totalOriginal: readings.length,
+      hasDateInfo: false,
+      gapsDetected: [],
+      warningMessage: readings.length > maxDays 
+        ? `Dados sem informação de data. Usando últimos ${recentReadings.length} registros. Possível mistura de dados antigos com recentes.`
+        : null,
+      dateRange: null,
+    };
+  }
+  
+  // Ordenar por data (mais antigo primeiro)
+  const sortedReadings = [...readingsWithDates].sort((a, b) => {
+    const dateA = a.measurementDate || "";
+    const dateB = b.measurementDate || "";
+    return dateA.localeCompare(dateB);
+  });
+  
+  // Detectar gaps e encontrar o bloco consecutivo mais recente
+  const gaps: GapInfo[] = [];
+  let consecutiveBlockStart = 0;
+  
+  for (let i = 1; i < sortedReadings.length; i++) {
+    const prevDate = sortedReadings[i - 1].measurementDate!;
+    const currDate = sortedReadings[i].measurementDate!;
+    const diff = daysDifference(prevDate, currDate);
+    
+    if (diff > maxGapDays) {
+      // Gap significativo detectado
+      gaps.push({
+        afterDate: prevDate,
+        beforeDate: currDate,
+        daysMissing: diff - 1, // -1 porque não contamos os dias com dados
+      });
+      // Novo bloco consecutivo começa aqui
+      consecutiveBlockStart = i;
+    }
+  }
+  
+  // Pegar o bloco consecutivo mais recente, limitado a maxDays
+  const consecutiveBlock = sortedReadings.slice(consecutiveBlockStart);
+  const recentConsecutive = consecutiveBlock.slice(-maxDays);
+  
+  // Gerar mensagem de aviso se necessário
+  let warningMessage: string | null = null;
+  
+  if (gaps.length > 0) {
+    const totalDaysSkipped = gaps.reduce((sum, g) => sum + g.daysMissing, 0);
+    const mostRecentGap = gaps[gaps.length - 1];
+    
+    if (consecutiveBlockStart > 0) {
+      // Dados mais antigos foram excluídos
+      const excludedCount = consecutiveBlockStart;
+      warningMessage = `${excludedCount} dia(s) anterior(es) excluído(s) da análise devido a gap de ${mostRecentGap.daysMissing} dia(s) sem monitoramento (entre ${mostRecentGap.afterDate} e ${mostRecentGap.beforeDate}). Analisando apenas os ${recentConsecutive.length} dias mais recentes e consecutivos.`;
+    }
+  } else if (sortedReadings.length > maxDays) {
+    // Sem gaps, mas mais dados que o máximo
+    warningMessage = `Analisando os ${maxDays} dias mais recentes de ${sortedReadings.length} disponíveis.`;
+  }
+  
+  return {
+    readings: recentConsecutive,
+    totalOriginal: readings.length,
+    hasDateInfo: true,
+    gapsDetected: gaps,
+    warningMessage,
+    dateRange: recentConsecutive.length > 0 ? {
+      start: recentConsecutive[0].measurementDate!,
+      end: recentConsecutive[recentConsecutive.length - 1].measurementDate!,
+    } : null,
+  };
+}
 
 /**
  * Extrai valores de um período específico de todos os dias de leitura
@@ -511,13 +654,13 @@ function analyzeMadrugada(readings: GlucoseReading[]): PeriodAdjustmentResult | 
 
 /**
  * Função principal: Analisa todos os períodos e retorna recomendações de ajuste
- * IMPORTANTE: Usa APENAS os últimos 7 dias de dados (reavaliações ocorrem a cada 7 dias)
+ * IMPORTANTE: Usa APENAS os últimos 7 dias CONSECUTIVOS de dados (reavaliações ocorrem a cada 7 dias)
  */
 export function analyzeInsulinAdjustments(allReadings: GlucoseReading[]): InsulinAdjustmentAnalysis {
-  // CRITICAL: Use only the last 7 days for recommendations
-  // Each entry in glucoseReadings represents ONE DAY with multiple period measurements
-  // Re-evaluations happen every 7 days per clinical protocol
-  const readings = allReadings.length <= 7 ? allReadings : allReadings.slice(-7);
+  // CRITICAL: Use analyzeChronology to get only the last 7 CONSECUTIVE days
+  // This prevents mixing old data with recent data when there are gaps
+  const chronologyResult = analyzeChronology(allReadings, 7, 2);
+  const readings = chronologyResult.readings;
   
   const ajustes: PeriodAdjustmentResult[] = [];
   const periodosSemDados: string[] = [];
@@ -681,6 +824,8 @@ export function analyzeInsulinAdjustments(allReadings: GlucoseReading[]): Insuli
     prioridadeMaxima,
     temDadosInsuficientes: periodosSemDados.length > 0 || ajustes.some(a => a.direcao === "SOLICITAR_DADOS"),
     periodosSemDados,
+    chronologyWarning: chronologyResult.warningMessage || undefined,
+    dateRange: chronologyResult.dateRange || undefined,
   };
 }
 
@@ -1119,11 +1264,14 @@ function generateSevenDayAnalysis(
   allReadings: GlucoseReading[],
   overallAnalysisByPeriod: GlucoseAnalysisByPeriod[]
 ): SevenDayAnalysis | null {
-  if (allReadings.length < 7) {
+  // Use chronology utility to get consecutive recent days
+  const chronologyResult = analyzeChronology(allReadings, 7, 2);
+  
+  if (chronologyResult.readings.length < 7 && allReadings.length < 7) {
     return null;
   }
   
-  const last7Days = allReadings.slice(-7);
+  const last7Days = chronologyResult.readings;
   const last7DaysByPeriod = analyzeByPeriod(last7Days);
   const last7DaysAlerts = checkCriticalGlucose(last7Days);
   
@@ -1431,11 +1579,11 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   
   const gestationalAge = `${gestationalWeeks} semanas e ${gestationalDays} dias`;
   
-  // CRITICAL: Use only the last 7 DAYS (not 7 entries) for clinical recommendations
-  // Each entry in glucoseReadings represents one day with multiple periods
-  // Re-evaluations happen every 7 days, so recommendations must be based on recent data
+  // CRITICAL: Use chronology utility to get only consecutive recent days
+  // This prevents mixing old data with recent data when there are gaps
   const totalDays = glucoseReadings.length;
-  const last7DaysReadings = totalDays <= 7 ? glucoseReadings : glucoseReadings.slice(-7);
+  const chronologyResult = analyzeChronology(glucoseReadings, 7, 2);
+  const last7DaysReadings = chronologyResult.readings;
   const totalDaysAnalyzed = last7DaysReadings.length;
   
   // Minimum 3 days of data required for reliable pattern detection
