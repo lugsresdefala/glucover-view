@@ -186,6 +186,20 @@ function analyzeJejumWithMadrugada(readings: GlucoseReading[]): PeriodAdjustment
     return null;
   }
   
+  // PRIORIDADE 0: Verificar hipoglicemia de jejum PRIMEIRO (segurança)
+  const diasJejumBaixo = countDaysBelowLimit(jejumValues, ADJUSTMENT_THRESHOLDS.HIPO_LIMITE);
+  if (diasJejumBaixo >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_HIPO) {
+    return {
+      periodo: PERIOD_LABELS.jejum,
+      insulinaAfetada: "NPH_NOTURNA",
+      direcao: "REDUZIR",
+      justificativa: `Hipoglicemia de jejum (<70 mg/dL) em ${diasJejumBaixo}/${jejumValues.length} dias. Opção: reduzir NPH noturna (ao deitar).`,
+      diasComProblema: diasJejumBaixo,
+      totalDiasAnalisados: jejumValues.length,
+      valoresObservados: jejumValues,
+    };
+  }
+  
   const diasJejumAlto = countDaysAboveLimit(jejumValues, ADJUSTMENT_THRESHOLDS.JEJUM_LIMITE);
   
   if (diasJejumAlto < ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
