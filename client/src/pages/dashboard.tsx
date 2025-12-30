@@ -122,6 +122,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showRecommendationModal, setShowRecommendationModal] = useState(false);
   const [patientFromUrl, setPatientFromUrl] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<string>("");
   
   const showBatchImport = section === "import";
   const showPatientList = section === "patients";
@@ -181,6 +182,38 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
     const uniqueMap = new Map(rawEvaluations.map(e => [e.id, e]));
     return Array.from(uniqueMap.values());
   }, [rawEvaluations]);
+
+  // Filter by date and sort alphabetically
+  const filteredEvaluations = useMemo(() => {
+    let filtered = [...evaluations];
+    
+    // Filter by date if set (and not "all")
+    if (dateFilter && dateFilter !== "all") {
+      const filterDate = new Date(dateFilter);
+      filtered = filtered.filter(e => {
+        if (!e.createdAt) return false;
+        const evalDate = new Date(e.createdAt);
+        return evalDate.toDateString() === filterDate.toDateString();
+      });
+    }
+    
+    // Sort alphabetically by patient name
+    return filtered.sort((a, b) => 
+      a.patientName.localeCompare(b.patientName, 'pt-BR')
+    );
+  }, [evaluations, dateFilter]);
+
+  // Get unique dates for the filter
+  const availableDates = useMemo(() => {
+    const dates = new Set<string>();
+    evaluations.forEach(e => {
+      if (e.createdAt) {
+        const date = new Date(e.createdAt).toISOString().split('T')[0];
+        dates.add(date);
+      }
+    });
+    return Array.from(dates).sort((a, b) => b.localeCompare(a));
+  }, [evaluations]);
 
   const dashboardMetrics = useMemo(() => {
     const now = new Date();
@@ -502,10 +535,35 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
             <div className="flex flex-col gap-1">
               <h2 className="text-lg font-semibold text-foreground">Histórico de Avaliações</h2>
               <p className="text-sm text-muted-foreground">
-                {isLoadingHistory ? "Carregando..." : `${dashboardMetrics.totalEvaluations} avaliações realizadas`}
+                {isLoadingHistory ? "Carregando..." : `${filteredEvaluations.length} de ${dashboardMetrics.totalEvaluations} avaliações${dateFilter ? " (filtrado)" : ""}`}
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger className="w-[180px]" data-testid="select-date-filter">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filtrar por data" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as datas</SelectItem>
+                  {availableDates.map(date => (
+                    <SelectItem key={date} value={date}>
+                      {new Date(date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {dateFilter && dateFilter !== "all" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDateFilter("")}
+                  data-testid="button-clear-date-filter"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Limpar
+                </Button>
+              )}
               {evaluations.length > 0 && (
                 <Button
                   variant="outline"
@@ -1023,12 +1081,16 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
                     <p>Nenhuma avaliação realizada ainda.</p>
                     <p className="text-sm">Clique em "Nova Avaliação" para começar.</p>
                   </div>
+                ) : filteredEvaluations.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Nenhuma avaliação encontrada para esta data.</p>
+                    <p className="text-sm">Tente selecionar outra data ou limpe o filtro.</p>
+                  </div>
                 ) : (
                   <ScrollArea className="h-[400px]">
                     <div className="space-y-3">
-                      {[...evaluations].sort((a, b) => 
-                        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-                      ).map((evaluation) => {
+                      {filteredEvaluations.map((evaluation) => {
                         const urgency = evaluation.recommendation?.urgencyLevel || "info";
                         const resolved = isEvaluationResolved(evaluation);
                         const resolvedAge = getResolvedGestationalAge(evaluation);
