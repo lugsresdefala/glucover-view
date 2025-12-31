@@ -924,7 +924,33 @@ export function BatchImport() {
           glucoseReadings: validReadings,
         };
 
-        const response = await apiRequest("POST", "/api/analyze", evaluationData);
+        // Retry logic for rate limiting (429 errors)
+        let response: Response | null = null;
+        let retryCount = 0;
+        const MAX_RETRIES = 3;
+        
+        while (retryCount <= MAX_RETRIES) {
+          try {
+            response = await apiRequest("POST", "/api/analyze", evaluationData);
+            break; // Success, exit retry loop
+          } catch (retryErr) {
+            const errMessage = retryErr instanceof Error ? retryErr.message : "";
+            if (errMessage.includes("429") || errMessage.includes("Limite")) {
+              retryCount++;
+              if (retryCount <= MAX_RETRIES) {
+                // Wait with exponential backoff: 1s, 2s, 4s
+                await new Promise(r => setTimeout(r, 1000 * Math.pow(2, retryCount - 1)));
+                continue;
+              }
+            }
+            throw retryErr; // Re-throw non-429 errors
+          }
+        }
+        
+        if (!response) {
+          throw new Error("Falha ao processar após múltiplas tentativas");
+        }
+        
         const result = await response.json();
 
         updatedPatients[i] = {
