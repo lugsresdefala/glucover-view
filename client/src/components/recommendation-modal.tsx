@@ -113,33 +113,41 @@ function calculateAdjustedDoses(
   const hasAnyHypo = hypoMadrugada || hypoJejum || hypoPreAlmoco || hypoPreJantar;
   
   if (!hasAnyHypo) {
-    // Jejum alto (≥95 mg/dL persistente) → Aumentar NPH Jantar
+    // NPH: Jejum alto (≥95 mg/dL persistente) → Aumentar NPH Jantar
     const hyperJejum = text.includes("jejum") && (text.includes("acima") || text.includes("≥95") || text.includes(">95") || text.includes("aumentar"));
     
-    // Pós-café alto (≥140 mg/dL) → Aumentar Rápida Manhã
-    const hyperPosCafe = (text.includes("pós-café") || text.includes("pos-cafe")) && (text.includes("acima") || text.includes("≥140") || text.includes(">140"));
+    // RÁPIDA: Usar VARIAÇÃO (delta) entre pré e pós-prandial, não valor absoluto
+    // Variação >40 mg/dL sugere ajuste de insulina rápida
+    const highDeltaCafe = (text.includes("café") || text.includes("manhã")) && 
+      (text.includes("variação") || text.includes("delta") || text.includes("excursão") || 
+       text.includes(">40") || text.includes("> 40") || text.includes("elevada"));
     
-    // Pós-almoço alto → Aumentar Rápida Almoço
-    const hyperPosAlmoco = text.includes("pós-almoço") && (text.includes("acima") || text.includes("≥140") || text.includes(">140"));
+    const highDeltaAlmoco = text.includes("almoço") && 
+      (text.includes("variação") || text.includes("delta") || text.includes("excursão") || 
+       text.includes(">40") || text.includes("> 40") || text.includes("elevada"));
     
-    // Pós-jantar alto → Aumentar Rápida Jantar
-    const hyperPosJantar = text.includes("pós-jantar") && (text.includes("acima") || text.includes("≥140") || text.includes(">140"));
+    const highDeltaJantar = text.includes("jantar") && !text.includes("nph") &&
+      (text.includes("variação") || text.includes("delta") || text.includes("excursão") || 
+       text.includes(">40") || text.includes("> 40") || text.includes("elevada"));
     
+    // NPH Jantar para jejum alto
     if (hyperJejum && jantar > 0) {
       adjustedJantar = Math.round(jantar * 1.15);
-      changes.push(`Jantar: ${jantar} → ${adjustedJantar} UI (+15%) - jejum persistentemente ≥95 mg/dL`);
+      changes.push(`NPH Jantar: ${jantar} → ${adjustedJantar} UI (+15%) - jejum persistentemente ≥95 mg/dL`);
     }
-    if (hyperPosCafe && manha > 0) {
+    
+    // RÁPIDA baseada em variação (delta) pós-prandial
+    if (highDeltaCafe && manha > 0) {
       adjustedManha = Math.round(manha * 1.15);
-      changes.push(`Manhã: ${manha} → ${adjustedManha} UI (+15%) - pós-café ≥140 mg/dL`);
+      changes.push(`Rápida Manhã: ${manha} → ${adjustedManha} UI (+15%) - variação pós-café elevada (>40 mg/dL)`);
     }
-    if (hyperPosAlmoco && almoco > 0) {
+    if (highDeltaAlmoco && almoco > 0) {
       adjustedAlmoco = Math.round(almoco * 1.15);
-      changes.push(`Almoço: ${almoco} → ${adjustedAlmoco} UI (+15%) - pós-almoço ≥140 mg/dL`);
+      changes.push(`Rápida Almoço: ${almoco} → ${adjustedAlmoco} UI (+15%) - variação pós-almoço elevada (>40 mg/dL)`);
     }
-    if (hyperPosJantar && jantar > 0 && !hyperJejum) {
+    if (highDeltaJantar && jantar > 0 && !hyperJejum) {
       adjustedJantar = Math.round(jantar * 1.15);
-      changes.push(`Jantar: ${jantar} → ${adjustedJantar} UI (+15%) - pós-jantar ≥140 mg/dL`);
+      changes.push(`Rápida Jantar: ${jantar} → ${adjustedJantar} UI (+15%) - variação pós-jantar elevada (>40 mg/dL)`);
     }
   }
   
