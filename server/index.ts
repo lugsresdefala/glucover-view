@@ -70,17 +70,8 @@ app.use("/api/auth/register", authLimiter);
 app.use("/api/patient/login", authLimiter);
 app.use("/api/patient/register", authLimiter);
 
-// Rate limiting for AI analysis and batch operations
-// Increased to 150/min to support batch imports of 100+ spreadsheets
-const analysisLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 150, // 150 requests per minute per IP (supports large batch imports)
-  message: { message: "Limite de requisições excedido. Aguarde um momento." },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use("/api/analyze", analysisLimiter);
-app.use("/api/evaluations/batch", analysisLimiter);
+// Rate limiting only for authentication routes - batch imports need no limit
+// Analysis endpoints used by authenticated clinicians don't need rate limiting
 
 app.use(
   express.json({
