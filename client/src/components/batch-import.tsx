@@ -53,54 +53,91 @@ interface ParsedPatientData {
   newEvaluation?: StoredEvaluation;
 }
 
-const COLUMN_MAPPINGS: Record<string, keyof GlucoseReading> = {
-  jejum: "jejum",
-  "glicemia jejum": "jejum",
-  "em jejum": "jejum",
-  "cafe manha": "posCafe1h",
-  "cafe da manha": "posCafe1h",
-  "pos cafe": "posCafe1h",
-  "pos-cafe": "posCafe1h",
-  "poscafe": "posCafe1h",
-  "1h cafe": "posCafe1h",
-  "1h pos cafe": "posCafe1h",
-  "1h pós cafe": "posCafe1h",
-  "apos cafe": "posCafe1h",
-  "depois cafe": "posCafe1h",
-  "antes do almoco": "preAlmoco",
-  "antes do almoço": "preAlmoco",
-  "pre almoco": "preAlmoco",
-  "pre-almoco": "preAlmoco",
-  "prealmoco": "preAlmoco",
-  "pos almoco": "posAlmoco1h",
-  "pos-almoco": "posAlmoco1h",
-  "posalmoco": "posAlmoco1h",
-  "1h almoco": "posAlmoco1h",
-  "1h pos almoco": "posAlmoco1h",
-  "1h pós almoco": "posAlmoco1h",
-  "apos almoco": "posAlmoco1h",
-  "depois almoco": "posAlmoco1h",
-  almoco: "posAlmoco1h",
-  "antes do jantar": "preJantar",
-  "pre jantar": "preJantar",
-  "pre-jantar": "preJantar",
-  "prejantar": "preJantar",
-  "pos jantar": "posJantar1h",
-  "pos-jantar": "posJantar1h",
-  "posjantar": "posJantar1h",
-  "1h jantar": "posJantar1h",
-  "1h pos jantar": "posJantar1h",
-  "1h pós jantar": "posJantar1h",
-  "apos jantar": "posJantar1h",
-  "depois jantar": "posJantar1h",
-  jantar: "posJantar1h",
-  madrugada: "madrugada",
-  "3h da manha": "madrugada",
-  "3h da manhã": "madrugada",
-  "3h manha": "madrugada",
-  "3h": "madrugada",
-  "3 horas": "madrugada",
-};
+// IMPORTANTE: Mapeamentos mais específicos (2h) devem vir ANTES dos genéricos
+// A função mapColumn usa o PRIMEIRO match encontrado
+const COLUMN_MAPPINGS: Array<[string, keyof GlucoseReading]> = [
+  // === 2 HORAS - PRIORIDADE MÁXIMA (verificar antes de 1h) ===
+  ["2h almoco", "posAlmoco2h"],
+  ["2h pos almoco", "posAlmoco2h"],
+  ["2h pós almoco", "posAlmoco2h"],
+  ["almoco 2h", "posAlmoco2h"],
+  ["almoco 2 h", "posAlmoco2h"],
+  ["pos almoco 2h", "posAlmoco2h"],
+  ["pos-almoco 2h", "posAlmoco2h"],
+  ["posalmoco 2h", "posAlmoco2h"],
+  ["2h jantar", "posJantar2h"],
+  ["2h pos jantar", "posJantar2h"],
+  ["2h pós jantar", "posJantar2h"],
+  ["jantar 2h", "posJantar2h"],
+  ["jantar 2 h", "posJantar2h"],
+  ["pos jantar 2h", "posJantar2h"],
+  ["pos-jantar 2h", "posJantar2h"],
+  ["posjantar 2h", "posJantar2h"],
+  ["2h cafe", "posCafe2h"],
+  ["2h pos cafe", "posCafe2h"],
+  ["cafe 2h", "posCafe2h"],
+  ["pos cafe 2h", "posCafe2h"],
+  
+  // === JEJUM ===
+  ["jejum", "jejum"],
+  ["glicemia jejum", "jejum"],
+  ["em jejum", "jejum"],
+  
+  // === CAFÉ DA MANHÃ (1h ou genérico) ===
+  ["cafe manha", "posCafe1h"],
+  ["cafe da manha", "posCafe1h"],
+  ["pos cafe", "posCafe1h"],
+  ["pos-cafe", "posCafe1h"],
+  ["poscafe", "posCafe1h"],
+  ["1h cafe", "posCafe1h"],
+  ["1h pos cafe", "posCafe1h"],
+  ["1h pós cafe", "posCafe1h"],
+  ["apos cafe", "posCafe1h"],
+  ["depois cafe", "posCafe1h"],
+  
+  // === PRÉ-ALMOÇO ===
+  ["antes do almoco", "preAlmoco"],
+  ["antes do almoço", "preAlmoco"],
+  ["pre almoco", "preAlmoco"],
+  ["pre-almoco", "preAlmoco"],
+  ["prealmoco", "preAlmoco"],
+  
+  // === PÓS-ALMOÇO 1h (verificar DEPOIS de 2h) ===
+  ["pos almoco", "posAlmoco1h"],
+  ["pos-almoco", "posAlmoco1h"],
+  ["posalmoco", "posAlmoco1h"],
+  ["1h almoco", "posAlmoco1h"],
+  ["1h pos almoco", "posAlmoco1h"],
+  ["1h pós almoco", "posAlmoco1h"],
+  ["apos almoco", "posAlmoco1h"],
+  ["depois almoco", "posAlmoco1h"],
+  ["almoco", "posAlmoco1h"],  // Genérico por último
+  
+  // === PRÉ-JANTAR ===
+  ["antes do jantar", "preJantar"],
+  ["pre jantar", "preJantar"],
+  ["pre-jantar", "preJantar"],
+  ["prejantar", "preJantar"],
+  
+  // === PÓS-JANTAR 1h (verificar DEPOIS de 2h) ===
+  ["pos jantar", "posJantar1h"],
+  ["pos-jantar", "posJantar1h"],
+  ["posjantar", "posJantar1h"],
+  ["1h jantar", "posJantar1h"],
+  ["1h pos jantar", "posJantar1h"],
+  ["1h pós jantar", "posJantar1h"],
+  ["apos jantar", "posJantar1h"],
+  ["depois jantar", "posJantar1h"],
+  ["jantar", "posJantar1h"],  // Genérico por último
+  
+  // === MADRUGADA ===
+  ["madrugada", "madrugada"],
+  ["3h da manha", "madrugada"],
+  ["3h da manhã", "madrugada"],
+  ["3h manha", "madrugada"],
+  ["3h", "madrugada"],
+  ["3 horas", "madrugada"],
+];
 
 function normalizeHeader(header: string): string {
   return header
@@ -113,7 +150,8 @@ function normalizeHeader(header: string): string {
 
 function mapColumn(header: string): keyof GlucoseReading | null {
   const normalized = normalizeHeader(header);
-  for (const [pattern, field] of Object.entries(COLUMN_MAPPINGS)) {
+  // Usar array ordenado para garantir que padrões mais específicos (2h) sejam verificados primeiro
+  for (const [pattern, field] of COLUMN_MAPPINGS) {
     if (normalized.includes(pattern)) {
       return field;
     }
