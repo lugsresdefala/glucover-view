@@ -76,35 +76,75 @@ function calculateAdjustedDoses(
   let adjustedAlmoco = almoco;
   let adjustedJantar = jantar;
   
-  const analysisText = (recommendation.analysis + " " + recommendation.mainRecommendation).toLowerCase();
+  const text = (recommendation.analysis + " " + recommendation.mainRecommendation).toLowerCase();
   
-  const hasHypo = analysisText.includes("hipoglicemia") || analysisText.includes("reduzir");
-  const hasHyperManha = analysisText.includes("jejum") && (analysisText.includes("aumentar") || analysisText.includes("acima"));
-  const hasHyperAlmoco = analysisText.includes("pós-almoço") && (analysisText.includes("aumentar") || analysisText.includes("acima"));
-  const hasHyperJantar = analysisText.includes("pós-jantar") && (analysisText.includes("aumentar") || analysisText.includes("acima"));
+  // SEGURANÇA PRIMEIRO: Detectar hipoglicemia por período
+  // Madrugada/Jejum baixo → Reduzir NPH Jantar (10-20%)
+  const hypoMadrugada = text.includes("madrugada") && (text.includes("hipoglicemia") || text.includes("<70") || text.includes("< 70"));
+  const hypoJejum = text.includes("jejum") && (text.includes("hipoglicemia") || text.includes("<70") || text.includes("reduzir"));
   
-  if (hasHypo) {
+  // Pré-almoço baixo → Reduzir NPH Manhã
+  const hypoPreAlmoco = text.includes("pré-almoço") && (text.includes("hipoglicemia") || text.includes("<70"));
+  
+  // Pré-jantar baixo → Reduzir NPH Almoço  
+  const hypoPreJantar = text.includes("pré-jantar") && (text.includes("hipoglicemia") || text.includes("<70"));
+  
+  // Aplicar reduções (SEGURANÇA - sempre primeiro)
+  if (hypoMadrugada || hypoJejum) {
     if (jantar > 0) {
-      adjustedJantar = Math.max(0, Math.round(jantar * 0.85));
-      if (adjustedJantar !== jantar) changes.push(`Jantar: ${jantar} → ${adjustedJantar} UI (-15%, segurança)`);
+      adjustedJantar = Math.max(1, Math.round(jantar * 0.85));
+      changes.push(`Jantar: ${jantar} → ${adjustedJantar} UI (-15%) - hipoglicemia madrugada/jejum detectada`);
     }
-  } else {
-    if (hasHyperManha && manha > 0) {
-      adjustedManha = Math.round(manha * 1.15);
-      changes.push(`Manhã: ${manha} → ${adjustedManha} UI (+15%)`);
+  }
+  if (hypoPreAlmoco) {
+    if (manha > 0) {
+      adjustedManha = Math.max(1, Math.round(manha * 0.85));
+      changes.push(`Manhã: ${manha} → ${adjustedManha} UI (-15%) - hipoglicemia pré-almoço detectada`);
     }
-    if (hasHyperAlmoco && almoco > 0) {
-      adjustedAlmoco = Math.round(almoco * 1.15);
-      changes.push(`Almoço: ${almoco} → ${adjustedAlmoco} UI (+15%)`);
+  }
+  if (hypoPreJantar) {
+    if (almoco > 0) {
+      adjustedAlmoco = Math.max(1, Math.round(almoco * 0.85));
+      changes.push(`Almoço: ${almoco} → ${adjustedAlmoco} UI (-15%) - hipoglicemia pré-jantar detectada`);
     }
-    if (hasHyperJantar && jantar > 0) {
+  }
+  
+  // Se não há hipoglicemia, verificar hiperglicemia
+  const hasAnyHypo = hypoMadrugada || hypoJejum || hypoPreAlmoco || hypoPreJantar;
+  
+  if (!hasAnyHypo) {
+    // Jejum alto (≥95 mg/dL persistente) → Aumentar NPH Jantar
+    const hyperJejum = text.includes("jejum") && (text.includes("acima") || text.includes("≥95") || text.includes(">95") || text.includes("aumentar"));
+    
+    // Pós-café alto (≥140 mg/dL) → Aumentar Rápida Manhã
+    const hyperPosCafe = (text.includes("pós-café") || text.includes("pos-cafe")) && (text.includes("acima") || text.includes("≥140") || text.includes(">140"));
+    
+    // Pós-almoço alto → Aumentar Rápida Almoço
+    const hyperPosAlmoco = text.includes("pós-almoço") && (text.includes("acima") || text.includes("≥140") || text.includes(">140"));
+    
+    // Pós-jantar alto → Aumentar Rápida Jantar
+    const hyperPosJantar = text.includes("pós-jantar") && (text.includes("acima") || text.includes("≥140") || text.includes(">140"));
+    
+    if (hyperJejum && jantar > 0) {
       adjustedJantar = Math.round(jantar * 1.15);
-      changes.push(`Jantar: ${jantar} → ${adjustedJantar} UI (+15%)`);
+      changes.push(`Jantar: ${jantar} → ${adjustedJantar} UI (+15%) - jejum persistentemente ≥95 mg/dL`);
+    }
+    if (hyperPosCafe && manha > 0) {
+      adjustedManha = Math.round(manha * 1.15);
+      changes.push(`Manhã: ${manha} → ${adjustedManha} UI (+15%) - pós-café ≥140 mg/dL`);
+    }
+    if (hyperPosAlmoco && almoco > 0) {
+      adjustedAlmoco = Math.round(almoco * 1.15);
+      changes.push(`Almoço: ${almoco} → ${adjustedAlmoco} UI (+15%) - pós-almoço ≥140 mg/dL`);
+    }
+    if (hyperPosJantar && jantar > 0 && !hyperJejum) {
+      adjustedJantar = Math.round(jantar * 1.15);
+      changes.push(`Jantar: ${jantar} → ${adjustedJantar} UI (+15%) - pós-jantar ≥140 mg/dL`);
     }
   }
   
   if (changes.length === 0) {
-    changes.push("Manter doses atuais - sem padrão claro de ajuste");
+    changes.push("Manter doses atuais - perfil glicêmico sem padrão claro para ajuste");
   }
   
   return {
