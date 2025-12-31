@@ -178,17 +178,17 @@ function daysDifference(dateA: string, dateB: string): number {
 }
 
 /**
- * Analisa cronologia dos dados e retorna apenas os dias recentes consecutivos.
+ * Analisa cronologia dos dados e retorna os últimos 7 dias.
  * 
  * REGRAS (baseado em SBD 2025, FEBRASGO 2019):
  * 1. Se não há datas disponíveis: usa últimos 7 registros com aviso
- * 2. Se há datas: ordena e seleciona o bloco mais recente de até 7 dias CONSECUTIVOS
- * 3. Gap de >2 dias interrompe a consecutividade (paciente em insulina precisa monitorar diariamente)
- * 4. Retorna avisos sobre gaps significativos
+ * 2. Se há datas: ordena e seleciona os 7 dias mais recentes
+ * 3. Gaps são detectados e informados como CONTEXTO, mas NÃO excluem dados
+ * 4. Recomendações são SEMPRE baseadas nos últimos 7 dias disponíveis
  * 
  * @param readings Todas as leituras de glicemia
  * @param maxDays Máximo de dias a analisar (default: 7)
- * @param maxGapDays Máximo de dias de gap permitido antes de considerar quebra (default: 2)
+ * @param maxGapDays Máximo de dias de gap para reportar (default: 2)
  */
 export function analyzeChronology(
   readings: GlucoseReading[], 
@@ -219,7 +219,7 @@ export function analyzeChronology(
       hasDateInfo: false,
       gapsDetected: [],
       warningMessage: readings.length > maxDays 
-        ? `Dados sem informação de data. Usando últimos ${recentReadings.length} registros. Possível mistura de dados antigos com recentes.`
+        ? `Dados sem informação de data. Usando últimos ${recentReadings.length} registros.`
         : null,
       dateRange: null,
     };
@@ -232,9 +232,8 @@ export function analyzeChronology(
     return dateA.localeCompare(dateB);
   });
   
-  // Detectar gaps e encontrar o bloco consecutivo mais recente
+  // Detectar gaps (apenas para informação contextual, NÃO exclui dados)
   const gaps: GapInfo[] = [];
-  let consecutiveBlockStart = 0;
   
   for (let i = 1; i < sortedReadings.length; i++) {
     const prevDate = sortedReadings[i - 1].measurementDate!;
@@ -242,47 +241,47 @@ export function analyzeChronology(
     const diff = daysDifference(prevDate, currDate);
     
     if (diff > maxGapDays) {
-      // Gap significativo detectado
       gaps.push({
         afterDate: prevDate,
         beforeDate: currDate,
-        daysMissing: diff - 1, // -1 porque não contamos os dias com dados
+        daysMissing: diff - 1,
       });
-      // Novo bloco consecutivo começa aqui
-      consecutiveBlockStart = i;
     }
   }
   
-  // Pegar o bloco consecutivo mais recente, limitado a maxDays
-  const consecutiveBlock = sortedReadings.slice(consecutiveBlockStart);
-  const recentConsecutive = consecutiveBlock.slice(-maxDays);
+  // SEMPRE usar os últimos 7 dias disponíveis (não excluir por gaps)
+  const recentReadings = sortedReadings.slice(-maxDays);
   
-  // Gerar mensagem de aviso se necessário
+  // Gerar mensagem informativa (não de exclusão)
   let warningMessage: string | null = null;
   
   if (gaps.length > 0) {
-    const totalDaysSkipped = gaps.reduce((sum, g) => sum + g.daysMissing, 0);
-    const mostRecentGap = gaps[gaps.length - 1];
+    // Informar sobre gaps nos últimos 7 dias como contexto
+    const recentGaps = gaps.filter(g => {
+      const gapDate = new Date(g.beforeDate);
+      const oldestRecent = new Date(recentReadings[0]?.measurementDate || "");
+      return gapDate >= oldestRecent;
+    });
     
-    if (consecutiveBlockStart > 0) {
-      // Dados mais antigos foram excluídos
-      const excludedCount = consecutiveBlockStart;
-      warningMessage = `${excludedCount} dia(s) anterior(es) excluído(s) da análise devido a gap de ${mostRecentGap.daysMissing} dia(s) sem monitoramento (entre ${mostRecentGap.afterDate} e ${mostRecentGap.beforeDate}). Analisando apenas os ${recentConsecutive.length} dias mais recentes e consecutivos.`;
+    if (recentGaps.length > 0) {
+      const totalGapDays = recentGaps.reduce((sum, g) => sum + g.daysMissing, 0);
+      warningMessage = `Período analisado contém ${recentGaps.length} intervalo(s) sem monitoramento (${totalGapDays} dia(s) total). Considerar reforçar adesão ao monitoramento.`;
     }
-  } else if (sortedReadings.length > maxDays) {
-    // Sem gaps, mas mais dados que o máximo
+  }
+  
+  if (!warningMessage && sortedReadings.length > maxDays) {
     warningMessage = `Analisando os ${maxDays} dias mais recentes de ${sortedReadings.length} disponíveis.`;
   }
   
   return {
-    readings: recentConsecutive,
+    readings: recentReadings,
     totalOriginal: readings.length,
     hasDateInfo: true,
     gapsDetected: gaps,
     warningMessage,
-    dateRange: recentConsecutive.length > 0 ? {
-      start: recentConsecutive[0].measurementDate!,
-      end: recentConsecutive[recentConsecutive.length - 1].measurementDate!,
+    dateRange: recentReadings.length > 0 ? {
+      start: recentReadings[0].measurementDate!,
+      end: recentReadings[recentReadings.length - 1].measurementDate!,
     } : null,
   };
 }
@@ -769,31 +768,46 @@ export function analyzeInsulinAdjustments(allReadings: GlucoseReading[]): Insuli
   const reduzir = ajustes.filter(a => a.direcao === "REDUZIR");
   const solicitar = ajustes.filter(a => a.direcao === "SOLICITAR_DADOS");
   
-  // Gerar resumo com tratamento de conflitos
+  // Gerar resumo DETALHADO com justificativas específicas
   let resumoGeral = "";
   if (ajustes.length === 0) {
     resumoGeral = "Perfil glicêmico sem padrões que indiquem necessidade de ajuste de doses no momento. Manter esquema atual e continuar monitorização.";
   } else {
-    
     const partes: string[] = [];
     
     // Handle conflicting patterns explicitly
     if (conflictingPeriods.length > 0) {
-      partes.push(`PADRÃO CONFLITANTE DETECTADO em ${conflictingPeriods.join(", ")}: hipoglicemia E hiperglicemia no mesmo horário. CONDUTA: SEGURANÇA PRIMEIRO - tratar hipoglicemia reduzindo dose; investigar variabilidade alimentar e padrão de atividade física`);
+      partes.push(`PADRÃO CONFLITANTE em ${conflictingPeriods.join(", ")}: hipoglicemia E hiperglicemia alternadas. SEGURANÇA PRIMEIRO - reduzir dose; investigar variabilidade alimentar`);
     }
     
+    // REDUÇÃO - incluir justificativas detalhadas
     if (reduzir.length > 0) {
-      partes.push(`Opção de redução em ${reduzir.map(a => INSULIN_LABELS[a.insulinaAfetada]).join(", ")} devido a hipoglicemia (PRIORIDADE MÁXIMA)`);
+      const detalhesReducao = reduzir.map(a => {
+        const avgValue = a.valoresObservados.length > 0 
+          ? Math.round(a.valoresObservados.reduce((s,v) => s+v, 0) / a.valoresObservados.length)
+          : null;
+        const valores = avgValue ? ` (média ${avgValue} mg/dL)` : "";
+        return `${INSULIN_LABELS[a.insulinaAfetada]}: reduzir 10-20%${valores} - ${a.diasComProblema}/${a.totalDiasAnalisados} dias com hipoglicemia em ${a.periodo}`;
+      });
+      partes.push(`REDUZIR (PRIORIDADE): ${detalhesReducao.join("; ")}`);
     }
+    
+    // AUMENTO - incluir justificativas detalhadas (só se não há hipoglicemia)
     if (aumentar.length > 0 && reduzir.length === 0) {
-      // Only recommend increase if NO hypoglycemia detected
-      partes.push(`Opção de aumento em ${aumentar.map(a => INSULIN_LABELS[a.insulinaAfetada]).join(", ")}`);
+      const detalhesAumento = aumentar.map(a => {
+        const avgValue = a.valoresObservados.length > 0 
+          ? Math.round(a.valoresObservados.reduce((s,v) => s+v, 0) / a.valoresObservados.length)
+          : null;
+        const valores = avgValue ? ` (média ${avgValue} mg/dL)` : "";
+        return `${INSULIN_LABELS[a.insulinaAfetada]}: aumentar 10-20%${valores} - ${a.diasComProblema}/${a.totalDiasAnalisados} dias acima da meta em ${a.periodo}`;
+      });
+      partes.push(`AUMENTAR: ${detalhesAumento.join("; ")}`);
     } else if (aumentar.length > 0 && reduzir.length > 0) {
-      // Document but don't recommend increase when there's hypo
-      partes.push(`Hiperglicemia também presente - NÃO aumentar insulina enquanto houver hipoglicemia. Estabilizar primeiro`);
+      partes.push(`Hiperglicemia em ${aumentar.map(a => a.periodo).join(", ")} - NÃO aumentar enquanto houver hipoglicemia`);
     }
+    
     if (solicitar.length > 0) {
-      partes.push(`Dados adicionais necessários para ${solicitar.map(a => a.periodo).join(", ")}`);
+      partes.push(`DADOS INSUFICIENTES: necessário monitorar ${solicitar.map(a => a.periodo).join(", ")}`);
     }
     
     resumoGeral = partes.join(". ") + ".";
