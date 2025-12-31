@@ -211,6 +211,9 @@ export interface CriticalAlert {
   day: number;
 }
 
+// Campos que são leituras de glicose (não incluir measurementDate, gestationalAge, etc.)
+const glucoseFields = ["jejum", "posCafe1h", "preAlmoco", "posAlmoco1h", "preJantar", "posJantar1h", "madrugada", "posAlmoco2h", "posJantar2h"] as const;
+
 export function checkCriticalGlucose(readings: GlucoseReading[]): CriticalAlert[] {
   const alerts: CriticalAlert[] = [];
   const timepointLabels: Record<string, string> = {
@@ -226,8 +229,10 @@ export function checkCriticalGlucose(readings: GlucoseReading[]): CriticalAlert[
   };
 
   readings.forEach((reading, dayIndex) => {
-    Object.entries(reading).forEach(([key, value]) => {
-      if (typeof value === "number") {
+    // Iterar APENAS sobre campos de glicose, não sobre gestationalAge, measurementDate, etc.
+    for (const key of glucoseFields) {
+      const value = reading[key as keyof GlucoseReading];
+      if (typeof value === "number" && value > 0) {
         if (value < criticalGlucoseThresholds.hypo) {
           alerts.push({
             type: "hypoglycemia",
@@ -244,7 +249,7 @@ export function checkCriticalGlucose(readings: GlucoseReading[]): CriticalAlert[
           });
         }
       }
-    });
+    }
   });
 
   return alerts;
