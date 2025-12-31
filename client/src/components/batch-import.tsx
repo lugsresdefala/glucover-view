@@ -340,7 +340,7 @@ function parseGestationalAge(value: unknown): number {
 function extractPatientNameFromFileName(fileName: string): string {
   let name = fileName
     .replace(/\.xlsx?$/i, "")
-    .replace(/^_+/, "")
+    .replace(/^[_#@]+/, "")  // Remove _, #, @ do início
     .replace(/_\d+$/, "")
     .replace(/_/g, " ")
     .trim();
