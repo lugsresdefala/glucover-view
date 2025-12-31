@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -7,7 +8,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertCircle, CheckCircle, AlertTriangle, FileText, ArrowRight, Calendar, Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { AlertCircle, CheckCircle, AlertTriangle, FileText, ArrowRight, Calendar, Info, ChevronDown, Syringe, Calculator } from "lucide-react";
 import type { ClinicalRecommendation } from "@shared/schema";
 
 interface RecommendationModalProps {
@@ -38,11 +47,93 @@ const urgencyConfig = {
   },
 };
 
+interface InsulinDoses {
+  tipo: string;
+  manha: string;
+  almoco: string;
+  jantar: string;
+}
+
+interface AdjustedDoses {
+  manha: number;
+  almoco: number;
+  jantar: number;
+  changes: string[];
+}
+
+function calculateAdjustedDoses(
+  currentDoses: InsulinDoses,
+  recommendation: ClinicalRecommendation
+): AdjustedDoses | null {
+  const manha = parseFloat(currentDoses.manha) || 0;
+  const almoco = parseFloat(currentDoses.almoco) || 0;
+  const jantar = parseFloat(currentDoses.jantar) || 0;
+  
+  if (manha === 0 && almoco === 0 && jantar === 0) return null;
+  
+  const changes: string[] = [];
+  let adjustedManha = manha;
+  let adjustedAlmoco = almoco;
+  let adjustedJantar = jantar;
+  
+  const analysisText = (recommendation.analysis + " " + recommendation.mainRecommendation).toLowerCase();
+  
+  const hasHypo = analysisText.includes("hipoglicemia") || analysisText.includes("reduzir");
+  const hasHyperManha = analysisText.includes("jejum") && (analysisText.includes("aumentar") || analysisText.includes("acima"));
+  const hasHyperAlmoco = analysisText.includes("pós-almoço") && (analysisText.includes("aumentar") || analysisText.includes("acima"));
+  const hasHyperJantar = analysisText.includes("pós-jantar") && (analysisText.includes("aumentar") || analysisText.includes("acima"));
+  
+  if (hasHypo) {
+    if (jantar > 0) {
+      adjustedJantar = Math.max(0, Math.round(jantar * 0.85));
+      if (adjustedJantar !== jantar) changes.push(`Jantar: ${jantar} → ${adjustedJantar} UI (-15%, segurança)`);
+    }
+  } else {
+    if (hasHyperManha && manha > 0) {
+      adjustedManha = Math.round(manha * 1.15);
+      changes.push(`Manhã: ${manha} → ${adjustedManha} UI (+15%)`);
+    }
+    if (hasHyperAlmoco && almoco > 0) {
+      adjustedAlmoco = Math.round(almoco * 1.15);
+      changes.push(`Almoço: ${almoco} → ${adjustedAlmoco} UI (+15%)`);
+    }
+    if (hasHyperJantar && jantar > 0) {
+      adjustedJantar = Math.round(jantar * 1.15);
+      changes.push(`Jantar: ${jantar} → ${adjustedJantar} UI (+15%)`);
+    }
+  }
+  
+  if (changes.length === 0) {
+    changes.push("Manter doses atuais - sem padrão claro de ajuste");
+  }
+  
+  return {
+    manha: adjustedManha,
+    almoco: adjustedAlmoco,
+    jantar: adjustedJantar,
+    changes,
+  };
+}
+
 export function RecommendationModal({ recommendation, patientName, open, onOpenChange }: RecommendationModalProps) {
+  const [insulinOpen, setInsulinOpen] = useState(false);
+  const [insulinDoses, setInsulinDoses] = useState<InsulinDoses>({
+    tipo: "",
+    manha: "",
+    almoco: "",
+    jantar: "",
+  });
+  const [adjustedDoses, setAdjustedDoses] = useState<AdjustedDoses | null>(null);
+  
   if (!recommendation) return null;
   
   const urgency = urgencyConfig[recommendation.urgencyLevel];
   const UrgencyIcon = urgency.icon;
+  
+  const handleCalculateAdjustment = () => {
+    const result = calculateAdjustedDoses(insulinDoses, recommendation);
+    setAdjustedDoses(result);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -115,6 +206,115 @@ export function RecommendationModal({ recommendation, patientName, open, onOpenC
                 </div>
               </div>
             </section>
+
+            <Collapsible open={insulinOpen} onOpenChange={setInsulinOpen}>
+              <CollapsibleTrigger asChild>
+                <Button variant="outline" className="w-full justify-between" data-testid="button-insulin-toggle">
+                  <span className="flex items-center gap-2">
+                    <Syringe className="h-4 w-4" />
+                    Calculadora de Ajuste de Insulina
+                  </span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${insulinOpen ? "rotate-180" : ""}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-4">
+                <div className="bg-muted/30 rounded-lg p-4 border space-y-4">
+                  <div>
+                    <Label htmlFor="insulin-type" className="text-sm font-medium">Tipo de Insulina</Label>
+                    <Input
+                      id="insulin-type"
+                      placeholder="Ex: NPH, Regular, Lispro..."
+                      value={insulinDoses.tipo}
+                      onChange={(e) => setInsulinDoses(prev => ({ ...prev, tipo: e.target.value }))}
+                      className="mt-1"
+                      data-testid="input-insulin-type"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label htmlFor="dose-manha" className="text-sm font-medium">Manhã (UI)</Label>
+                      <Input
+                        id="dose-manha"
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={insulinDoses.manha}
+                        onChange={(e) => setInsulinDoses(prev => ({ ...prev, manha: e.target.value }))}
+                        className="mt-1"
+                        data-testid="input-dose-manha"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="dose-almoco" className="text-sm font-medium">Almoço (UI)</Label>
+                      <Input
+                        id="dose-almoco"
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={insulinDoses.almoco}
+                        onChange={(e) => setInsulinDoses(prev => ({ ...prev, almoco: e.target.value }))}
+                        className="mt-1"
+                        data-testid="input-dose-almoco"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="dose-jantar" className="text-sm font-medium">Jantar (UI)</Label>
+                      <Input
+                        id="dose-jantar"
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={insulinDoses.jantar}
+                        onChange={(e) => setInsulinDoses(prev => ({ ...prev, jantar: e.target.value }))}
+                        className="mt-1"
+                        data-testid="input-dose-jantar"
+                      />
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={handleCalculateAdjustment} 
+                    className="w-full"
+                    data-testid="button-calculate-adjustment"
+                  >
+                    <Calculator className="h-4 w-4 mr-2" />
+                    Calcular Ajuste Sugerido
+                  </Button>
+                  
+                  {adjustedDoses && (
+                    <div className="bg-background rounded-lg p-3 border border-primary/20 space-y-2">
+                      <h4 className="text-sm font-semibold text-primary">Doses Ajustadas Sugeridas</h4>
+                      <div className="grid grid-cols-3 gap-3 text-center">
+                        <div className="bg-muted/50 rounded p-2">
+                          <div className="text-xs text-muted-foreground">Manhã</div>
+                          <div className="text-lg font-bold">{adjustedDoses.manha} UI</div>
+                        </div>
+                        <div className="bg-muted/50 rounded p-2">
+                          <div className="text-xs text-muted-foreground">Almoço</div>
+                          <div className="text-lg font-bold">{adjustedDoses.almoco} UI</div>
+                        </div>
+                        <div className="bg-muted/50 rounded p-2">
+                          <div className="text-xs text-muted-foreground">Jantar</div>
+                          <div className="text-lg font-bold">{adjustedDoses.jantar} UI</div>
+                        </div>
+                      </div>
+                      <div className="mt-2 space-y-1">
+                        {adjustedDoses.changes.map((change, i) => (
+                          <p key={i} className="text-xs text-muted-foreground flex items-center gap-1">
+                            <ArrowRight className="h-3 w-3" />
+                            {change}
+                          </p>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground italic mt-2 border-t pt-2">
+                        Sugestão baseada nos resultados glicêmicos. Ajuste final deve ser validado pelo profissional de saúde.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             <section>
               <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
