@@ -658,13 +658,14 @@ function analyzeMadrugada(readings: GlucoseReading[]): PeriodAdjustmentResult | 
 
 /**
  * Função principal: Analisa todos os períodos e retorna recomendações de ajuste
- * IMPORTANTE: Usa APENAS os últimos 7 dias CONSECUTIVOS de dados (reavaliações ocorrem a cada 7 dias)
+ * IMPORTANTE: Recebe APENAS os últimos 7 dias de dados (já filtrados por generateClinicalAnalysis)
+ * 
+ * @param last7DaysReadings - Leituras dos últimos 7 dias (já filtradas externamente)
  */
-export function analyzeInsulinAdjustments(allReadings: GlucoseReading[]): InsulinAdjustmentAnalysis {
-  // CRITICAL: Use analyzeChronology to get only the last 7 CONSECUTIVE days
-  // This prevents mixing old data with recent data when there are gaps
-  const chronologyResult = analyzeChronology(allReadings, 7, 2);
-  const readings = chronologyResult.readings;
+export function analyzeInsulinAdjustments(last7DaysReadings: GlucoseReading[]): InsulinAdjustmentAnalysis {
+  // Use directly - data is already filtered to last 7 days by caller (generateClinicalAnalysis)
+  // No redundant filtering needed
+  const readings = last7DaysReadings;
   
   const ajustes: PeriodAdjustmentResult[] = [];
   const periodosSemDados: string[] = [];
@@ -843,8 +844,8 @@ export function analyzeInsulinAdjustments(allReadings: GlucoseReading[]): Insuli
     prioridadeMaxima,
     temDadosInsuficientes: periodosSemDados.length > 0 || ajustes.some(a => a.direcao === "SOLICITAR_DADOS"),
     periodosSemDados,
-    chronologyWarning: chronologyResult.warningMessage || undefined,
-    dateRange: chronologyResult.dateRange || undefined,
+    // chronologyWarning and dateRange are now provided by the caller (generateClinicalAnalysis)
+    // since data is pre-filtered before being passed to this function
   };
 }
 
