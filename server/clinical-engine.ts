@@ -225,11 +225,16 @@ export function analyzeChronology(
     };
   }
   
-  // Ordenar por data (mais antigo primeiro)
+  // Ordenar por data NUMÉRICA (mais antigo primeiro)
+  // Usar Date.parse para evitar erros de comparação de strings (ex: "2025-1-9" vs "2025-01-10")
   const sortedReadings = [...readingsWithDates].sort((a, b) => {
-    const dateA = a.measurementDate || "";
-    const dateB = b.measurementDate || "";
-    return dateA.localeCompare(dateB);
+    const dateA = a.measurementDate ? new Date(a.measurementDate).getTime() : 0;
+    const dateB = b.measurementDate ? new Date(b.measurementDate).getTime() : 0;
+    // Se parsing falhar (NaN), manter ordem original
+    if (isNaN(dateA) && isNaN(dateB)) return 0;
+    if (isNaN(dateA)) return 1;  // Datas inválidas vão para o final
+    if (isNaN(dateB)) return -1;
+    return dateA - dateB;
   });
   
   // Detectar gaps (apenas para informação contextual, NÃO exclui dados)
