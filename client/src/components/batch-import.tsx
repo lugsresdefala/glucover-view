@@ -552,6 +552,21 @@ function parseExcelFile(file: File, retryCount = 0): Promise<ParsedPatientData> 
         }
         
         
+        // DEBUG: Mostrar TODOS os headers encontrados e como foram mapeados
+        const headerRow = rawData[headerRowIndex] || [];
+        console.log(`[DEBUG ${patientName}] ========== ANALISE DE COLUNAS ==========`);
+        console.log(`[DEBUG ${patientName}] Header row index: ${headerRowIndex}`);
+        console.log(`[DEBUG ${patientName}] Headers encontrados:`);
+        for (let j = 0; j < headerRow.length; j++) {
+          const cell = headerRow[j];
+          if (cell !== null && cell !== undefined && cell !== "") {
+            const mapped = mapColumn(String(cell));
+            console.log(`[DEBUG ${patientName}]   Coluna ${j}: "${String(cell)}" -> ${mapped || "NÃO MAPEADO"}`);
+          }
+        }
+        console.log(`[DEBUG ${patientName}] Colunas mapeadas: ${JSON.stringify(columnMap)}`);
+        console.log(`[DEBUG ${patientName}] ===========================================`);
+        
         if (headerRowIndex === -1 || Object.keys(columnMap).length === 0) {
           throw new Error("Cabeçalho da planilha não encontrado. Verifique se a planilha contém colunas como 'Jejum', 'Pós Café', 'Pós Almoço', etc.");
         }
