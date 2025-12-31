@@ -10,8 +10,9 @@ export function getCookieSecurity() {
   const secureCookies =
     (process.env.SESSION_COOKIE_SECURE || "").toLowerCase() === "true" ||
     isProduction;
-  // Use "strict" in production for better CSRF protection, "lax" in development for easier testing
-  const sameSite: "strict" | "lax" = isProduction ? "strict" : "lax";
+  // Use "lax" to allow embedding in hospital intranet portals (iframes)
+  // CSRF protection is provided by token validation in routes
+  const sameSite: "lax" = "lax";
   return { isProduction, secureCookies, sameSite };
 }
 
