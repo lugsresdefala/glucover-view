@@ -591,7 +591,7 @@ function parseExcelFile(file: File, retryCount = 0): Promise<ParsedPatientData> 
         let debugRowCount = 0;
         let consecutiveEmptyRows = 0;
         let firstReadingFound = false; // Only start counting empty rows after finding first data
-        const MAX_EMPTY_ROWS = 30; // Stop after 30 consecutive rows without glucose data (to handle larger gaps in data)
+        const MAX_EMPTY_ROWS = 50; // Stop after 50 consecutive rows without glucose data (to handle larger gaps in data)
         const MAX_ROWS_WITHOUT_DATA = 200; // Maximum rows to scan before giving up if no data found
         let rowsScannedWithoutData = 0;
         
