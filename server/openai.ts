@@ -220,89 +220,85 @@ function generateDeterministicRecommendation(
   const diasAnalise = analysis.totalDaysAnalyzed;
   const s7 = analysis.sevenDayAnalysis;
   
-  // ============== PANORAMA GERAL ==============
-  let panoramaResumo = "";
-  let panoramaAnalise = "";
+  // ============== ANÁLISE CLÍNICA UNIFICADA ==============
+  // Texto único, sem repetições, focado no que importa clinicamente
+  
+  let analysisSummary = "";
+  let trendInfo = "";
+  let periodDetails = "";
+  
+  const metasText = "metas: jejum 65-95, 1h pós-prandial <140 mg/dL";
   
   if (hasHypo || hasSevereHyper) {
     urgency = "critical";
     const hypoCount = criticalAlerts.filter(a => a.type === "hypoglycemia").length;
     const hyperCount = criticalAlerts.filter(a => a.type === "severe_hyperglycemia").length;
     
-    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}. Período analisado: ${diasAnalise} dias.`;
+    analysisSummary = `Gestante com ${igText}, ${analysis.diabetesType}. Período analisado: ${diasAnalise} dias.`;
     
     if (hasHypo && hasSevereHyper) {
-      panoramaAnalise = `Perfil glicêmico com variabilidade: ${hypoCount} episódio(s) de hipoglicemia (<65 mg/dL) e ${hyperCount} episódio(s) de hiperglicemia (>200 mg/dL). Média glicêmica: ${analysis.averageGlucose} mg/dL. Percentual na meta: ${analysis.percentInTarget}%.`;
+      analysisSummary += ` Perfil glicêmico com variabilidade significativa: ${hypoCount} hipoglicemia(s) e ${hyperCount} hiperglicemia(s) severa(s).`;
     } else if (hasHypo) {
-      panoramaAnalise = `Registrados ${hypoCount} episódio(s) de hipoglicemia (<65 mg/dL). ${evaluation.usesInsulin ? "Avaliação de dose de insulina e esquema alimentar indicada." : "Avaliação de padrão alimentar e atividade física indicada."} Média glicêmica: ${analysis.averageGlucose} mg/dL. Percentual na meta: ${analysis.percentInTarget}%.`;
+      analysisSummary += ` ${hypoCount} episódio(s) de hipoglicemia (<65 mg/dL) registrado(s).`;
     } else {
-      panoramaAnalise = `Registrados ${hyperCount} episódio(s) de hiperglicemia (>200 mg/dL). Média glicêmica: ${analysis.averageGlucose} mg/dL. Percentual na meta: ${analysis.percentInTarget}%.`;
+      analysisSummary += ` ${hyperCount} episódio(s) de hiperglicemia severa (>200 mg/dL) registrado(s).`;
     }
+    analysisSummary += ` Percentual na meta: ${analysis.percentInTarget}% (${metasText}). Média glicêmica: ${analysis.averageGlucose} mg/dL.`;
+    
   } else if (analysis.percentInTarget >= 70) {
     urgency = "info";
-    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}. Período analisado: ${diasAnalise} dias.`;
-    panoramaAnalise = `Percentual na meta: ${analysis.percentInTarget}% (metas: jejum 65-95, 1h pós-prandial <140 mg/dL). Média glicêmica: ${analysis.averageGlucose} mg/dL. ${evaluation.usesInsulin ? "Manutenção do esquema de insulinoterapia atual indicada." : "Manutenção do manejo nutricional atual indicada."}`;
+    analysisSummary = `Gestante com ${igText}, ${analysis.diabetesType}. Período analisado: ${diasAnalise} dias.`;
+    analysisSummary += ` Percentual na meta: ${analysis.percentInTarget}% (${metasText}). Média glicêmica: ${analysis.averageGlucose} mg/dL. ${evaluation.usesInsulin ? "Manutenção do esquema de insulinoterapia atual indicada." : "Manutenção do manejo nutricional atual indicada."}`;
+    
   } else if (analysis.percentInTarget >= 50) {
     urgency = "warning";
-    const periodInfo = generatePeriodAnalysis(analysis);
-    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}. Período analisado: ${diasAnalise} dias.`;
-    panoramaAnalise = `Percentual na meta: ${analysis.percentInTarget}%. Percentual acima da meta: ${analysis.percentAboveTarget}%. Média glicêmica: ${analysis.averageGlucose} mg/dL. ${periodInfo}`;
+    analysisSummary = `Gestante com ${igText}, ${analysis.diabetesType}. Período analisado: ${diasAnalise} dias.`;
+    analysisSummary += ` Percentual na meta: ${analysis.percentInTarget}%. Percentual acima da meta: ${analysis.percentAboveTarget}%. Média glicêmica: ${analysis.averageGlucose} mg/dL.`;
+    periodDetails = generatePeriodAnalysis(analysis);
+    
   } else {
     urgency = "critical";
-    const periodInfo2 = generatePeriodAnalysis(analysis);
-    panoramaResumo = `Gestante com ${igText}, ${analysis.diabetesType}. Período analisado: ${diasAnalise} dias.`;
-    panoramaAnalise = `Percentual na meta: ${analysis.percentInTarget}%. Percentual acima da meta: ${analysis.percentAboveTarget}%. Média glicêmica: ${analysis.averageGlucose} mg/dL. ${periodInfo2}`;
+    analysisSummary = `Gestante com ${igText}, ${analysis.diabetesType}. Período analisado: ${diasAnalise} dias.`;
+    analysisSummary += ` Percentual na meta: ${analysis.percentInTarget}%. Percentual acima da meta: ${analysis.percentAboveTarget}%. Média glicêmica: ${analysis.averageGlucose} mg/dL.`;
+    periodDetails = generatePeriodAnalysis(analysis);
   }
   
-  // ============== ÚLTIMOS 7 DIAS (CONSOLIDADO) ==============
-  let ultimos7Resumo = "";
-  let ultimos7Tendencia = "";
-  let ultimos7Analise = "";
-  
-  if (s7) {
+  // ============== TENDÊNCIA RECENTE ==============
+  // Só mostra se houver dados suficientes E se a tendência diferir do geral
+  if (s7 && diasAnalise > 7) {
     const tendenciaLabel = s7.trend === "improving" ? "MELHORA" : s7.trend === "worsening" ? "PIORA" : "ESTÁVEL";
     const diffPercent = s7.percentInTarget - analysis.percentInTarget;
     const diffMedia = s7.averageGlucose - analysis.averageGlucose;
     
-    // Resumo único com dados essenciais
-    ultimos7Resumo = `${s7.percentInTarget}% na meta, média ${s7.averageGlucose} mg/dL.`;
-    
-    // Tendência com comparativo integrado (sem repetir números)
-    if (diffPercent > 5) {
-      ultimos7Tendencia = `${tendenciaLabel}: melhora de ${Math.abs(diffPercent)}pp vs período geral${diffMedia < 0 ? `, média reduziu ${Math.abs(diffMedia)} mg/dL` : ""}.`;
-    } else if (diffPercent < -5) {
-      ultimos7Tendencia = `${tendenciaLabel}: piora de ${Math.abs(diffPercent)}pp vs período geral${diffMedia > 0 ? `, média aumentou ${diffMedia} mg/dL` : ""}.`;
+    // Só mostra se há diferença significativa entre 7 dias e período geral
+    if (Math.abs(diffPercent) > 5 || Math.abs(diffMedia) > 5) {
+      trendInfo = `Últimos 7 dias: ${s7.percentInTarget}% na meta, média ${s7.averageGlucose} mg/dL. `;
+      if (diffPercent > 5) {
+        trendInfo += `Tendência: ${tendenciaLabel} (+${Math.abs(diffPercent)}pp vs período geral).`;
+      } else if (diffPercent < -5) {
+        trendInfo += `Tendência: ${tendenciaLabel} (${diffPercent}pp vs período geral).`;
+      }
     } else {
-      ultimos7Tendencia = `${tendenciaLabel}: padrão consistente com período geral.`;
+      trendInfo = `Tendência: ${tendenciaLabel} - padrão consistente com período geral.`;
     }
     
-    // Análise focada em mudanças relevantes (sem repetir tendência)
-    const detalhes: string[] = [];
-    
-    // Períodos com mudança significativa
+    // Períodos com mudança significativa (apenas se houver)
     const worsePeriods = s7.periodComparison.filter(p => p.change === "worse");
     const betterPeriods = s7.periodComparison.filter(p => p.change === "better");
     
-    if (worsePeriods.length > 0) {
-      detalhes.push(`Aumento em: ${worsePeriods.map(p => `${p.period} (${p.overall}→${p.last7Days})`).join(", ")}`);
+    if (worsePeriods.length > 0 || betterPeriods.length > 0) {
+      const changes: string[] = [];
+      if (worsePeriods.length > 0) {
+        changes.push(`piora em ${worsePeriods.map(p => p.period).join(", ")}`);
+      }
+      if (betterPeriods.length > 0) {
+        changes.push(`melhora em ${betterPeriods.map(p => p.period).join(", ")}`);
+      }
+      trendInfo += ` Mudanças recentes: ${changes.join("; ")}.`;
     }
-    if (betterPeriods.length > 0) {
-      detalhes.push(`Redução em: ${betterPeriods.map(p => `${p.period} (${p.overall}→${p.last7Days})`).join(", ")}`);
-    }
-    
-    // Alertas críticos recentes
-    if (s7.criticalAlerts.length > 0) {
-      const hypoRecent = s7.criticalAlerts.filter(a => a.type === "hypoglycemia").length;
-      const hyperRecent = s7.criticalAlerts.filter(a => a.type === "severe_hyperglycemia").length;
-      if (hypoRecent > 0) detalhes.push(`${hypoRecent} hipoglicemia(s)`);
-      if (hyperRecent > 0) detalhes.push(`${hyperRecent} hiperglicemia(s) >200`);
-    }
-    
-    ultimos7Analise = detalhes.length > 0 ? detalhes.join(". ") + "." : "";
-  } else {
-    ultimos7Resumo = `Período: ${diasAnalise} dias disponíveis.`;
-    ultimos7Tendencia = "Dados insuficientes para análise de tendência.";
-    ultimos7Analise = "";
+  } else if (s7) {
+    // Se só tem 7 dias, a tendência já está no resumo principal
+    trendInfo = `Tendência: ${s7.trend === "improving" ? "MELHORA" : s7.trend === "worsening" ? "PIORA" : "ESTÁVEL"} - padrão consistente com período geral.`;
   }
   
   // ============== CONDUTA TERAPÊUTICA ==============
@@ -465,31 +461,22 @@ function generateDeterministicRecommendation(
   
   const ruleIds = analysis.rulesTriggered.map(r => r.id);
   
-  // Montar análise completa com duas seções - ensure consistent format even with empty content
-  const panoramaSection = [
-    `PANORAMA GERAL`,
+  // Montar análise completa - texto único e conciso
+  const analysisSection = [
+    `ANÁLISE CLÍNICA`,
     ``,
-    panoramaResumo || `Gestante com ${igText}, ${analysis.diabetesType}, em acompanhamento.`,
-    ``,
-    panoramaAnalise || `Análise baseada em ${diasAnalise} dias de monitoramento glicêmico.`,
-  ].join("\n");
+    analysisSummary,
+  ];
   
-  const ultimos7Section = [
-    `ÚLTIMOS 7 DIAS`,
-    ``,
-    ultimos7Resumo,
-    ``,
-    `Tendência: ${ultimos7Tendencia}`,
-    ultimos7Analise ? `\n${ultimos7Analise}` : "",
-  ].filter(Boolean).join("\n");
+  if (periodDetails) {
+    analysisSection.push(``, periodDetails);
+  }
   
-  const fullAnalysis = [
-    panoramaSection,
-    ``,
-    `---`,
-    ``,
-    ultimos7Section,
-  ].join("\n");
+  if (trendInfo) {
+    analysisSection.push(``, trendInfo);
+  }
+  
+  const fullAnalysis = analysisSection.join("\n");
   
   const mainRec = [
     `Conduta Imediata: ${condutaImediata}`,
