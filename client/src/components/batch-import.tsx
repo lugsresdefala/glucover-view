@@ -151,8 +151,10 @@ function normalizeHeader(header: string): string {
 function mapColumn(header: string): keyof GlucoseReading | null {
   const normalized = normalizeHeader(header);
   // Usar array ordenado para garantir que padrões mais específicos (2h) sejam verificados primeiro
+  // IMPORTANTE: Normalizar o padrão também para remover acentos e garantir correspondência
   for (const [pattern, field] of COLUMN_MAPPINGS) {
-    if (normalized.includes(pattern)) {
+    const normalizedPattern = normalizeHeader(pattern);
+    if (normalized.includes(normalizedPattern)) {
       return field;
     }
   }
