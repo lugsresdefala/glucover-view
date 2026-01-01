@@ -244,15 +244,15 @@ export function RecommendationModal({ recommendation, patientName, open, onOpenC
                                 {doseAtual > 0 && (
                                   <div className="flex gap-2">
                                     <div className="text-center px-3 py-1 bg-muted rounded">
-                                      <div className="text-xs text-muted-foreground">-10%</div>
+                                      <div className="text-xs text-muted-foreground">{isAumentar ? "+" : "-"}10%</div>
                                       <div className="font-bold">{calcularNovaDose(doseAtual, ajuste.direcao as "AUMENTAR" | "REDUZIR", 10)} UI</div>
                                     </div>
                                     <div className="text-center px-3 py-1 bg-primary/10 rounded border border-primary/20">
-                                      <div className="text-xs text-muted-foreground">-15%</div>
+                                      <div className="text-xs text-muted-foreground">{isAumentar ? "+" : "-"}15%</div>
                                       <div className="font-bold text-primary">{calcularNovaDose(doseAtual, ajuste.direcao as "AUMENTAR" | "REDUZIR", 15)} UI</div>
                                     </div>
                                     <div className="text-center px-3 py-1 bg-muted rounded">
-                                      <div className="text-xs text-muted-foreground">-20%</div>
+                                      <div className="text-xs text-muted-foreground">{isAumentar ? "+" : "-"}20%</div>
                                       <div className="font-bold">{calcularNovaDose(doseAtual, ajuste.direcao as "AUMENTAR" | "REDUZIR", 20)} UI</div>
                                     </div>
                                   </div>
