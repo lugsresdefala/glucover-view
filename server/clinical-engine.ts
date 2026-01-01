@@ -357,15 +357,16 @@ function analyzeJejumWithMadrugada(readings: GlucoseReading[]): PeriodAdjustment
   const madrugadaValues = extractPeriodValues(readings, "madrugada");
   
   if (madrugadaValues.length === 0) {
-    // Sem dados de madrugada, mas jejum persistentemente alto
-    // Conduta padrão: aumentar NPH noturna (fenômeno do alvorecer é mais comum que Somogyi)
-    // NOTA: Apenas sugerir monitorar madrugada se houver sinais de hipoglicemia noturna reportados
-    const avgJejum = Math.round(jejumValues.reduce((a, b) => a + b, 0) / jejumValues.length);
+    // SEM dados de madrugada + jejum alto = SOLICITAR medição da madrugada
+    // CRÍTICO: Não aumentar NPH sem diferenciar Fenômeno do Alvorecer vs Efeito Somogyi
+    // - Fenômeno do Alvorecer: madrugada normal/alta → AUMENTAR NPH
+    // - Efeito Somogyi: madrugada baixa (<70) → REDUZIR NPH (hipoglicemia noturna)
+    // Aumentar NPH sem essa informação pode causar hipoglicemia materna/fetal
     return {
       periodo: PERIOD_LABELS.jejum,
       insulinaAfetada: "NPH_NOTURNA",
-      direcao: "AUMENTAR",
-      justificativa: `Jejum ≥95 mg/dL em ${diasJejumAlto}/${jejumValues.length} dias (média ${avgJejum} mg/dL). Opção: aumentar NPH noturna (ao deitar). Considerar monitorar madrugada (3h) se suspeita de hipoglicemia noturna.`,
+      direcao: "SOLICITAR_DADOS",
+      justificativa: `Jejum ≥95 mg/dL em ${diasJejumAlto}/${jejumValues.length} dias. Necessário monitorizar glicemia da madrugada (3h) para diferenciar dose insuficiente de NPH vs Efeito Somogyi.`,
       diasComProblema: diasJejumAlto,
       totalDiasAnalisados: jejumValues.length,
       valoresObservados: jejumValues,
