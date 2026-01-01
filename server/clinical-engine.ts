@@ -600,17 +600,13 @@ function analyzePosPrandial(
   const avgDelta = deltas.length > 0 ? Math.round(deltas.reduce((a, b) => a + b.delta, 0) / deltas.length) : 0;
   const avgPos = Math.round(posValues.reduce((a, b) => a + b, 0) / posValues.length);
   
-  // Percentual mínimo de dias com delta alto para considerar padrão significativo
-  const percentualDeltaAlto = deltas.length > 0 ? (diasDeltaAlto / deltas.length) * 100 : 0;
-  const PERCENTUAL_MINIMO_PADRAO = 40; // Pelo menos 40% dos dias com delta alto
-  
-  if (diasDeltaAlto >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO && percentualDeltaAlto >= PERCENTUAL_MINIMO_PADRAO) {
-    // Delta > 40 em ≥3 dias E ≥40% dos dias → problema na rápida
+  if (diasDeltaAlto >= ADJUSTMENT_THRESHOLDS.DIAS_MINIMOS_PADRAO) {
+    // Delta > 40 em ≥3 dias → problema na rápida
     return {
       periodo: PERIOD_LABELS[posPeriod],
       insulinaAfetada: rapidaResponsavel,
       direcao: "AUMENTAR",
-      justificativa: `Excursão glicêmica ≥40 mg/dL em ${diasDeltaAlto}/${deltas.length} dias (${Math.round(percentualDeltaAlto)}%, delta médio ${avgDelta} mg/dL). Indica ${INSULIN_LABELS[rapidaResponsavel]} insuficiente. Opção: aumentar dose.`,
+      justificativa: `Excursão glicêmica ≥40 mg/dL em ${diasDeltaAlto}/${deltas.length} dias (delta médio ${avgDelta} mg/dL). Indica ${INSULIN_LABELS[rapidaResponsavel]} insuficiente. Opção: aumentar dose.`,
       diasComProblema: diasDeltaAlto,
       totalDiasAnalisados: deltas.length,
       valoresObservados: posValues,
