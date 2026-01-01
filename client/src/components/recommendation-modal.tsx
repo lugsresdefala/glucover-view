@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -172,6 +172,25 @@ export function RecommendationModal({ recommendation, patientName, open, onOpenC
     jantar: "",
   });
   const [adjustedDoses, setAdjustedDoses] = useState<AdjustedDoses | null>(null);
+  
+  // Abrir calculadora automaticamente quando ha ajuste de insulina recomendado
+  useEffect(() => {
+    if (open && recommendation) {
+      const hasAdjustment = recommendation.mainRecommendation?.includes("AUMENTO INDICADO") || 
+        recommendation.mainRecommendation?.includes("REDUCAO INDICADA") ||
+        recommendation.mainRecommendation?.includes("aumentar 10-20%") ||
+        recommendation.mainRecommendation?.includes("reduzir 10-20%");
+      setInsulinOpen(hasAdjustment);
+      // Resetar doses ao abrir novo modal
+      setInsulinDoses({ tipo: "", manha: "", almoco: "", jantar: "" });
+      setAdjustedDoses(null);
+    } else if (!open) {
+      // Resetar estado ao fechar
+      setInsulinOpen(false);
+      setInsulinDoses({ tipo: "", manha: "", almoco: "", jantar: "" });
+      setAdjustedDoses(null);
+    }
+  }, [open, recommendation]);
   
   if (!recommendation) return null;
   

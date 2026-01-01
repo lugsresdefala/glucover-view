@@ -779,49 +779,62 @@ export function analyzeInsulinAdjustments(last7DaysReadings: GlucoseReading[]): 
   const reduzir = ajustes.filter(a => a.direcao === "REDUZIR");
   const solicitar = ajustes.filter(a => a.direcao === "SOLICITAR_DADOS");
   
-  // Gerar resumo DETALHADO com justificativas específicas
+  // Gerar resumo DETALHADO com formatacao clara em linhas separadas
   let resumoGeral = "";
   if (ajustes.length === 0) {
-    resumoGeral = "Perfil glicêmico sem padrões que indiquem necessidade de ajuste de doses no momento. Manter esquema atual e continuar monitorização.";
+    resumoGeral = "Perfil glicemico adequado. Manter esquema atual.";
   } else {
-    const partes: string[] = [];
+    const linhas: string[] = [];
     
     // Handle conflicting patterns explicitly
     if (conflictingPeriods.length > 0) {
-      partes.push(`PADRÃO CONFLITANTE em ${conflictingPeriods.join(", ")}: hipoglicemia E hiperglicemia alternadas. SEGURANÇA PRIMEIRO - reduzir dose; investigar variabilidade alimentar`);
+      linhas.push(`CONFLITO em ${conflictingPeriods.join(", ")}: hipo + hiper alternadas`);
+      linhas.push(`Conduta: REDUZIR dose (seguranca primeiro)`);
+      linhas.push("");
     }
     
-    // REDUÇÃO - incluir justificativas detalhadas
+    // REDUCAO - formato claro em linhas
     if (reduzir.length > 0) {
-      const detalhesReducao = reduzir.map(a => {
+      linhas.push("REDUCAO INDICADA:");
+      reduzir.forEach(a => {
         const avgValue = a.valoresObservados.length > 0 
           ? Math.round(a.valoresObservados.reduce((s,v) => s+v, 0) / a.valoresObservados.length)
           : null;
-        const valores = avgValue ? ` (média ${avgValue} mg/dL)` : "";
-        return `${INSULIN_LABELS[a.insulinaAfetada]}: reduzir 10-20%${valores} - ${a.diasComProblema}/${a.totalDiasAnalisados} dias com hipoglicemia em ${a.periodo}`;
+        linhas.push(`- ${INSULIN_LABELS[a.insulinaAfetada]}`);
+        linhas.push(`  Ajuste: reduzir 10-20%`);
+        linhas.push(`  Motivo: hipoglicemia em ${a.periodo} (${a.diasComProblema}/${a.totalDiasAnalisados} dias${avgValue ? `, media ${avgValue} mg/dL` : ""})`);
       });
-      partes.push(`REDUZIR (PRIORIDADE): ${detalhesReducao.join("; ")}`);
+      linhas.push("");
     }
     
-    // AUMENTO - incluir justificativas detalhadas (só se não há hipoglicemia)
+    // AUMENTO - formato claro em linhas (so se nao ha hipoglicemia)
     if (aumentar.length > 0 && reduzir.length === 0) {
-      const detalhesAumento = aumentar.map(a => {
+      linhas.push("AUMENTO INDICADO:");
+      aumentar.forEach(a => {
         const avgValue = a.valoresObservados.length > 0 
           ? Math.round(a.valoresObservados.reduce((s,v) => s+v, 0) / a.valoresObservados.length)
           : null;
-        const valores = avgValue ? ` (média ${avgValue} mg/dL)` : "";
-        return `${INSULIN_LABELS[a.insulinaAfetada]}: aumentar 10-20%${valores} - ${a.diasComProblema}/${a.totalDiasAnalisados} dias acima da meta em ${a.periodo}`;
+        linhas.push(`- ${INSULIN_LABELS[a.insulinaAfetada]}`);
+        linhas.push(`  Ajuste: aumentar 10-20%`);
+        linhas.push(`  Motivo: ${a.periodo} elevado (${a.diasComProblema}/${a.totalDiasAnalisados} dias${avgValue ? `, media ${avgValue} mg/dL` : ""})`);
       });
-      partes.push(`AUMENTAR: ${detalhesAumento.join("; ")}`);
+      linhas.push("");
     } else if (aumentar.length > 0 && reduzir.length > 0) {
-      partes.push(`Hiperglicemia em ${aumentar.map(a => a.periodo).join(", ")} - NÃO aumentar enquanto houver hipoglicemia`);
+      linhas.push("AUMENTO SUSPENSO:");
+      linhas.push(`- Hiperglicemia em ${aumentar.map(a => a.periodo).join(", ")}`);
+      linhas.push(`- NAO aumentar enquanto houver hipoglicemia`);
+      linhas.push("");
     }
     
+    // DADOS INSUFICIENTES
     if (solicitar.length > 0) {
-      partes.push(`DADOS INSUFICIENTES: necessário monitorar ${solicitar.map(a => a.periodo).join(", ")}`);
+      linhas.push("DADOS INSUFICIENTES:");
+      solicitar.forEach(a => {
+        linhas.push(`- ${a.periodo}: necessario monitorar para definir conduta`);
+      });
     }
     
-    resumoGeral = partes.join(". ") + ".";
+    resumoGeral = linhas.join("\n").trim();
   }
   
   // HARMONIZE CONFLICT RESOLUTION: If hypoglycemia is present, suppress increase recommendations
