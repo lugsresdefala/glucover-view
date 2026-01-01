@@ -126,6 +126,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
   const [dateFilter, setDateFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "resolved">("all");
   const [patientSearchQuery, setPatientSearchQuery] = useState("");
+  const [evaluationSearchQuery, setEvaluationSearchQuery] = useState("");
   const recommendationRef = useRef<HTMLDivElement>(null);
   
   const showBatchImport = section === "import";
@@ -187,9 +188,17 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
     return Array.from(uniqueMap.values());
   }, [rawEvaluations]);
 
-  // Filter by date, status and sort alphabetically
+  // Filter by date, status, search and sort alphabetically
   const filteredEvaluations = useMemo(() => {
     let filtered = [...evaluations];
+    
+    // Filter by search query (patient name)
+    if (evaluationSearchQuery.trim()) {
+      const searchLower = evaluationSearchQuery.toLowerCase().trim();
+      filtered = filtered.filter(e => 
+        e.patientName.toLowerCase().includes(searchLower)
+      );
+    }
     
     // Filter by date if set (and not "all")
     if (dateFilter && dateFilter !== "all") {
@@ -210,7 +219,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
     return filtered.sort((a, b) => 
       a.patientName.localeCompare(b.patientName, 'pt-BR')
     );
-  }, [evaluations, dateFilter, statusFilter]);
+  }, [evaluations, dateFilter, statusFilter, evaluationSearchQuery]);
 
   // Get unique dates for the filter
   const availableDates = useMemo(() => {
@@ -635,10 +644,21 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
             <div className="flex flex-col gap-1">
               <h2 className="text-lg font-semibold text-foreground">Histórico de Avaliações</h2>
               <p className="text-sm text-muted-foreground">
-                {isLoadingHistory ? "Carregando..." : `${filteredEvaluations.length} de ${dashboardMetrics.totalEvaluations} avaliações${(dateFilter || statusFilter !== "all") ? " (filtrado)" : ""}`}
+                {isLoadingHistory ? "Carregando..." : `${filteredEvaluations.length} de ${dashboardMetrics.totalEvaluations} avaliações${(dateFilter || statusFilter !== "all" || evaluationSearchQuery) ? " (filtrado)" : ""}`}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Buscar paciente..."
+                  value={evaluationSearchQuery}
+                  onChange={(e) => setEvaluationSearchQuery(e.target.value)}
+                  className="pl-9 w-[200px]"
+                  data-testid="input-evaluation-search"
+                />
+              </div>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | "active" | "resolved")}>
                 <SelectTrigger className="w-[160px]" data-testid="select-status-filter">
                   <User className="h-4 w-4 mr-2" />
@@ -664,11 +684,11 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
                   ))}
                 </SelectContent>
               </Select>
-              {(dateFilter && dateFilter !== "all") || statusFilter !== "all" ? (
+              {(dateFilter && dateFilter !== "all") || statusFilter !== "all" || evaluationSearchQuery ? (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => { setDateFilter(""); setStatusFilter("all"); }}
+                  onClick={() => { setDateFilter(""); setStatusFilter("all"); setEvaluationSearchQuery(""); }}
                   data-testid="button-clear-filters"
                 >
                   <X className="h-4 w-4 mr-1" />
