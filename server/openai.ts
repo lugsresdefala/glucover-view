@@ -330,9 +330,10 @@ function generateDeterministicRecommendation(
   
   // Get 7-day specific period issues for targeted adjustments - always include when worsening
   const sevenDayWorseningPeriods = s7?.periodComparison?.filter(p => p.change === "worse") || [];
+  // Only show "piora" message if there's an actual increase in average glucose (avgDelta > 0)
   const sevenDayAdjustments = sevenDayWorseningPeriods.length > 0 
     ? `Atenção especial aos períodos com piora recente: ${sevenDayWorseningPeriods.map(p => `${p.period} (${p.overall}→${p.last7Days} mg/dL)`).join(", ")}.`
-    : (isRecentWorsening && s7 ? `Piora observada na média geral (${analysis.averageGlucose}→${s7.averageGlucose} mg/dL nos últimos 7 dias).` : "");
+    : (isRecentWorsening && s7 && avgDelta > 0 ? `Piora observada na média geral (${analysis.averageGlucose}→${s7.averageGlucose} mg/dL nos últimos 7 dias).` : "");
   
   // Verificar padrão recorrente de hipoglicemia antes de recomendar redução de dose
   const hypoPattern = hasRecurrentHypoglycemia(analysis);
@@ -433,9 +434,10 @@ function generateDeterministicRecommendation(
     fundamentacao = `Conforme SBD-R1 (Classe IIb, Nível C), ${analysis.percentAboveTarget}% das medidas acima da meta indica início ou intensificação de insulinoterapia.${isRecentWorsening ? " Tendência de piora recente reforça indicação de intervenção." : ""} Insulina como primeira escolha (SBD-R2, Classe I, Nível A).`;
   } else {
     // Poor control
+    // Only show worsening trend if there's actual increase in average glucose
     const trendNote = isRecentImproving 
       ? " Tendência de melhora nos últimos 7 dias sugere resposta inicial ao tratamento."
-      : isRecentWorsening 
+      : (isRecentWorsening && avgDelta > 0)
         ? " Tendência de piora progressiva nos últimos 7 dias observada."
         : "";
     
