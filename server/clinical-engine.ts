@@ -1230,6 +1230,14 @@ export interface ClinicalAnalysis {
   usesInsulin: boolean;
   currentInsulinRegimens: InsulinRegimen[];
   
+  // Full period stats (all days available)
+  fullPeriodStats: {
+    totalDays: number;
+    totalReadings: number;
+    percentInTarget: number;
+    averageGlucose: number;
+  };
+  
   analysisByPeriod: GlucoseAnalysisByPeriod[];
   criticalAlerts: CriticalAlert[];
   
@@ -1651,6 +1659,23 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
   const percentAboveTarget = totalReadings > 0 ? Math.round((totalAbove / totalReadings) * 100) : 0;
   const averageGlucose = totalReadings > 0 ? Math.round(sumGlucose / totalReadings) : 0;
   
+  // FULL PERIOD STATS (all available days, not just last 7)
+  const fullPeriodAnalysis = analyzeByPeriod(glucoseReadings);
+  let fullPeriodReadings = 0;
+  let fullPeriodInTarget = 0;
+  let fullPeriodSum = 0;
+  fullPeriodAnalysis.forEach(p => {
+    fullPeriodReadings += p.total;
+    fullPeriodInTarget += p.inTarget;
+    fullPeriodSum += p.average * p.total;
+  });
+  const fullPeriodStats = {
+    totalDays: totalDays,
+    totalReadings: fullPeriodReadings,
+    percentInTarget: fullPeriodReadings > 0 ? Math.round((fullPeriodInTarget / fullPeriodReadings) * 100) : 0,
+    averageGlucose: fullPeriodReadings > 0 ? Math.round(fullPeriodSum / fullPeriodReadings) : 0,
+  };
+  
   const hasCAFPercentile75 = (evaluation.abdominalCircumferencePercentile || 0) >= 75;
   const currentTotalInsulinDose = calculateCurrentTotalInsulinDose(insulinRegimens || []);
   
@@ -1805,6 +1830,7 @@ export function generateClinicalAnalysis(evaluation: PatientEvaluation): Clinica
     averageGlucose,
     usesInsulin,
     currentInsulinRegimens: insulinRegimens || [],
+    fullPeriodStats,
     analysisByPeriod,
     criticalAlerts,
     sevenDayAnalysis,
