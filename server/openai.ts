@@ -393,7 +393,9 @@ function generateDeterministicRecommendation(
     fundamentacao = "Valores críticos de glicemia indicam necessidade de intervenção para prevenção de complicações materno-fetais conforme SBD 2025 e FEBRASGO 2019 (F8 - vigilância fetal).";
   } else if (analysis.percentInTarget >= 70) {
     // Good overall control - check if recent trend is worsening
-    if (isRecentWorsening) {
+    // Only show worsening message if there's actual decrease in percent-in-target (percentDelta < 0)
+    const hasActualWorsening = isRecentWorsening && percentDelta < 0;
+    if (hasActualWorsening) {
       condutaImediata = evaluation.usesInsulin 
         ? `Tendência de piora observada nos últimos 7 dias (${recent7DayPercent}% na meta vs ${analysis.percentInTarget}% geral). Avaliação de ajuste preventivo indicada. ${sevenDayAdjustments}`
         : `Tendência de piora recente observada (${recent7DayPercent}% na meta nos últimos 7 dias). Intensificação da orientação dietética e monitoramento recomendados.`;
@@ -409,7 +411,7 @@ function generateDeterministicRecommendation(
     nextSteps.push("Manutenção da automonitorização glicêmica");
     nextSteps.push("Continuidade da orientação nutricional");
     nextSteps.push(evaluation.gestationalWeeks >= 32 ? "Vigilância fetal semanal (CTG, PBF)" : "Próxima consulta em 15 dias");
-    fundamentacao = `Controle adequado conforme metas SBD 2025 (jejum 65-95, 1h pós-prandial <140 mg/dL).${isRecentWorsening ? " Tendência de piora recente requer vigilância." : ""} ${evaluation.gestationalWeeks >= 32 ? "Vigilância fetal intensificada após 32 semanas (FEBRASGO-F8, OMS-W8)." : ""}`;
+    fundamentacao = `Controle adequado conforme metas SBD 2025 (jejum 65-95, 1h pós-prandial <140 mg/dL).${hasActualWorsening ? " Tendência de piora recente requer vigilância." : ""} ${evaluation.gestationalWeeks >= 32 ? "Vigilância fetal intensificada após 32 semanas (FEBRASGO-F8, OMS-W8)." : ""}`;
   } else if (analysis.percentInTarget >= 50) {
     // Moderate control - use 7-day data to guide urgency
     const urgencyNote = isRecentWorsening ? " Tendência de piora detectada nos últimos 7 dias." : "";
