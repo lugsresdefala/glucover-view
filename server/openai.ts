@@ -165,6 +165,18 @@ function formatAIResponse(parsed: any, analysis: ClinicalAnalysis): ClinicalReco
   const chronologyWarning = analysis.chronologyWarning || analysis.insulinAdjustments?.chronologyWarning;
   const dateRange = analysis.dateRange || analysis.insulinAdjustments?.dateRange;
   
+  // Convert PeriodAdjustmentResult to InsulinAdjustment for frontend
+  const ajustesRecomendados = analysis.insulinAdjustments?.ajustesRecomendados?.map(a => ({
+    periodo: a.periodo,
+    insulinaAfetada: a.insulinaAfetada,
+    direcao: a.direcao,
+    justificativa: a.justificativa,
+    diasComProblema: a.diasComProblema,
+    totalDiasAnalisados: a.totalDiasAnalisados,
+    valoresObservados: a.valoresObservados,
+    suspended: a.suspended,
+  })) || [];
+
   return {
     analysis: fullAnalysis || analysis.technicalSummary,
     mainRecommendation: conduta.trim(),
@@ -177,6 +189,7 @@ function formatAIResponse(parsed: any, analysis: ClinicalAnalysis): ClinicalReco
     chronologyWarning,
     dateRange,
     totalDaysAnalyzed: analysis.totalDaysAnalyzed,
+    ajustesRecomendados,
   };
 }
 
@@ -487,6 +500,18 @@ function generateDeterministicRecommendation(
   const chronologyWarning = analysis.chronologyWarning || analysis.insulinAdjustments?.chronologyWarning;
   const dateRange = analysis.dateRange || analysis.insulinAdjustments?.dateRange;
   
+  // Convert PeriodAdjustmentResult to InsulinAdjustment for frontend
+  const ajustesRecomendados = analysis.insulinAdjustments?.ajustesRecomendados?.map(a => ({
+    periodo: a.periodo,
+    insulinaAfetada: a.insulinaAfetada,
+    direcao: a.direcao,
+    justificativa: a.justificativa,
+    diasComProblema: a.diasComProblema,
+    totalDiasAnalisados: a.totalDiasAnalisados,
+    valoresObservados: a.valoresObservados,
+    suspended: a.suspended,
+  })) || [];
+  
   return {
     analysis: fullAnalysis,
     mainRecommendation: mainRec,
@@ -497,6 +522,7 @@ function generateDeterministicRecommendation(
     chronologyWarning,
     dateRange,
     totalDaysAnalyzed: analysis.totalDaysAnalyzed,
+    ajustesRecomendados,
   };
 }
 
