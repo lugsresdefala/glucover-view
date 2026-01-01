@@ -56,7 +56,8 @@ import {
   Square,
   X,
   FileText,
-  Download
+  Download,
+  Search
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import {
@@ -124,6 +125,8 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
   const [patientFromUrl, setPatientFromUrl] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "resolved">("all");
+  const [patientSearchQuery, setPatientSearchQuery] = useState("");
+  const recommendationRef = useRef<HTMLDivElement>(null);
   
   const showBatchImport = section === "import";
   const showPatientList = section === "patients";
@@ -416,6 +419,14 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
     form.setValue("dietAdherence", evaluation.dietAdherence);
     setGlucoseReadings(evaluation.glucoseReadings);
     setInsulinRegimens(evaluation.insulinRegimens || []);
+    
+    // Auto-scroll para a seção de recomendação
+    setTimeout(() => {
+      recommendationRef.current?.scrollIntoView({ 
+        behavior: "smooth", 
+        block: "start" 
+      });
+    }, 100);
   };
 
   const formatDate = (date: string | Date | undefined) => {
@@ -1010,7 +1021,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
         {showPatientList && (
           <Card className="mb-6">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Users className="h-5 w-5" />
@@ -1022,6 +1033,16 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
                       : "Pacientes vinculadas ao seu perfil"}
                   </CardDescription>
                 </div>
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar paciente..."
+                    value={patientSearchQuery}
+                    onChange={(e) => setPatientSearchQuery(e.target.value)}
+                    className="pl-9"
+                    data-testid="input-patient-search"
+                  />
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -1030,27 +1051,46 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
               ) : patients.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">Nenhuma paciente vinculada.</p>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {patients.map((patient) => (
-                    <div 
-                      key={patient.id} 
-                      className="flex items-center gap-3 p-3 border hover-elevate cursor-pointer"
-                      onClick={() => {
-                        form.setValue("patientName", patient.name);
-                        setShowEvaluationForm(true);
-                      }}
-                      data-testid={`card-patient-${patient.id}`}
-                    >
-                      <Avatar className="h-9 w-9">
-                        <AvatarFallback>{patient.name[0]?.toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{patient.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{patient.email}</p>
+                <>
+                  {(() => {
+                    const filteredPatients = patients.filter((patient) =>
+                      patient.name.toLowerCase().includes(patientSearchQuery.toLowerCase()) ||
+                      patient.email.toLowerCase().includes(patientSearchQuery.toLowerCase())
+                    );
+                    
+                    if (filteredPatients.length === 0) {
+                      return (
+                        <p className="text-muted-foreground text-center py-8">
+                          Nenhuma paciente encontrada para "{patientSearchQuery}"
+                        </p>
+                      );
+                    }
+                    
+                    return (
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {filteredPatients.map((patient) => (
+                          <div 
+                            key={patient.id} 
+                            className="flex items-center gap-3 p-3 border hover-elevate cursor-pointer"
+                            onClick={() => {
+                              form.setValue("patientName", patient.name);
+                              setShowEvaluationForm(true);
+                            }}
+                            data-testid={`card-patient-${patient.id}`}
+                          >
+                            <Avatar className="h-9 w-9">
+                              <AvatarFallback>{patient.name[0]?.toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{patient.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{patient.email}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    );
+                  })()}
+                </>
               )}
             </CardContent>
           </Card>
@@ -1294,7 +1334,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
             </Card>
 
             {currentRecommendation?.recommendation && (
-              <Card className="border-primary/30 bg-primary/5">
+              <Card ref={recommendationRef} className="border-primary/30 bg-primary/5">
                 <CardContent className="py-4">
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-3">

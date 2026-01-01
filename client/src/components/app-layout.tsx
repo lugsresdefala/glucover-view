@@ -69,9 +69,17 @@ interface AppLayoutProps {
   showPatientList?: boolean;
 }
 
-function SidebarAutoCollapse({ isMobile }: { isMobile: boolean }) {
-  const { setOpen } = useSidebar();
+function SidebarAutoCollapse({ isMobile, location }: { isMobile: boolean; location: string }) {
+  const { setOpen, setOpenMobile } = useSidebar();
   
+  // Fechar sidebar ao mudar de rota em telas menores
+  useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  }, [location, isMobile, setOpenMobile]);
+  
+  // Fechar sidebar quando muda para mobile
   useEffect(() => {
     if (isMobile) {
       setOpen(false);
@@ -264,7 +272,7 @@ export function AppLayout({ children, showPatientList = false }: AppLayoutProps)
       style={sidebarStyle as React.CSSProperties}
       defaultOpen={!isMobile}
     >
-      <SidebarAutoCollapse isMobile={isMobile} />
+      <SidebarAutoCollapse isMobile={isMobile} location={location} />
       <div className="flex h-screen w-full overflow-hidden">
         <Sidebar collapsible="icon" variant="sidebar">
           <SidebarHeader className="px-4 py-3 border-b border-sidebar-border group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-2">
