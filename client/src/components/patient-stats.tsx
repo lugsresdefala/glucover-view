@@ -32,7 +32,7 @@ export function PatientStats({ readings, gestationalWeeks, gestationalDays, weig
                 Na Meta
               </p>
               <p className="text-2xl font-mono font-semibold" data-testid="text-percentage-target">
-                {percentageInTarget}%
+                {percentageInTarget}% <span className="text-sm font-normal">de {readings.length} dias</span>
               </p>
             </div>
           </div>
