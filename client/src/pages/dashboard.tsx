@@ -523,7 +523,7 @@ export default function Dashboard({ section = "dashboard" }: DashboardProps) {
         "Adesão Dieta": evaluation.dietAdherence === "boa" ? "Boa" : 
                         evaluation.dietAdherence === "regular" ? "Regular" : "Ruim",
         "Nível": getUrgencyLabel(rec?.urgencyLevel || "info"),
-        "% no Alvo": allValues.length > 0 ? `${percentInTarget.toFixed(0)}%` : "-",
+        "% no Alvo": allValues.length > 0 ? `${percentInTarget.toFixed(0)}% de ${readings.length} dias` : "-",
         "Média Glicêmica": allValues.length > 0 ? `${avgGlucose.toFixed(0)} mg/dL` : "-",
         "Leituras Analisadas": allValues.length,
         "Recomendação Principal": rec?.mainRecommendation || "-",
