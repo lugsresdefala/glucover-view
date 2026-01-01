@@ -122,31 +122,35 @@ export async function generateClinicalRecommendation(
 function formatAIResponse(parsed: any, analysis: ClinicalAnalysis): ClinicalRecommendation {
   const ruleIds = analysis.rulesTriggered.map(r => r.id);
   
-  // Build panorama geral section
-  let panoramaGeral = "";
+  // Build unified analysis section (no more repetitive PANORAMA GERAL / ÚLTIMOS 7 DIAS)
+  let analysisContent = "";
+  
+  // Extract main summary from AI response
   if (parsed.panoramaGeral) {
-    panoramaGeral = `PANORAMA GERAL\n\n${parsed.panoramaGeral.resumo || ""}\n\n${parsed.panoramaGeral.analise || ""}`;
+    const resumo = parsed.panoramaGeral.resumo || "";
+    const analise = parsed.panoramaGeral.analise || "";
+    analysisContent = [resumo, analise].filter(Boolean).join(" ");
   } else if (parsed.resumoExecutivo) {
-    panoramaGeral = `PANORAMA GERAL\n\n${parsed.resumoExecutivo}\n\n${parsed.interpretacaoClinica || ""}`;
+    analysisContent = [parsed.resumoExecutivo, parsed.interpretacaoClinica].filter(Boolean).join(" ");
   }
   
-  // Build últimos 7 dias section
-  let ultimos7Dias = "";
-  if (parsed.ultimosSeteDias) {
+  // Add trend info only if significantly different (avoid repetition)
+  let trendInfo = "";
+  if (parsed.ultimosSeteDias && parsed.ultimosSeteDias.tendencia) {
     const u7 = parsed.ultimosSeteDias;
-    ultimos7Dias = `ÚLTIMOS 7 DIAS\n\n`;
-    if (u7.resumo) ultimos7Dias += `${u7.resumo}\n\n`;
-    if (u7.tendencia) ultimos7Dias += `Tendência: ${u7.tendencia}\n\n`;
-    if (u7.comparativo) ultimos7Dias += `${u7.comparativo}\n\n`;
-    if (u7.analise) ultimos7Dias += `${u7.analise}`;
+    // Only add if there's a meaningful trend difference
+    if (u7.tendencia && u7.tendencia !== "ESTÁVEL") {
+      trendInfo = `Tendência: ${u7.tendencia}.`;
+    }
   } else if (analysis.sevenDayAnalysis) {
     const s7 = analysis.sevenDayAnalysis;
-    ultimos7Dias = `ÚLTIMOS 7 DIAS\n\n`;
-    ultimos7Dias += `${s7.trendDescription}\n\n`;
-    ultimos7Dias += `Média glicêmica: ${s7.averageGlucose} mg/dL (${s7.percentInTarget}% na meta)`;
+    if (s7.trend !== "stable") {
+      const tendenciaLabel = s7.trend === "improving" ? "MELHORA" : "PIORA";
+      trendInfo = `Tendência: ${tendenciaLabel}.`;
+    }
   }
   
-  const fullAnalysis = [panoramaGeral, ultimos7Dias].filter(Boolean).join("\n\n---\n\n");
+  const fullAnalysis = `ANÁLISE CLÍNICA\n\n${analysisContent}${trendInfo ? `\n\n${trendInfo}` : ""}`;
   
   // Build conduta
   let conduta = "";
