@@ -78,6 +78,12 @@ export async function generateClinicalRecommendation(
 ): Promise<ClinicalRecommendation> {
   const clinicalAnalysis = generateClinicalAnalysis(evaluation);
   
+  // MUDANÇA: Forçar uso do motor determinístico e desabilitar IA
+  // Conforme solicitado, a análise deve seguir estritamente as diretrizes padronizadas
+  // e usar mensagens pré-definidas, sem intervenção de IA generativa.
+  return generateDeterministicRecommendation(clinicalAnalysis, evaluation);
+
+  /* CÓDIGO IA DESABILITADO
   if (!openai) {
     const { logger } = await import("./logger");
     logger.warn("OpenAI integration not configured, using deterministic recommendation", {
@@ -117,6 +123,7 @@ export async function generateClinicalRecommendation(
     });
     return generateDeterministicRecommendation(clinicalAnalysis, evaluation);
   }
+  */
 }
 
 function formatAIResponse(parsed: any, analysis: ClinicalAnalysis): ClinicalRecommendation {
@@ -357,12 +364,12 @@ function generateDeterministicRecommendation(
       condutaImediata = evaluation.usesInsulin 
         ? `Manutenção do esquema atual de insulinoterapia indicada. Controle adequado demonstrado${isRecentImproving ? ", com tendência de melhora recente confirmando eficácia do tratamento" : ""}.`
         : `Manutenção da orientação dietética e atividade física regular indicada. Não há indicação de insulinoterapia no momento.`;
-      condutaContinuada = `Continuidade do monitoramento conforme protocolo. ${evaluation.gestationalWeeks >= 32 ? "Intensificação da vigilância fetal indicada a partir de 32 semanas." : "Seguimento ambulatorial regular recomendado."}`;
+      condutaContinuada = `Continuidade do monitoramento conforme protocolo. ${evaluation.gestationalWeeks >= 32 ? "Intensificação da vigilância fetal indicada a partir de 32 semanas." : "Seguimento padrão."}`;
     }
     nextSteps.push("Manutenção da automonitorização glicêmica");
     nextSteps.push("Continuidade da orientação nutricional");
     nextSteps.push(evaluation.gestationalWeeks >= 32 ? "Vigilância fetal semanal (CTG, PBF)" : "Próxima consulta em 15 dias");
-    fundamentacao = `Controle adequado conforme metas SBD 2025 (jejum 65-95, 1h pós-prandial <140 mg/dL).${hasActualWorsening ? " Tendência de piora recente requer vigilância." : ""} ${evaluation.gestationalWeeks >= 32 ? "Vigilância fetal intensificada após 32 semanas (FEBRASGO-F8, OMS-W8)." : ""}`;
+    fundamentacao = `Controle adequado conforme metas SBD 2025 (jejum 65-95, 1h pós-prandial <140 mg/dL).${hasActualWorsening ? " Tendência de piora recente requer vigilância." : ""} ${evaluation.gestationalWeeks >= 32 ? "Indicação de vigilância fetal (FEBRASGO-F8)." : ""}`;
   } else if (analysis.percentInTarget >= 50) {
     // Moderate control - use 7-day data to guide urgency
     const urgencyNote = isRecentWorsening ? " Tendência de piora detectada nos últimos 7 dias." : "";
@@ -384,7 +391,7 @@ function generateDeterministicRecommendation(
     nextSteps.push("Reforço de adesão à dieta prescrita");
     nextSteps.push(isRecentWorsening ? "Reavaliação em 5-7 dias" : "Reavaliação em 7-14 dias");
     if (evaluation.gestationalWeeks >= 29) nextSteps.push("Solicitação de USG para avaliação de crescimento fetal");
-    fundamentacao = `Conforme SBD-R1 (Classe IIb, Nível C), ${analysis.percentAboveTarget}% das medidas acima da meta indica início ou intensificação de insulinoterapia.${isRecentWorsening ? " Tendência de piora recente reforça indicação de intervenção." : ""} Insulina como primeira escolha (SBD-R2, Classe I, Nível A).`;
+    fundamentacao = `Conforme SBD-R1 (Classe IIb, Nível C), ${analysis.percentAboveTarget}% das medidas acima da meta indica início ou intensificação de insulinoterapia.${isRecentWorsening ? " Piora recente exige intervenção mais agressiva." : ""}`;
   } else {
     // Poor control
     // Only show worsening trend if there's actual increase in average glucose
@@ -411,7 +418,7 @@ function generateDeterministicRecommendation(
     nextSteps.push(isRecentWorsening ? "Reavaliação em 5 dias" : "Reavaliação em 7 dias");
     if (isRecentWorsening) nextSteps.push("Considerar internação para ajuste supervisionado");
     else nextSteps.push("Internação pode ser considerada se necessário");
-    fundamentacao = `Descontrole glicêmico significativo (${analysis.percentInTarget}% na meta${s7 ? `, ${recent7DayPercent}% nos últimos 7 dias` : ""}) indica necessidade de intervenção conforme SBD-R1 e SBD-R2. Associação com complicações materno-fetais documentada.`;
+    fundamentacao = `Descontrole glicêmico significativo (${analysis.percentInTarget}% na meta${s7 ? `, ${recent7DayPercent}% nos últimos 7 dias` : ""}) indica necessidade de intervenção conforme SBD 2025 e OMS 2025.`;
   }
   
   const ruleIds = analysis.rulesTriggered.map(r => r.id);
